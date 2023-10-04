@@ -1,0 +1,8 @@
+@import "./reset.scss";
+@import "./theme.scss";
+
+body {
+  font-family: "TT Commons", sans-serif;
+  background-color: $bg;
+  color: $white;
+}

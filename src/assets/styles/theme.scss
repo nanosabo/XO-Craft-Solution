@@ -1,0 +1,43 @@
+@import "../fonts/TTCommons/stylesheet.scss";
+
+$bg: #111316;
+$primary: #0077ff;
+$secondary: #16191b;
+$default: #89898a;
+$white: #ffffff;
+$red: #ff0000;
+
+@mixin h1 {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+@mixin h2 {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+@mixin subtitle {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+@mixin subtitle2 {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+@mixin body {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+@mixin bodyMax {
+  font-size: 20px;
+  font-weight: 400;
+}
+
+@mixin caption {
+  font-size: 14px;
+  font-weight: 400;
+}
