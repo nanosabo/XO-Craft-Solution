@@ -13,10 +13,10 @@ const icon = {
 };
 
 const handleClick = {
-  close() {
+  hide() {
     window.ipcRenderer.send("minimize");
   },
-  hide() {
+  close() {
     window.ipcRenderer.send("close");
   },
 };
