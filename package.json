@@ -1,7 +1,7 @@
 {
   "name": "xo-craft-solution",
   "private": true,
-  "version": "0.0.1",
+  "version": "2.0.1",
   "author": "SABOTAGE",
   "description": "Desktop application that helps you design optimal crafts",
   "scripts": {
