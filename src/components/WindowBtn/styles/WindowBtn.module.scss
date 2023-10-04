@@ -1,0 +1,18 @@
+@import "@styles/theme";
+
+.window_button {
+  svg path {
+    transition: fill 0.2s ease-in-out, stroke 0.2s ease-in-out;
+  }
+
+  &:hover {
+    svg path {
+      fill: $white;
+      stroke: $white;
+    }
+  }
+}
+
+.hide {
+  padding-bottom: 2px;
+}
