@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 
 // The built directory structure
@@ -63,6 +63,16 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+ipcMain.on("minimize", (e) => {
+  const win = BrowserWindow.fromWebContents(e.sender);
+  win?.minimize();
+});
+
+ipcMain.on("close", (e) => {
+  const win = BrowserWindow.fromWebContents(e.sender);
+  win?.close();
 });
 
 app.whenReady().then(createWindow);
