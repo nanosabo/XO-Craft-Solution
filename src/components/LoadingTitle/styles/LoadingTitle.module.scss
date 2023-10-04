@@ -1,0 +1,32 @@
+@import "@styles/theme";
+
+.loading_title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+
+  h1 {
+    @include h1;
+    color: $white;
+  }
+
+  p {
+    @include subtitle2;
+    color: $default;
+  }
+
+  &.logo {
+    position: relative;
+
+    &::after {
+      content: "2.0";
+      position: absolute;
+      top: -8px;
+      right: -20px;
+      color: $primary;
+      
+      @include caption;
+    }
+  }
+}
