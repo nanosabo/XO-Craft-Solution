@@ -11,11 +11,11 @@
 
   &::before {
     content: "";
-    width: 100%;
+    width: 1080px;
     position: absolute;
     left: 0;
     top: 0;
-    height: 28px;
+    height: 31px;
     -webkit-app-region: drag;
   }
 }
