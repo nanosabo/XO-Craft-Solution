@@ -2,27 +2,10 @@
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-ul[class],
-ol[class] {
+  background: none;
+  outline: 0;
+  border: 0;
   padding: 0;
-}
-
-body,
-h1,
-h2,
-h3,
-h4,
-p,
-ul[class],
-ol[class],
-li,
-figure,
-figcaption,
-blockquote,
-dl,
-dd {
   margin: 0;
 }
 
