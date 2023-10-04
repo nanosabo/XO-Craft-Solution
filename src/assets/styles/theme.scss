@@ -2,10 +2,12 @@
 
 $bg: #111316;
 $primary: #0077ff;
+$primaryGradient: linear-gradient(180deg, $primary 0%, $bg 100%);
 $secondary: #16191b;
 $default: #89898a;
 $white: #ffffff;
 $red: #ff0000;
+$redGradient: linear-gradient(180deg, $red 0%, $bg 100%);
 
 @mixin h1 {
   font-size: 32px;
