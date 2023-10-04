@@ -1,5 +1,5 @@
 import WindowActions from "@src/containers/WindowActions";
-import React, { FC, PropsWithChildren } from "react";
+import { FC, PropsWithChildren } from "react";
 
 const PageLayout: FC<PropsWithChildren> = ({ children }) => {
   return (

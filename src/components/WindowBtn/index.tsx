@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import { CloseIcon, HideIcon } from "@src/ui/icons";
 import styles from "./styles/WindowBtn.module.scss";
 import classNames from "classnames";
