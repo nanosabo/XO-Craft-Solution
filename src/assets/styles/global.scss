@@ -7,3 +7,13 @@ body {
   background-image: url("@src/assets/images/bg.svg");
   color: $white;
 }
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+main {
+  flex-grow: 3;
+}
