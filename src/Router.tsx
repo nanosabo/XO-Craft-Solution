@@ -1,10 +1,15 @@
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import MainPage from "./pages/MainPage";
+import LoadingPage from "./pages/LoadingPage";
 
 const router = createHashRouter([
   {
     path: "/",
     element: <MainPage />,
+  },
+  {
+    path: "/loading",
+    element: <LoadingPage />,
   },
 ]);
 

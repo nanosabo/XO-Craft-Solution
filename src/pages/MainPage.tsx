@@ -1,7 +1,14 @@
-const MainPage = () => {
-  return (
-    <div>Main Page</div>
-  )
-}
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default MainPage
+const MainPage = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate("/loading");
+  }, [navigate]);
+
+  return <div>Main Page</div>;
+};
+
+export default MainPage;
