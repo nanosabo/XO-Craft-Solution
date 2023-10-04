@@ -1,12 +1,12 @@
 import Router from "@src/Router";
-import PageLayout from "./layouts/PageLayout";
+import RootLayout from "./layouts/RootLayout";
 import "@styles/global.scss";
 
 function App() {
   return (
-    <PageLayout>
+    <RootLayout>
       <Router />
-    </PageLayout>
+    </RootLayout>
   );
 }
 

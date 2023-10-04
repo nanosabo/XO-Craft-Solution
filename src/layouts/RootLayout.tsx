@@ -1,7 +1,7 @@
 import WindowActions from "@src/containers/WindowActions";
 import { FC, PropsWithChildren } from "react";
 
-const PageLayout: FC<PropsWithChildren> = ({ children }) => {
+const RootLayout: FC<PropsWithChildren> = ({ children }) => {
   return (
     <>
       <header>
@@ -12,4 +12,4 @@ const PageLayout: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
-export default PageLayout;
+export default RootLayout;
