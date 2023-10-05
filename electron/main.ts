@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, globalShortcut, ipcMain } from "electron";
 import path from "node:path";
 
 // The built directory structure
@@ -18,6 +18,7 @@ process.env.VITE_PUBLIC = app.isPackaged
 let win: BrowserWindow | null;
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
+const IS_DEV = !app.isPackaged;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -28,7 +29,7 @@ function createWindow() {
     frame: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      devTools: true,
+      devTools: IS_DEV,
     },
   });
 
@@ -36,6 +37,10 @@ function createWindow() {
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
     win?.webContents.openDevTools();
+
+    if (!IS_DEV) {
+      globalShortcut.register("CommandOrControl+R", () => {});
+    }
   });
 
   if (VITE_DEV_SERVER_URL) {
