@@ -1,12 +1,7 @@
 {
   "initial": {
     "title": "Craft Solution",
-    "subtitle": "Загружаемся... Ожидайте",
-    "description": {
-      "part1": {
-        "part2": 123
-      }
-    }
+    "subtitle": "Загружаемся... Ожидайте"
   },
   "solving": {
     "title": "Идет просчет",
