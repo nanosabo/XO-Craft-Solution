@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { CloseIcon, HideIcon } from "@src/ui/icons";
-import styles from "./styles/WindowBtn.module.scss";
+import styles from "./styles/WindowButton.module.scss";
 import classNames from "classnames";
 
 type Props = {
@@ -21,7 +21,7 @@ const handleClick = {
   },
 };
 
-const WindowBtn: FC<Props> = ({ type }) => {
+const WindowButton: FC<Props> = ({ type }) => {
   const className = classNames(styles.window_button, {
     [styles.hide]: type === "hide",
   });
@@ -33,4 +33,4 @@ const WindowBtn: FC<Props> = ({ type }) => {
   );
 };
 
-export default WindowBtn;
+export default WindowButton;
