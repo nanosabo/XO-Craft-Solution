@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut, ipcMain } from "electron";
+import { app, BrowserWindow, globalShortcut, ipcMain, shell } from "electron";
 import path from "node:path";
 
 // The built directory structure
@@ -77,6 +77,10 @@ ipcMain.on("minimize", (e) => {
 ipcMain.on("close", (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   win?.close();
+});
+
+ipcMain.on("openDiscordExternal", () => {
+  shell.openExternal("https://discord.gg/2dWevuMVwZ");
 });
 
 app.whenReady().then(createWindow);
