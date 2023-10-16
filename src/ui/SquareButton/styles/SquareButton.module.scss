@@ -1,0 +1,23 @@
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  background-color: #282a2d;
+  border-radius: 8px;
+
+  transition: background-color 0.2s ease-in-out, scale 0.1s ease-in-out;
+
+  &:hover:not(:disabled) {
+    background-color: #1e2023;
+  }
+
+  &:active:not(:disabled) {
+    scale: 0.95;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
