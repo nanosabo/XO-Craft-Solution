@@ -1,0 +1,14 @@
+{
+  "initial": {
+    "title": "Craft Solution",
+    "subtitle": "Loading... Please wait"
+  },
+  "solving": {
+    "title": "Looking for a solution",
+    "subtitle": "Improving your skill 🪄"
+  },
+  "error": {
+    "title": "An error has occurred",
+    "subtitle": "Check your Internet connection and restart the application"
+  }
+}
