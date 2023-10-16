@@ -1,15 +1,15 @@
-import WindowActions from "@src/containers/WindowActions";
+import Header from "@src/containers/Header";
 import { store } from "@src/store/store";
-import { FC, PropsWithChildren } from "react";
 import { Provider } from "react-redux";
+import { Outlet } from "react-router-dom";
 
-const RootLayout: FC<PropsWithChildren> = ({ children }) => {
+const RootLayout = () => {
   return (
     <Provider store={store}>
-      <header>
-        <WindowActions />
-      </header>
-      <main>{children}</main>
+      <Header />
+      <main>
+        <Outlet />
+      </main>
     </Provider>
   );
 };
