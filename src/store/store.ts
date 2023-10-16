@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import loaderReducer from "./slices/loader.slice";
+import appReducer from "./slices/app.slice";
 
 export const store = configureStore({
   reducer: {
     loader: loaderReducer,
+    app: appReducer,
   },
 });
 
