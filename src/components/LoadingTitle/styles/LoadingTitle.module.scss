@@ -22,8 +22,8 @@
     &::after {
       content: "2.0";
       position: absolute;
-      top: -4px;
-      right: -8px;
+      top: -6px;
+      right: -15px;
       color: $primary;
       
       @include caption;
