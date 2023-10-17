@@ -1,11 +1,12 @@
-import styles from "@src/ui/NavigationLink/styles/NavigationLink.module.scss";
+import styles from "@src/ui/NavLink/styles/NavLink.module.scss";
 import classNames from "classnames";
+import { useLocation } from "react-router-dom";
 
 const useNavLinkClassName = (href: string) => {
-  const path = window.location.pathname;
+  const { pathname } = useLocation();
 
   const className = classNames(styles.navlink, {
-    [styles.active]: path === href,
+    [styles.active]: pathname === href,
   });
 
   return className;

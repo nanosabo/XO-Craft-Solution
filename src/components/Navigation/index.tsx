@@ -1,4 +1,4 @@
-import NavigationLink from "@src/ui/NavigationLink";
+import NavLink from "@src/ui/NavLink";
 import { HomeIcon, InfoIcon, SettingsIcon } from "@src/ui/icons";
 import styles from "./styles/Navigation.module.scss";
 import { useTranslation } from "react-i18next";
@@ -27,7 +27,7 @@ const Navigation = () => {
   return (
     <nav className={styles.nav}>
       {links.map(({ href, icon, key }) => (
-        <NavigationLink key={key} icon={icon} href={href} title={t(key)} />
+        <NavLink key={key} icon={icon} href={href} title={t(key)} />
       ))}
     </nav>
   );

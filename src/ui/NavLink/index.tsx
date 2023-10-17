@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink as Link } from "react-router-dom";
 import useNavLinkClassName from "@src/hooks/useNavLinkClassName";
 
 type Props = {
@@ -8,14 +8,14 @@ type Props = {
   title: string;
 };
 
-const NavigationLink: FC<Props> = ({ href, icon, title }) => {
+const NavLink: FC<Props> = ({ href, icon, title }) => {
   const className = useNavLinkClassName(href);
 
   return (
-    <NavLink className={className} to={href}>
+    <Link className={className} to={href}>
       {icon} {title}
-    </NavLink>
+    </Link>
   );
 };
 
-export default NavigationLink;
+export default NavLink;

@@ -1,0 +1,83 @@
+@import "@styles/theme";
+
+.navlink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $default;
+  text-decoration: none;
+
+  transition: color 0.2s ease-in-out;
+
+  svg {
+    margin-bottom: 7px;
+
+    path {
+      transition: fill 0.2s ease-in-out;
+    }
+  }
+
+  @include body;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -300%;
+    left: 50%;
+    translate: -50% 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 50px 50px 50px;
+    border-color: transparent transparent rgba($primary, 0.3) transparent;
+    z-index: -1;
+    opacity: 0;
+
+    transition: opacity 0.5s ease-in-out;
+
+    filter: blur(15px);
+  }
+
+  &.active,
+  &:hover {
+    color: $white;
+
+    svg path {
+      fill: $white;
+    }
+  }
+
+  &.active {
+    position: relative;
+
+    &::after {
+      opacity: 1;
+      animation: 5s flicker 0.5s linear infinite;
+    }
+
+    &:hover {
+      cursor: default;
+    }
+  }
+}
+
+@keyframes flicker {
+  0%,
+  19.999%,
+  22%,
+  62.999%,
+  64%,
+  64.999%,
+  70%,
+  100% {
+    opacity: 0.99;
+  }
+  20%,
+  21.999%,
+  63%,
+  63.999%,
+  65%,
+  69.999% {
+    opacity: 0.8;
+  }
+}
