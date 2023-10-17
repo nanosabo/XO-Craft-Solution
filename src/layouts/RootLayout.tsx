@@ -1,15 +1,16 @@
 import Header from "@src/containers/Header";
 import { store } from "@src/store/store";
+import { FC, PropsWithChildren } from "react";
 import { Provider } from "react-redux";
-import { Outlet } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 
-const RootLayout = () => {
+const RootLayout: FC<PropsWithChildren> = ({ children }) => {
   return (
     <Provider store={store}>
-      <Header />
-      <main>
-        <Outlet />
-      </main>
+      <HashRouter>
+        <Header />
+        <main>{children}</main>
+      </HashRouter>
     </Provider>
   );
 };

@@ -1,26 +1,19 @@
-import {
-  createHashRouter,
-  createRoutesFromElements,
-  Route,
-  RouterProvider,
-} from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import MainPage from "./pages/MainPage";
 import LoadingPage from "./pages/LoadingPage";
-import RootLayout from "./layouts/RootLayout";
-
-const router = createHashRouter(
-  createRoutesFromElements(
-    <Route path="/">
-      <Route element={<RootLayout />}>
-        <Route index element={<MainPage />} />
-        <Route path="loading" element={<LoadingPage />} />
-      </Route>
-    </Route>
-  )
-);
+import { AnimatePresence } from "framer-motion";
 
 const Router = () => {
-  return <RouterProvider router={router} />;
+  const location = useLocation();
+
+  return (
+    <AnimatePresence>
+      <Routes location={location} key={location.key}>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/loading" element={<LoadingPage />} />
+      </Routes>
+    </AnimatePresence>
+  );
 };
 
 export default Router;
