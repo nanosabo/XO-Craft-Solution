@@ -1,5 +1,5 @@
-import { FC } from "react";
-import { NavLink as Link } from "react-router-dom";
+import React, { FC } from "react";
+import { NavLink as Link, useLocation } from "react-router-dom";
 import useNavLinkClassName from "@src/hooks/useNavLinkClassName";
 
 type Props = {
@@ -10,9 +10,18 @@ type Props = {
 
 const NavLink: FC<Props> = ({ href, icon, title }) => {
   const className = useNavLinkClassName(href);
+  const { pathname } = useLocation();
+
+  const handleClick = (
+    event: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    if (pathname === href) {
+      event.preventDefault();
+    }
+  };
 
   return (
-    <Link className={className} to={href}>
+    <Link className={className} to={href} onClick={handleClick}>
       {icon} {title}
     </Link>
   );
