@@ -6,3 +6,4 @@ export { default as InfoIcon } from "./InfoIcon";
 export { default as EngIcon } from "./EngIcon";
 export { default as RuIcon } from "./RuIcon";
 export { default as DiscordIcon } from "./DiscordIcon";
+export { default as SearchIcon } from "./SearchIcon";
