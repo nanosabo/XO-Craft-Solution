@@ -1,0 +1,16 @@
+@import "@styles/theme";
+
+.page_title {
+  margin-bottom: 32px;
+  
+  h1 {
+    @include h1;
+    color: $white;
+  }
+
+  p {
+    @include subtitle;
+    color: $default;
+    max-width: 400px;
+  }
+}
