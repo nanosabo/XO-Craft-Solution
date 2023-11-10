@@ -1,0 +1,20 @@
+@import "@styles/theme";
+
+.input_section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.header {
+  display: flex;
+  gap: 8px;
+
+  p {
+    @include body;
+
+    & + svg path {
+      fill: $yellow;
+    }
+  }
+}
