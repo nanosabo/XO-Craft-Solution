@@ -1,0 +1,24 @@
+{
+  "header": {
+    "title": "Build parameters",
+    "subtitle": "Enter the current characteristics of the build, as well as restrictions for the final solution"
+  },
+  "inputs": {
+    "strenght": "Current build strenght",
+    "weight": "Current build weight",
+    "capacity": "Current build load capacity",
+    "details": "Count of already used details",
+    "maxDetails": "Max details count",
+    "powerpoints": "Current build powerpoints",
+    "maxPowerpoints": "Max build powerpoints",
+    "minDetailHp": "Min detail HP",
+    "maxDetailHp": "Max detail HP",
+    "driver": "«Grizzly» driver",
+    "requriedDetails": "Required details",
+    "placeholder": "Enter value...",
+    "searchPlaceholder": "Search by name..."
+  },
+  "solve": {
+    "title": "Get Solution"
+  }
+}
