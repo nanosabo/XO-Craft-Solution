@@ -10,5 +10,4 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           ignore-comments: true
-          labels-synonyms: '{"Сортировка | Triage":["triage"]}'
-          default-labels: '["triage"]'
+          default-labels: '["Сортировка | Triage"]'
