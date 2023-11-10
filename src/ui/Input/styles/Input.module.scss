@@ -1,0 +1,93 @@
+@import "@styles/theme";
+
+.input {
+  &:not(:has(input[type="checkbox"])) {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    height: 36px;
+    padding: 10px 16px;
+    background-color: rgba($input, 0.5);
+    backdrop-filter: blur(2px);
+    border: 1px solid rgba($white, 0.1);
+    border-radius: 8px;
+
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+
+  input {
+    width: 100%;
+    @include body;
+    color: $white;
+
+    &::placeholder {
+      color: $default;
+    }
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+
+  input[type="checkbox"] {
+    display: none;
+
+    & + label {
+      position: relative;
+      display: block;
+      width: 80px;
+      height: 36px;
+      border: 1px solid rgba($white, 0.1);
+      border-radius: 18px;
+      background-color: $default;
+      padding: 0 4px;
+      cursor: pointer;
+
+      transition: background-color 0.2s ease-in-out;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 4px;
+        transform: translateY(-50%);
+        display: block;
+        width: 28px;
+        height: 28px;
+        background-color: $white;
+        border-radius: 50%;
+        filter: drop-shadow(-4px 4px 4px rgba(0, 0, 0, 0.25));
+
+        transition: left 0.2s ease-in-out;
+      }
+    }
+
+    &:checked + label {
+      background-color: $primary;
+
+      &::before {
+        left: 46px;
+      }
+    }
+
+    &:disabled + label {
+      opacity: 0.5;
+    }
+  }
+}
+
+.input:has(input:focus) {
+  background-color: rgba($primary, 0.1);
+  border-color: $primary;
+}
+
+.input:has(input:not(:placeholder-shown)) svg path {
+  fill: $white;
+}
+
+.input:has(input:disabled:not([type="checkbox"])) {
+  background-color: rgba($default, 0.5);
+}
