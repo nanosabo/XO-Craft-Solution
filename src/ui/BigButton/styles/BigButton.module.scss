@@ -1,0 +1,39 @@
+@import "@styles/theme";
+
+.wrapper {
+  filter: drop-shadow(0px 4px 0px darken($primary, 30%));
+
+  &:has(.button:active) {
+    filter: drop-shadow(0px 4px 0px transparent);
+
+    .button {
+      transform: translateY(4px);
+    }
+  }
+}
+
+.button {
+  width: 336px;
+  height: 70px;
+  background-color: $primary;
+  background-image: url("./bigBtnBg.svg");
+  mask-image: url("./bigBtnMask.svg");
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+
+  -webkit-mask-image: url("./bigBtnMask.svg");
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+
+  font-size: 32px;
+  font-weight: 400;
+  color: $white;
+
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover {
+    background-color: darken($primary, 10%);
+  }
+}
