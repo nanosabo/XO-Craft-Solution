@@ -1,0 +1,32 @@
+@import "@styles/theme";
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+
+  @include subtitle;
+
+  transition: opacity 0.2s ease-in-out, transform 0.1s ease-in-out;
+
+  &.white {
+    background-color: $white;
+    color: $secondary;
+  }
+
+  &.primary {
+    background-color: $primary;
+    color: $white;
+  }
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
