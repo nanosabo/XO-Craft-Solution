@@ -1,90 +1,27 @@
-import InputSection, { InputSectionProps } from "@src/components/InputSection";
+import InputSection from "@src/components/InputSection";
 import { useTranslation } from "react-i18next";
 import styles from "./styles/ColumtInputs.module.scss";
-
-interface Input {
-  icon: InputSectionProps["icon"];
-  type: InputSectionProps["type"];
-}
-
-interface InputsData {
-  [key: string]: Input;
-}
-
-const firstColumnInputs: InputsData = {
-  strenght: {
-    icon: "ShieldIcon",
-    type: "number",
-  },
-  weight: {
-    icon: "WeightIcon",
-    type: "number",
-  },
-  capacity: {
-    icon: "LoadCapacityIcon",
-    type: "number",
-  },
-  details: {
-    icon: "PuzzleIcon",
-    type: "number",
-  },
-  maxDetails: {
-    icon: "PuzzleIcon",
-    type: "number",
-  },
-};
-
-const secondColumnInputs: InputsData = {
-  powerpoints: {
-    icon: "FlashOutlineIcon",
-    type: "number",
-  },
-  maxPowerpoints: {
-    icon: "FlashFillIcon",
-    type: "number",
-  },
-  minDetailHp: {
-    icon: "MinLoadIcon",
-    type: "number",
-  },
-  maxDetailHp: {
-    icon: "MaxLoadIcon",
-    type: "number",
-  },
-  driver: {
-    icon: "DriverIcon",
-    type: "checkbox",
-  },
-};
+import { allColumns } from "./inputsTypes";
+import SearchedDetail from "../SearchedDetail";
 
 const ColumnInputs = () => {
   const { t } = useTranslation("mainPage", { keyPrefix: "inputs" });
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.block}>
-        {Object.entries(firstColumnInputs).map(([name, { icon, type }]) => (
-          <InputSection
-            key={name}
-            icon={icon}
-            type={type}
-            title={t(name)}
-            placeholder={t("placeholder")}
-          />
-        ))}
-      </div>
-
-      <div className={styles.block}>
-        {Object.entries(secondColumnInputs).map(([name, { icon, type }]) => (
-          <InputSection
-            key={name}
-            icon={icon}
-            type={type}
-            title={t(name)}
-            placeholder={t("placeholder")}
-          />
-        ))}
-      </div>
+      {allColumns.map((inputs, key) => (
+        <div key={key} className={styles.block}>
+          {Object.entries(inputs).map(([name, { icon, type }]) => (
+            <InputSection
+              key={name}
+              icon={icon}
+              type={type}
+              title={t(name)}
+              placeholder={t("placeholder")}
+            />
+          ))}
+        </div>
+      ))}
 
       <div className={styles.block}>
         <InputSection
@@ -93,6 +30,14 @@ const ColumnInputs = () => {
           title={t("requriedDetails")}
           placeholder={t("searchPlaceholder")}
         />
+
+        <div className={styles.required}>
+          {Array(5)
+            .fill(null)
+            .map((_, index) => (
+              <SearchedDetail key={index} />
+            ))}
+        </div>
       </div>
     </div>
   );
