@@ -2,7 +2,7 @@ import InputSection from "@src/components/InputSection";
 import { useTranslation } from "react-i18next";
 import styles from "./styles/ColumtInputs.module.scss";
 import { allColumns } from "./inputsTypes";
-import SearchedDetail from "../SearchedDetail";
+import RequiredDetails from "../RequiredDetails";
 
 const ColumnInputs = () => {
   const { t } = useTranslation("mainPage", { keyPrefix: "inputs" });
@@ -31,13 +31,7 @@ const ColumnInputs = () => {
           placeholder={t("searchPlaceholder")}
         />
 
-        <div className={styles.required}>
-          {Array(5)
-            .fill(null)
-            .map((_, index) => (
-              <SearchedDetail key={index} />
-            ))}
-        </div>
+        <RequiredDetails />
       </div>
     </div>
   );
