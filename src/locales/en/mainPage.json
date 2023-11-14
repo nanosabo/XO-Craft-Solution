@@ -4,17 +4,83 @@
     "subtitle": "Enter the current characteristics of the build, as well as restrictions for the final solution"
   },
   "inputs": {
-    "strenght": "Current build strenght",
-    "weight": "Current build weight",
-    "capacity": "Current build load capacity",
-    "details": "Count of already used details",
-    "maxDetails": "Max details count",
-    "powerpoints": "Current build powerpoints",
-    "maxPowerpoints": "Max build powerpoints",
-    "minDetailHp": "Min detail HP",
-    "maxDetailHp": "Max detail HP",
-    "driver": "«Grizzly» driver",
-    "requriedDetails": "Required details",
+    "strenght": {
+      "title": "Current build strenght",
+      "tooltip": {
+        "title": "The amount of HP of the build only with the base, weapons, chassis and necessary modules",
+        "subtitle": "Located in the build characteristics section"
+      }
+    },
+    "weight": {
+      "title": "Current build weight",
+      "tooltip": {
+        "title": "Weight of the build only with the base, weapons, chassis and necessary modules",
+        "subtitle": "Located in the build characteristics section"
+      }
+    },
+    "capacity": {
+      "title": "Current build load capacity",
+      "tooltip": {
+        "title": "Maximum load capacity of the build up to the red line of the load capacity scale",
+        "subtitle": "Shown when hovering over the load capacity bar"
+      }
+    },
+    "details": {
+      "title": "Count of already used details",
+      "tooltip": {
+        "title": "Number of parts currently installed on the build",
+        "subtitle": "Located in the build characteristics section"
+      }
+    },
+    "maxDetails": {
+      "title": "Max details count",
+      "tooltip": {
+        "title": "Maximum number of parts for a build. Standard: 80 - normal build, 180 - leviathan",
+        "subtitle": "Located in the build characteristics section"
+      }
+    },
+    "powerpoints": {
+      "title": "Current build powerpoints",
+      "tooltip": {
+        "title": "The number of Power Points that the build currently has",
+        "subtitle": "Located in the build characteristics section"
+      }
+    },
+    "maxPowerpoints": {
+      "title": "Max build powerpoints",
+      "tooltip": {
+        "title": "The maximum number of Power Points that you need to get in the end. Leave 0 if there are no restrictions",
+        "subtitle": "Cannot be less than the current PP value"
+      }
+    },
+    "minDetailHp": {
+      "title": "Min detail HP",
+      "tooltip": {
+        "title": "Parts whose strength is lower than specified will not be taken into account in the solution",
+        "subtitle": ""
+      }
+    },
+    "maxDetailHp": {
+      "title": "Max detail HP",
+      "tooltip": {
+        "title": "Parts whose strength is higher than specified will not be taken into account in the solution",
+        "subtitle": ""
+      }
+    },
+    "driver": {
+      "title": "«Grizzly» driver",
+      "tooltip": {
+        "title": "If you have a “Grizzly” partner installed, 5% of the build’s strength will be taken into account",
+        "subtitle": ""
+      }
+    },
+    "requriedDetails": {
+      "title": "Required details",
+      "tooltip": {
+        "title": "Details that should definitely be included in the final solution sample",
+        "subtitle": ""
+      }
+    },
     "placeholder": "Enter value...",
     "searchPlaceholder": "Search by name..."
   },
