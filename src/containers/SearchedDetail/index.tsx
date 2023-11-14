@@ -14,7 +14,7 @@ const SearchedDetail = () => {
   return (
     <div className={styles.wrapper}>
       <div className={styles.info}>
-        <DetailSearchPicture src="/details/Fender.webp" alt="Крыло" />
+        <DetailSearchPicture src="details/Fender.webp" alt="Крыло" />
         <p>Крыло</p>
       </div>
 
