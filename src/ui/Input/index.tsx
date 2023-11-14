@@ -1,10 +1,10 @@
-import { FC, InputHTMLAttributes, useId } from "react";
+import { FC, InputHTMLAttributes, memo, useId } from "react";
 import { SearchIcon } from "../icons";
 import styles from "./styles/Input.module.scss";
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {}
 
-const Input: FC<Props> = ({ type, ...props }) => {
+const Input: FC<Props> = memo(({ type, ...props }) => {
   const id = useId();
 
   return (
@@ -14,6 +14,6 @@ const Input: FC<Props> = ({ type, ...props }) => {
       {type === "checkbox" && <label htmlFor={id}></label>}
     </div>
   );
-};
+});
 
 export default Input;

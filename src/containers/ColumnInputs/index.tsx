@@ -16,8 +16,11 @@ const ColumnInputs = () => {
               key={name}
               icon={icon}
               type={type}
-              title={t(name)}
+              title={t(`${name}.title`)}
               placeholder={t("placeholder")}
+              tooltipTitle={t(`${name}.tooltip.title`)}
+              toolTipSubtitle={t(`${name}.tooltip.subtitle`)}
+              tooltipImage="tooltips/weight.png"
             />
           ))}
         </div>
@@ -27,8 +30,11 @@ const ColumnInputs = () => {
         <InputSection
           icon="PuzzleIcon"
           type="search"
-          title={t("requriedDetails")}
+          title={t("requriedDetails.title")}
           placeholder={t("searchPlaceholder")}
+          tooltipTitle={t(`requriedDetails.tooltip.title`)}
+          toolTipSubtitle={t(`requriedDetails.tooltip.subtitle`)}
+          tooltipImage="tooltips/weight.png"
         />
 
         <RequiredDetails />

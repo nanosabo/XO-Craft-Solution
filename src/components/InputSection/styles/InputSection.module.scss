@@ -1,6 +1,7 @@
 @import "@styles/theme";
 
 .input_section {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -13,7 +14,7 @@
   p {
     @include body;
 
-    & + svg path {
+    & + span svg path {
       fill: $yellow;
     }
   }
