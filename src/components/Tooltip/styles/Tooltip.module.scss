@@ -1,0 +1,33 @@
+@import "@styles/theme";
+
+.tooltip {
+  overflow: hidden;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: linear-gradient(180deg, #2C2C2E 0%, #16191B 59.37%);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 8px;
+  opacity: 0;
+  visibility: hidden;
+
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  p {
+    padding: 16px 16px 12px;
+    @include body;
+  }
+
+  span {
+    display: block;
+    padding: 0px 16px 12px;
+    @include caption;
+    color: $default;
+  }
+}
