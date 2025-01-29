@@ -38,6 +38,8 @@ function createWindow() {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
     win?.webContents.openDevTools();
 
+    globalShortcut.register("F11", () => {});
+
     if (!IS_DEV) {
       globalShortcut.register("CommandOrControl+R", () => {});
     }
