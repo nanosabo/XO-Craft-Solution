@@ -10,7 +10,7 @@ export interface InputSectionProps
   title: string;
   tooltipTitle: string;
   toolTipSubtitle: string;
-  tooltipImage: string;
+  tooltipImage?: string;
 }
 
 const InputSection: FC<InputSectionProps> = ({

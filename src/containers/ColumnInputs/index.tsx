@@ -5,7 +5,7 @@ import { allColumns } from "./inputsTypes";
 import RequiredDetails from "../RequiredDetails";
 
 const ColumnInputs = () => {
-  const { t } = useTranslation("mainPage", { keyPrefix: "inputs" });
+  const { t, i18n } = useTranslation("mainPage", { keyPrefix: "inputs" });
 
   return (
     <div className={styles.wrapper}>
@@ -20,7 +20,11 @@ const ColumnInputs = () => {
               placeholder={t("placeholder")}
               tooltipTitle={t(`${name}.tooltip.title`)}
               toolTipSubtitle={t(`${name}.tooltip.subtitle`)}
-              tooltipImage="tooltips/weight.png"
+              tooltipImage={
+                inputs[name].image
+                  ? `tooltips/${i18n.language}/${name}.png`
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -34,7 +38,6 @@ const ColumnInputs = () => {
           placeholder={t("searchPlaceholder")}
           tooltipTitle={t(`requriedDetails.tooltip.title`)}
           toolTipSubtitle={t(`requriedDetails.tooltip.subtitle`)}
-          tooltipImage="tooltips/weight.png"
         />
 
         <RequiredDetails />

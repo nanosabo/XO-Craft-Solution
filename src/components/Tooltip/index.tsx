@@ -5,7 +5,7 @@ import classNames from "classnames";
 type Props = {
   title: string;
   subtitle: string;
-  image: string;
+  image?: string;
   visible: boolean;
 };
 
@@ -13,8 +13,8 @@ const Tooltip: FC<Props> = ({ title, subtitle, image, visible }) => {
   return (
     <div className={classNames(styles.tooltip, { [styles.visible]: visible })}>
       <p>{title}</p>
-      <span>{subtitle}</span>
-      <img src={image} alt="" draggable="false" />
+      {subtitle && <span>{subtitle}</span>}
+      {image && <img src={image} alt="" draggable="false" />}
     </div>
   );
 };
