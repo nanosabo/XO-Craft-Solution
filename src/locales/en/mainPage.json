@@ -5,21 +5,21 @@
   },
   "inputs": {
     "strenght": {
-      "title": "Current build strenght",
+      "title": "Current build durability",
       "tooltip": {
         "title": "The amount of HP of the build only with the base, weapons, chassis and necessary modules",
         "subtitle": "Located in the build characteristics section"
       }
     },
     "weight": {
-      "title": "Current build weight",
+      "title": "Current build mass",
       "tooltip": {
         "title": "Weight of the build only with the base, weapons, chassis and necessary modules",
         "subtitle": "Located in the build characteristics section"
       }
     },
     "capacity": {
-      "title": "Current build load capacity",
+      "title": "Current build tonnage",
       "tooltip": {
         "title": "Maximum load capacity of the build up to the red line of the load capacity scale",
         "subtitle": "Shown when hovering over the load capacity bar"
@@ -40,16 +40,16 @@
       }
     },
     "powerpoints": {
-      "title": "Current build powerpoints",
+      "title": "Current build power scores",
       "tooltip": {
-        "title": "The number of Power Points that the build currently has",
+        "title": "The number of Power Scores that the build currently has",
         "subtitle": "Located in the build characteristics section"
       }
     },
     "maxPowerpoints": {
-      "title": "Max build powerpoints",
+      "title": "Max build power scores",
       "tooltip": {
-        "title": "The maximum number of Power Points that you need to get in the end. Leave 0 if there are no restrictions",
+        "title": "The maximum number of Power Scores that you need to get in the end. Leave 0 if there are no restrictions",
         "subtitle": "Cannot be less than the current PP value"
       }
     },
@@ -68,9 +68,9 @@
       }
     },
     "driver": {
-      "title": "«Grizzly» driver",
+      "title": "«Grizzly» co-driver",
       "tooltip": {
-        "title": "If you have a “Grizzly” partner installed, 5% of the build’s strength will be taken into account",
+        "title": "If you have a “Grizzly” co-driver installed, 5% of the build’s durability will be taken into account",
         "subtitle": ""
       }
     },
