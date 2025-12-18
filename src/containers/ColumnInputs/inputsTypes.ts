@@ -11,7 +11,7 @@ interface InputsData {
 }
 
 const firstColumnInputs: InputsData = {
-  strenght: {
+  durability: {
     icon: "ShieldIcon",
     type: "number",
     image: true,
@@ -21,17 +21,17 @@ const firstColumnInputs: InputsData = {
     type: "number",
     image: true,
   },
-  capacity: {
+  tonnage: {
     icon: "LoadCapacityIcon",
     type: "number",
     image: true,
   },
-  details: {
+  parts: {
     icon: "PuzzleIcon",
     type: "number",
     image: true,
   },
-  maxDetails: {
+  maxParts: {
     icon: "PuzzleIcon",
     type: "number",
     image: true,
@@ -39,27 +39,27 @@ const firstColumnInputs: InputsData = {
 };
 
 const secondColumnInputs: InputsData = {
-  powerpoints: {
+  powerScores: {
     icon: "FlashOutlineIcon",
     type: "number",
     image: true,
   },
-  maxPowerpoints: {
+  maxPowerScores: {
     icon: "FlashFillIcon",
     type: "number",
     image: false,
   },
-  minDetailHp: {
+  minPartHp: {
     icon: "MinLoadIcon",
     type: "number",
     image: false,
   },
-  maxDetailHp: {
+  maxPartHp: {
     icon: "MaxLoadIcon",
     type: "number",
     image: false,
   },
-  driver: {
+  coDriver: {
     icon: "DriverIcon",
     type: "checkbox",
     image: true,

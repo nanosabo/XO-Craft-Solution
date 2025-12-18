@@ -34,7 +34,7 @@ const ColumnInputs = () => {
         <InputSection
           icon="PuzzleIcon"
           type="search"
-          title={t("requriedDetails.title")}
+          title={t("requriedParts.title")}
           placeholder={t("searchPlaceholder")}
           tooltipTitle={t(`requriedDetails.tooltip.title`)}
           toolTipSubtitle={t(`requriedDetails.tooltip.subtitle`)}
