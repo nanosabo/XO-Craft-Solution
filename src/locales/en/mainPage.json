@@ -60,10 +60,10 @@
         "subtitle": ""
       }
     },
-    "maxPartHp": {
-      "title": "Max detail HP",
+    "durabilityCabin": {
+      "title": "Durability cabin +10%",
       "tooltip": {
-        "title": "Parts whose strength is higher than specified will not be taken into account in the solution",
+        "title": "If you have a cabin installed, upgraded +10% to durability, this bonus will be taken into account",
         "subtitle": ""
       }
     },

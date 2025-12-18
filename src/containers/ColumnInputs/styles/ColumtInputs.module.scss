@@ -11,3 +11,27 @@
   flex-direction: column;
   gap: 20px;
 }
+
+.searched {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  top: 80px;
+  left: 0;
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: $secondary;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 4px solid rgba($primary, 0.5);
+    border-radius: 4px;
+  }
+}

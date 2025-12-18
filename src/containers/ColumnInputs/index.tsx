@@ -2,10 +2,35 @@ import InputSection from "@src/components/InputSection";
 import { useTranslation } from "react-i18next";
 import styles from "./styles/ColumtInputs.module.scss";
 import { allColumns } from "./inputsTypes";
-import RequiredDetails from "../RequiredDetails";
+import { ChangeEvent } from "react";
+import { useAppDispatch, useAppSelector } from "@src/store/store";
+import {
+  selectSolveInputsState,
+  setSolveInput,
+  solveInputsState,
+} from "@src/store/slices/solveInputs.slice";
+import RequiredParts from "./RequiredParts";
 
 const ColumnInputs = () => {
   const { t, i18n } = useTranslation("mainPage", { keyPrefix: "inputs" });
+
+  const data = useAppSelector(selectSolveInputsState);
+  const dispatch = useAppDispatch();
+
+  const onChange = (
+    name: keyof solveInputsState,
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
+    dispatch(
+      setSolveInput({
+        key: name,
+        value:
+          e.target.type === "checkbox"
+            ? e.target.checked
+            : Number(e.target.value) || 0,
+      })
+    );
+  };
 
   return (
     <div className={styles.wrapper}>
@@ -16,6 +41,20 @@ const ColumnInputs = () => {
               key={name}
               icon={icon}
               type={type}
+              value={data[name as keyof solveInputsState] as string | number}
+              checked={
+                typeof data[name as keyof solveInputsState] === "boolean"
+                  ? (data[name as keyof solveInputsState] as boolean)
+                  : undefined
+              }
+              min={
+                typeof data[name as keyof solveInputsState] === "number"
+                  ? 0
+                  : undefined
+              }
+              onChange={(value) =>
+                onChange(name as keyof solveInputsState, value)
+              }
               title={t(`${name}.title`)}
               placeholder={t("placeholder")}
               tooltipTitle={t(`${name}.tooltip.title`)}
@@ -30,18 +69,7 @@ const ColumnInputs = () => {
         </div>
       ))}
 
-      <div className={styles.block}>
-        <InputSection
-          icon="PuzzleIcon"
-          type="search"
-          title={t("requriedParts.title")}
-          placeholder={t("searchPlaceholder")}
-          tooltipTitle={t(`requriedDetails.tooltip.title`)}
-          toolTipSubtitle={t(`requriedDetails.tooltip.subtitle`)}
-        />
-
-        <RequiredDetails />
-      </div>
+      <RequiredParts />
     </div>
   );
 };

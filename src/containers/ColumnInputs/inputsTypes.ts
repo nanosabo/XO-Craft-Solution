@@ -54,10 +54,10 @@ const secondColumnInputs: InputsData = {
     type: "number",
     image: false,
   },
-  maxPartHp: {
-    icon: "MaxLoadIcon",
-    type: "number",
-    image: false,
+  durabilityCabin: {
+    icon: "UpShieldIcon",
+    type: "checkbox",
+    image: true,
   },
   coDriver: {
     icon: "DriverIcon",

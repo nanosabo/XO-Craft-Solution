@@ -4,6 +4,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  &.withoutControls {
+    cursor: pointer;
+    padding: 12px;
+    transition: background-color 0.1s ease-in-out;
+
+    &:hover {
+      background-color: rgba($bg, 0.5);
+    }
+  }
 }
 
 .info {

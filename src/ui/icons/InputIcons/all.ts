@@ -1,4 +1,5 @@
 export { default as ShieldIcon } from "./ShieldIcon";
+export { default as UpShieldIcon } from "./UpShieldIcon";
 export { default as WeightIcon } from "./WeightIcon";
 export { default as LoadCapacityIcon } from "./LoadCapacityIcon";
 export { default as PuzzleIcon } from "./PuzzleIcon";
