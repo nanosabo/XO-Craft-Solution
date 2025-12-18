@@ -5,6 +5,7 @@
   "author": "SABOTAGE",
   "description": "Desktop application that helps you design optimal crafts",
   "scripts": {
+    "solver:build": "dotnet publish ./solver/knapsack-solver.csproj -c Release",
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",

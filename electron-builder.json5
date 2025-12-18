@@ -10,7 +10,16 @@
     output: "release",
     buildResources: "build",
   },
-  extraResources: ["build/icon.ico"],
+  extraResources: [
+    {
+      from: "build/icon.ico",
+      to: "build/icon.ico",
+    },
+    {
+      from: "build/solver",
+      to: "build/solver",
+    },
+  ],
 
   files: ["dist", "dist-electron"],
   mac: {
