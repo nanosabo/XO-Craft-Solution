@@ -1,0 +1,10 @@
+@import "@styles/theme";
+
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @include caption;
+  color: $white;
+}

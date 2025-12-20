@@ -1,0 +1,31 @@
+{
+  "header": {
+    "title": "Suitable Solution",
+    "subtitle": "Calculation results for your configuration"
+  },
+  "resolve": {
+    "title": "Recalculate"
+  },
+  "parts": {
+    "title": "Recommended Parts List",
+    "subtitle": "Use the parts selected based on your data. Hover over a part and select «Similar» if any part is out of stock."
+  },
+  "totals": {
+    "weight": {
+      "title": "Total Mass",
+      "prefix": "kg"
+    },
+    "power": {
+      "title": "Total Power",
+      "prefix": "ps"
+    },
+    "durability": {
+      "title": "Total Durability",
+      "prefix": "pts"
+    },
+    "partsUsed": {
+      "title": "Parts Used",
+      "prefix": "pcs"
+    }
+  }
+}

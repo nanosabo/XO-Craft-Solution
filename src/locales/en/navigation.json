@@ -1,5 +1,7 @@
 {
   "main": "Main",
   "settings": "Settings",
-  "about": "About App"
+  "about": "About App",
+  "lang": "Change language",
+  "prev": "Previous solution"
 }

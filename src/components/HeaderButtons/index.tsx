@@ -2,6 +2,7 @@ import SquareButton from "@src/ui/SquareButton";
 import { DiscordIcon } from "@src/ui/icons";
 import styles from "./styles/HeaderButtons.module.scss";
 import SwitchLanguageButton from "../SwitchLanguageButton";
+import PrevSolutionButton from "../PrevSolutionButton";
 
 const HeaderButtons = () => {
   const handleOpenDiscordExternal = () => {
@@ -15,6 +16,8 @@ const HeaderButtons = () => {
       <SquareButton onClick={handleOpenDiscordExternal}>
         <DiscordIcon />
       </SquareButton>
+
+      <PrevSolutionButton />
     </div>
   );
 };

@@ -1,0 +1,44 @@
+@import "@styles/theme";
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 180px;
+  height: 150px;
+  background: radial-gradient(50% 50% at 50% 50%, #2c2c2e 0%, $secondary 100%);
+  border-radius: 8px;
+  border: 1px solid rgba($white, 0.1);
+  padding: 12px 12px 0 12px;
+
+  &.active {
+    background: radial-gradient(50% 50% at 50% 50%, #32a9ff 0%, $primary 100%);
+
+    span {
+      color: #021e3d;
+    }
+  }
+
+  &:hover {
+    cursor: pointer;
+  }
+
+  img {
+    width: 100px;
+    height: 100px;
+  }
+
+  p {
+    @include body;
+    text-align: center;
+  }
+
+  span {
+    @include caption;
+    color: $default;
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+  }
+}

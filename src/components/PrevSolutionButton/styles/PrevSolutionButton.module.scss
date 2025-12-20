@@ -1,0 +1,9 @@
+@import "@styles/theme";
+
+.root {
+  background-color: $primary;
+
+  &:hover:not(:disabled) {
+    background-color: rgba($primary, 0.8);
+  }
+}

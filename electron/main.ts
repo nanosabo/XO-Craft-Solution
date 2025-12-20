@@ -224,8 +224,8 @@ ipcMain.handle("solve", async (_, { inputs, requiredParts }: DataToSolve) => {
         let totalDurability = parsed.maxDurability + requiredStats.durability;
 
         if (inputs.durabilityCabin) totalDurability *= 1.1;
-        totalDurability += inputs.durability;
         if (inputs.coDriver) totalDurability *= 1.05;
+        totalDurability += inputs.durability;
 
         resolve({
           solution: Array.from(solutionMap.values()),

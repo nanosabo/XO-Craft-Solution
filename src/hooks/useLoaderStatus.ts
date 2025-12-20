@@ -10,8 +10,9 @@ const useLoaderStatus = () => {
   const isInitial = status === LoaderStateStatus.INITIAL;
   const isError = status === LoaderStateStatus.ERROR;
   const isSolving = status === LoaderStateStatus.SOLVING;
+  const isSolved = status === LoaderStateStatus.SOLVED;
 
-  return { status, isError, isSolving, isInitial };
+  return { status, isError, isSolving, isSolved, isInitial };
 };
 
 export default useLoaderStatus;

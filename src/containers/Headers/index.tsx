@@ -2,20 +2,20 @@ import PageTitle from "@src/components/PageTitle";
 import BigButton from "@src/ui/BigButton";
 import { useTranslation } from "react-i18next";
 import styles from "./styles/MainPageHeader.module.scss";
-import { useAppSelector } from "@src/store/store";
-import { selectSolveInputsState } from "@src/store/slices/solveInputs.slice";
-import { selectRequiredPartsState } from "@src/store/slices/requiredParts.slice";
+import { useAppDispatch } from "@src/store/store";
+import { useNavigate } from "react-router-dom";
+import { setLoaderSolvingStatus } from "@src/store/slices/loader.slice";
 
 const MainPageHeader = () => {
   const { t } = useTranslation("mainPage");
 
-  const inputs = useAppSelector(selectSolveInputsState);
-  const { parts } = useAppSelector(selectRequiredPartsState);
+  const navigate = useNavigate();
+
+  const dispatch = useAppDispatch();
 
   const onClickSolve = () => {
-    window.ipcRenderer
-      .invoke("solve", { inputs, requiredParts: parts })
-      .then(console.log);
+    dispatch(setLoaderSolvingStatus());
+    navigate("/loading");
   };
 
   return (
