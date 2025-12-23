@@ -8,6 +8,7 @@ import SearchedParts from "./SearchedParts";
 import { AnimatePresence } from "framer-motion";
 import { useAppSelector } from "@src/store/store";
 import { selectRequiredPartsState } from "@src/store/slices/requiredParts.slice";
+import PartsFilterButtons from "@src/components/PartsFilterButtons";
 
 export interface SearchedPart {
   id: string;
@@ -19,7 +20,7 @@ export interface SearchedPart {
 const RequiredParts = () => {
   const { t } = useTranslation("mainPage", { keyPrefix: "inputs" });
   const [searched, setSearched] = useState<SearchedPart[]>([]);
-  const { parts } = useAppSelector(selectRequiredPartsState);
+  const { parts, forbidden } = useAppSelector(selectRequiredPartsState);
 
   const debouncedSearch = useMemo(
     () =>
@@ -30,12 +31,14 @@ const RequiredParts = () => {
               .invoke("search-required-parts", value)
               .then((result: SearchedPart[]) => {
                 const filteredResult = result.filter(
-                  (part) => !parts.find((p) => p.id === part.id)
+                  (part) =>
+                    !parts.find((p) => p.id === part.id) &&
+                    !forbidden.find((p) => p.id === part.id)
                 );
                 setSearched(filteredResult);
               });
       }, 500),
-    [parts]
+    [parts, forbidden]
   );
 
   const onSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +66,8 @@ const RequiredParts = () => {
         toolTipSubtitle={t(`requriedParts.tooltip.subtitle`)}
         onChange={onSearchChange}
       />
+
+      <PartsFilterButtons />
 
       <AnimatePresence>
         {searched.length > 0 && (

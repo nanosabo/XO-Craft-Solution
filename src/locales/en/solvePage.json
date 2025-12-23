@@ -27,5 +27,11 @@
       "title": "Parts Used",
       "prefix": "pcs"
     }
+  },
+  "exclude": {
+    "title": "Exclude from solution"
+  },
+  "return": {
+    "title": "Return this part"
   }
 }

@@ -1,0 +1,32 @@
+@import "@styles/theme";
+
+.root {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 8px;
+  background-color: $secondary;
+  width: 100%;
+  gap: 16px;
+}
+
+.button {
+  @include body;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $white;
+  padding: 6px 12px;
+  width: 100%;
+  border-radius: 4px;
+  background-color: transparent;
+
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+
+  &:disabled {
+    background: $white;
+    color: $secondary;
+    font-weight: 500;
+    cursor: default;
+  }
+}

@@ -6,3 +6,5 @@ export { default as InfoIcon } from "./InfoIcon";
 export { default as DiscordIcon } from "./DiscordIcon";
 export { default as SearchIcon } from "./SearchIcon";
 export { default as TimeIcon } from "./TimeIcon";
+export { default as TrashIcon } from "./TrashIcon";
+export { default as BackArrowIcon } from "./BackArrowIcon";

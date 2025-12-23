@@ -30,7 +30,9 @@ const LoadingPage = () => {
 
   useEffect(() => {
     if (isSolved) {
-      navigate("/solved");
+      new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
+        navigate("/solved");
+      });
     }
   }, [isSolved, navigate]);
 

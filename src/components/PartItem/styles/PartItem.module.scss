@@ -11,17 +11,30 @@
   border-radius: 8px;
   border: 1px solid rgba($white, 0.1);
   padding: 12px 12px 0 12px;
+  overflow: hidden;
+
+  transition: scale 0.2s ease-in-out;
 
   &.active {
     background: radial-gradient(50% 50% at 50% 50%, #32a9ff 0%, $primary 100%);
 
     span {
       color: #021e3d;
+      font-weight: 600;
     }
+  }
+
+  &.forbidden {
+    background: radial-gradient(50% 50% at 50% 50%, #c42525 0%, #7a0707 100%);
+    scale: 0.9;
   }
 
   &:hover {
     cursor: pointer;
+
+    .exclude {
+      bottom: 12px;
+    }
   }
 
   img {
@@ -35,10 +48,37 @@
   }
 
   span {
-    @include caption;
+    @include body;
     color: $default;
     position: absolute;
     right: 8px;
     bottom: 8px;
+  }
+
+  .exclude {
+    position: absolute;
+    left: 12px;
+    bottom: -32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    background-color: #c21010;
+
+    transition: bottom 0.2s ease-in-out, background-color 0.2s ease-in-out;
+
+    &:hover {
+      background-color: darken(#c21010, 10);
+    }
+
+    &.return {
+      background-color: $primary;
+
+      &:hover {
+        background-color: darken($primary, 10);
+      }
+    }
   }
 }

@@ -4,10 +4,10 @@ import RequiredDetailsWrapper from "./RequiredDetailsWrapper";
 import { selectRequiredPartsState } from "@src/store/slices/requiredParts.slice";
 
 const RequiredDetails = () => {
-  const { parts } = useAppSelector(selectRequiredPartsState);
+  const parts = useAppSelector(selectRequiredPartsState);
   return (
     <RequiredDetailsWrapper>
-      {parts.map((item) => (
+      {parts[parts.switched].map((item) => (
         <SearchedDetail
           key={item.id}
           name={item.name}
@@ -15,6 +15,7 @@ const RequiredDetails = () => {
           id={item.id}
           count={item.count}
           max={item.maxCount}
+          onlyDelete={parts.switched === "forbidden"}
         />
       ))}
     </RequiredDetailsWrapper>

@@ -7,6 +7,10 @@
     "title": "Looking for a solution",
     "subtitle": "Improving your skill 🪄"
   },
+  "solved": {
+    "title": "Solved!",
+    "subtitle": "A little more magic 🧙"
+  },
   "error": {
     "title": "An error has occurred",
     "subtitle": "Check your Internet connection and restart the application"

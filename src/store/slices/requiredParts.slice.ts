@@ -10,11 +10,15 @@ export interface requiredPart {
 }
 
 export interface requiredPartsState {
+  switched: "parts" | "forbidden";
   parts: requiredPart[];
+  forbidden: requiredPart[];
 }
 
 const initialState: requiredPartsState = {
+  switched: "parts",
   parts: [],
+  forbidden: [],
 };
 
 const storage = localStorage.getItem("requiredParts");
@@ -36,7 +40,35 @@ export const requiredPartsSlice = createSlice({
         };
       }
     ) {
-      state.parts = [{ ...action.payload, count: 1 }, ...state.parts];
+      state[state.switched] = [
+        { ...action.payload, count: 1 },
+        ...state[state.switched],
+      ];
+      localStorage.setItem("requiredParts", JSON.stringify(state));
+    },
+    excludePart(
+      state: requiredPartsState,
+      action: {
+        payload: {
+          id: string;
+          name: string;
+          eng_name: string;
+          maxCount: number;
+        };
+      }
+    ) {
+      state.forbidden = [{ ...action.payload, count: 1 }, ...state.forbidden];
+      localStorage.setItem("requiredParts", JSON.stringify(state));
+    },
+    returnPart(
+      state: requiredPartsState,
+      action: {
+        payload: string;
+      }
+    ) {
+      state.forbidden = state.forbidden.filter(
+        (part) => part.id !== action.payload
+      );
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
     removePart(
@@ -45,7 +77,9 @@ export const requiredPartsSlice = createSlice({
         payload: string;
       }
     ) {
-      state.parts = state.parts.filter((part) => part.id !== action.payload);
+      state[state.switched] = state[state.switched].filter(
+        (part) => part.id !== action.payload
+      );
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
     inсrementPartCount(
@@ -54,7 +88,7 @@ export const requiredPartsSlice = createSlice({
         payload: string;
       }
     ) {
-      const part = state.parts.find((p) => p.id === action.payload);
+      const part = state[state.switched].find((p) => p.id === action.payload);
       if (part) {
         part.count += 1;
         localStorage.setItem("requiredParts", JSON.stringify(state));
@@ -66,20 +100,36 @@ export const requiredPartsSlice = createSlice({
         payload: string;
       }
     ) {
-      const part = state.parts.find((p) => p.id === action.payload);
+      const part = state[state.switched].find((p) => p.id === action.payload);
       if (part && part.count > 1) {
         part.count -= 1;
       } else if (part && part.count === 1) {
-        state.parts = state.parts.filter((p) => p.id !== action.payload);
+        state[state.switched] = state[state.switched].filter(
+          (p) => p.id !== action.payload
+        );
       }
 
+      localStorage.setItem("requiredParts", JSON.stringify(state));
+    },
+    setSwitched(
+      state: requiredPartsState,
+      action: { payload: requiredPartsState["switched"] }
+    ) {
+      state.switched = action.payload;
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
   },
 });
 
-export const { addPart, removePart, inсrementPartCount, decrementPartCount } =
-  requiredPartsSlice.actions;
+export const {
+  addPart,
+  removePart,
+  inсrementPartCount,
+  decrementPartCount,
+  setSwitched,
+  excludePart,
+  returnPart,
+} = requiredPartsSlice.actions;
 
 export const selectRequiredPartsState = (state: RootState) =>
   state.requiredParts;

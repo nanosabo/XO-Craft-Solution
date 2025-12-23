@@ -75,9 +75,9 @@
       }
     },
     "requriedParts": {
-      "title": "Required details",
+      "title": "Parts filter",
       "tooltip": {
-        "title": "Details that should definitely be included in the final solution sample",
+        "title": "Parts that should definitely be included or excluded in the final solution sample",
         "subtitle": ""
       }
     },
@@ -86,5 +86,11 @@
   },
   "solve": {
     "title": "Get Solution"
+  },
+  "required": {
+    "title": "Required"
+  },
+  "forbidden": {
+    "title": "Forbidden"
   }
 }

@@ -18,10 +18,12 @@ type Props = {
   count?: number;
   onClickAdd?: () => void;
   max?: number;
+  onlyDelete?: boolean;
 };
 
 const SearchedDetail: FC<Props> = ({
   withControls = true,
+  onlyDelete,
   name,
   eng_name,
   id,
@@ -29,7 +31,7 @@ const SearchedDetail: FC<Props> = ({
   max,
   onClickAdd,
 }) => {
-  const { i18n } = useTranslation("mainPage", { keyPrefix: "inputs" });
+  const { i18n } = useTranslation();
   const dispathch = useAppDispatch();
 
   const handleIncrement = () => dispathch(inсrementPartCount(id));
@@ -56,15 +58,21 @@ const SearchedDetail: FC<Props> = ({
             -
           </SquareSmallButton>
 
-          <span>{count}</span>
+          {!onlyDelete && (
+            <>
+              <span>{count}</span>
 
-          <SquareSmallButton
-            variant="primary"
-            onClick={handleIncrement}
-            disabled={count !== undefined && max !== undefined && count >= max}
-          >
-            +
-          </SquareSmallButton>
+              <SquareSmallButton
+                variant="primary"
+                onClick={handleIncrement}
+                disabled={
+                  count !== undefined && max !== undefined && count >= max
+                }
+              >
+                +
+              </SquareSmallButton>
+            </>
+          )}
         </div>
       )}
     </div>
