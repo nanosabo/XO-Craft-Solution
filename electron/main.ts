@@ -4,6 +4,7 @@ import { spawn } from "child_process";
 import actualParts from "./actual_parts.json";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
+import { fetchItems } from "./fetchItems";
 
 const IS_DEV = !app.isPackaged;
 
@@ -113,6 +114,26 @@ interface SolveResult {
   totalParts: number;
 }
 
+let interval: NodeJS.Timeout | null = null;
+
+ipcMain.handle("market", async (e) => {
+  const win = BrowserWindow.fromWebContents(e.sender);
+
+  if (interval !== null) {
+    clearInterval(interval);
+  }
+
+  interval = setInterval(
+    async () => {
+      const updated = await fetchItems();
+      win?.webContents.send("update", updated);
+    },
+    1000 * 60 * 2.5,
+  );
+
+  return await fetchItems();
+});
+
 ipcMain.handle(
   "solve",
   async (_, { inputs, requiredParts, forbidden }: DataToSolve) => {
@@ -120,7 +141,7 @@ ipcMain.handle(
 
     const forbiddenNames = forbidden.map((part) => part.eng_name);
     const parts = actualParts.filter(
-      (p) => !forbiddenNames.includes(p.eng_name)
+      (p) => !forbiddenNames.includes(p.eng_name),
     );
 
     /* ---------------- helpers ---------------- */
@@ -142,7 +163,7 @@ ipcMain.handle(
 
         return acc;
       },
-      { parts: 0, power: 0, weight: 0, durability: 0 }
+      { parts: 0, power: 0, weight: 0, durability: 0 },
     );
 
     /* ---------------- limits ---------------- */
@@ -169,7 +190,7 @@ ipcMain.handle(
         (p) =>
           (p.category === "Конструкции" || p.category === "Простреливаемые") &&
           p.durability >= inputs.minPartHp &&
-          p.maxCount > 0
+          p.maxCount > 0,
       );
 
     const inputData = {
@@ -252,7 +273,7 @@ ipcMain.handle(
     });
 
     return result;
-  }
+  },
 );
 
 ipcMain.handle("getParts", async () => {
@@ -263,7 +284,7 @@ ipcMain.handle("search-required-parts", async (_, value) => {
   return actualParts.filter(
     (part) =>
       part.name.toLowerCase().includes(value.toLowerCase()) ||
-      part.eng_name.toLowerCase().includes(value.toLowerCase())
+      part.eng_name.toLowerCase().includes(value.toLowerCase()),
   );
 });
 

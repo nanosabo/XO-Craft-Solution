@@ -1,0 +1,33 @@
+@import "@styles/theme";
+
+.root {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.buttons {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rarity_item {
+  width: 20px;
+  height: 20px;
+  background-color: $white;
+  border-radius: 4px;
+
+  @each $name, $color in $rarities {
+    &.#{$name} {
+      background-color: $color;
+    }
+  }
+}
+
+.search,
+.sort {
+  width: 160px;
+}

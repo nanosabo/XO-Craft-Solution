@@ -11,6 +11,14 @@ $input: #252829;
 $yellow: #fcc400;
 $redGradient: linear-gradient(180deg, $red 0%, $bg 100%);
 
+$rarities: (
+  rare: #0077ff,
+  special: #0ac59a,
+  epic: #ae12b7,
+  legendary: #ffea02,
+  relic: #fe4c0b,
+);
+
 @mixin h1 {
   font-size: 32px;
   font-weight: 700;

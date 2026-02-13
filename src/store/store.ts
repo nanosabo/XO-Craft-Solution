@@ -1,9 +1,11 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, ThunkMiddleware } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import loaderReducer from "./slices/loader.slice";
 import appReducer from "./slices/app.slice";
 import solveInputsReducer from "./slices/solveInputs.slice";
 import requiredPartsReducer from "./slices/requiredParts.slice";
+import marketReducer from "./slices/market.slice";
+import logger from "redux-logger";
 
 export const store = configureStore({
   reducer: {
@@ -11,7 +13,10 @@ export const store = configureStore({
     app: appReducer,
     solveInputs: solveInputsReducer,
     requiredParts: requiredPartsReducer,
+    market: marketReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat([logger as ThunkMiddleware]),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

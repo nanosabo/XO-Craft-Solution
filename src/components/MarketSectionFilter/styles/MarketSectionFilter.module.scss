@@ -1,0 +1,12 @@
+@import "@styles/theme";
+
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+
+  b {
+    @include body;
+  }
+}

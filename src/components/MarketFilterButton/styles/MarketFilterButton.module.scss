@@ -1,0 +1,23 @@
+@import "@styles/theme";
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: rgba($white, 0.1);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 8px;
+  color: $white;
+  cursor: default;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    cursor: pointer;
+  }
+
+  &.active {
+    border: 2px solid $primary;
+  }
+}

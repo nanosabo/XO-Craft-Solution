@@ -26,7 +26,7 @@ const storage = localStorage.getItem("requiredParts");
 export const requiredPartsSlice = createSlice({
   name: "loader",
   initialState: storage
-    ? (JSON.parse(storage) as requiredPartsState)
+    ? { ...initialState, ...(JSON.parse(storage) as requiredPartsState) }
     : initialState,
   reducers: {
     addPart(

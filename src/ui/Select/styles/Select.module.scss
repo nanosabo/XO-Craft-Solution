@@ -1,0 +1,99 @@
+@import "@styles/theme";
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.control {
+  padding: 10px 16px 6px 8px;
+  background: rgba($input, 0.5);
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: border-color 0.2s;
+
+  .selected_option {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    color: $default;
+    max-width: 100px;
+  }
+
+  &:hover {
+    border-color: $primary;
+  }
+  &.isOpen {
+    border-color: $primary;
+  }
+}
+
+.sort {
+  margin-right: 4px;
+
+  svg {
+    color: $default;
+    height: 14px;
+  }
+
+  &.desc {
+    svg {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.menu {
+  width: 130%;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba($input, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background-color: rgba($bg, 0.5);
+  }
+  &.isSelected {
+    background-color: $bg;
+    font-weight: 500;
+  }
+}
+
+.arrow {
+  margin-top: -6px;
+  border: solid $default;
+  border-width: 0 2px 2px 0;
+  display: inline-block;
+  padding: 3px;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+
+  &.up {
+    transform: rotate(-135deg);
+    margin-top: 0px;
+  }
+}

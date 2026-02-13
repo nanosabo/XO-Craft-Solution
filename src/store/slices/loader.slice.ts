@@ -46,7 +46,6 @@ export const solveData = createAsyncThunk(
       requiredParts: parts,
       forbidden: forbidden,
     });
-    console.log(result);
     localStorage.setItem("solution", JSON.stringify(result));
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return result;

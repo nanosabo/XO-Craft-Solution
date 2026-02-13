@@ -358,7 +358,7 @@
     "power": 53,
     "durability": 103,
     "weight": 185,
-    "maxCount": 0,
+    "maxCount": 2,
     "build_hp": 103,
     "eng_name": "Back wall"
   },

@@ -12,8 +12,12 @@
   svg {
     margin-bottom: 7px;
 
-    path {
+    path[fill] {
       transition: fill 0.2s ease-in-out;
+    }
+
+    path[stroke] {
+      transition: stroke 0.2s ease-in-out;
     }
   }
 
@@ -42,8 +46,14 @@
   &:hover {
     color: $white;
 
-    svg path {
-      fill: $white;
+    svg {
+      path[fill] {
+        fill: $white;
+      }
+
+      path[stroke] {
+        stroke: $white;
+      }
     }
   }
 

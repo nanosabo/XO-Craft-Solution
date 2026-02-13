@@ -1,5 +1,5 @@
 import NavLink from "@src/ui/NavLink";
-import { HomeIcon, InfoIcon, SettingsIcon } from "@src/ui/icons";
+import { HomeIcon, InfoIcon, MarketIcon, SettingsIcon } from "@src/ui/icons";
 import styles from "./styles/Navigation.module.scss";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +13,11 @@ const links = [
     href: "/settings",
     icon: <SettingsIcon />,
     key: "settings",
+  },
+  {
+    href: "/market",
+    icon: <MarketIcon />,
+    key: "market",
   },
   {
     href: "/about",

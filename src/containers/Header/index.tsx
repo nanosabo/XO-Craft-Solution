@@ -6,10 +6,27 @@ import styles from "./styles/Header.module.scss";
 import HeaderButtons from "@src/components/HeaderButtons";
 import { AnimatePresence, motion } from "framer-motion";
 import { headerAnimation } from "./animation";
+import { useAppDispatch } from "@src/store/store";
+import { useEffect } from "react";
+import { FetchedData, updateMarket } from "@src/store/slices/market.slice";
 
 const Header = () => {
   const location = useLocation();
   const isLoadingPage = location.pathname === "/loading";
+
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    const listener = (_: Electron.IpcRendererEvent, data: FetchedData) => {
+      dispatch(updateMarket(data));
+    };
+
+    window.ipcRenderer.on("update", listener);
+
+    return () => {
+      window.ipcRenderer.removeListener("from-main", listener);
+    };
+  }, [dispatch]);
 
   return (
     <header className={styles.header}>

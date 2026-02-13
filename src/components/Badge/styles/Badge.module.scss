@@ -1,0 +1,45 @@
+@import "@styles/theme";
+
+.badge {
+  width: 100%;
+  padding: 3px 8px 0px 8px;
+  background-color: #13300d;
+  border: 1px solid #7af239;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 6px;
+
+  &.warn {
+    background-color: #300d0d;
+    border-color: #f23939;
+  }
+
+  &.grey {
+    background-color: rgba($bg, 0.5);
+    border-color: $default;
+  }
+
+  &.center span {
+    width: 100%;
+    text-align: center;
+  }
+
+  span {
+    font-size: 16px;
+    color: rgba($white, 0.5);
+  }
+
+  p {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    gap: 4px;
+
+    img {
+      margin-top: -5px;
+      width: 16px;
+      height: auto;
+    }
+  }
+}
