@@ -8,6 +8,7 @@ import { fetchItems } from "./fetchItems";
 import { IData } from "@src/store/slices/market.slice";
 import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
 import { getOneItem } from "./oneItemCalc";
+import { fetchUpdate } from "./fetchUpdate";
 
 const IS_DEV = !app.isPackaged;
 
@@ -129,42 +130,46 @@ let interval: NodeJS.Timeout | null = null;
 let fetchedItems: IItem[];
 let fetchedPrices: Record<string, IData>;
 let lastCraft: CalcParams | null = null;
+let lastUpdate: number;
 
 ipcMain.handle("market", async () => {
   if (interval !== null) {
     clearInterval(interval);
   }
 
-  interval = setInterval(
-    async () => {
-      const {
-        initialData: { items, marketData, ...rest },
-      } = await fetchItems();
-      const analytics = getEnhancedAnalytics(items, marketData);
+  interval = setInterval(async () => {
+    const response = await fetchUpdate(lastUpdate);
+    if (!response || !response.updated) return;
 
-      fetchedItems = items;
-      fetchedPrices = marketData;
+    const { data, lastUpdateTimestamp } = response;
 
-      win?.webContents.send("update", { ...rest, items: analytics });
+    lastUpdate = lastUpdateTimestamp;
+    fetchedPrices = data.marketData;
 
-      if (lastCraft) {
-        const { itemId, type, overdrive, onlyCraft, mode } = lastCraft;
-        const fnForItem = getOneItem(fetchedItems, fetchedPrices);
-        const analyzed = fnForItem(itemId, type, {
-          overdrive,
-          onlyCraft,
-          isCraftAll: mode === "allcraft",
-        });
-        win?.webContents.send("updateCraft", analyzed);
-      }
-    },
-    1000 * 60 * 2.5,
-  );
+    const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
+
+    win?.webContents.send("update", { items: analytics });
+
+    if (lastCraft) {
+      const { itemId, type, overdrive, onlyCraft, mode } = lastCraft;
+      const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+
+      const analyzed = fnForItem(itemId, type, {
+        overdrive,
+        onlyCraft,
+        isCraftAll: mode === "allcraft",
+      });
+
+      win?.webContents.send("updateCraft", analyzed);
+    }
+  }, 1000 * 30);
 
   const {
     initialData: { items, marketData, ...rest },
   } = await fetchItems();
   const analytics = getEnhancedAnalytics(items, marketData);
+
+  lastUpdate = rest.lastUpdateTimestamp;
 
   fetchedItems = items;
   fetchedPrices = marketData;

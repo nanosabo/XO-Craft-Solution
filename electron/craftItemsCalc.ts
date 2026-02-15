@@ -63,7 +63,7 @@ export function getEnhancedAnalytics(
         item.recipe === "$undefined" || item.craftable === 0
           ? 0
           : Math.round((sellNet - craftCoast) * 100) / 100,
-      roi: optCost > 0 ? Math.round(((sellNet - p.b) / p.b) * 10000) / 100 : 0,
+      roi: Math.round(((sellNet - p.b) / p.b) * 10000) / 100,
       spread: p.b > 0 ? Math.round((sellNet - p.b) * 100) / 100 : 0,
     };
   });

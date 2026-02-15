@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { headerAnimation } from "./animation";
 import { useAppDispatch } from "@src/store/store";
 import { useEffect } from "react";
-import { FetchedData, updateMarket } from "@src/store/slices/market.slice";
+import { IItemAnalytics, updateMarket } from "@src/store/slices/market.slice";
 
 const Header = () => {
   const location = useLocation();
@@ -17,8 +17,11 @@ const Header = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    const listener = (_: Electron.IpcRendererEvent, data: FetchedData) => {
-      dispatch(updateMarket(data));
+    const listener = (
+      _: Electron.IpcRendererEvent,
+      { items }: { items: IItemAnalytics[] },
+    ) => {
+      dispatch(updateMarket(items));
     };
 
     window.ipcRenderer.on("update", listener);

@@ -148,11 +148,8 @@ export const MarketSLice = createSlice({
   name: "market",
   initialState,
   reducers: {
-    updateMarket: (state, { payload }: { payload: FetchedData }) => {
-      state.categories = payload.categories;
-      state.items = payload.items;
-      state.rarities = payload.rarities;
-      saveFilters(state);
+    updateMarket: (state, { payload }: { payload: IItemAnalytics[] }) => {
+      state.items = payload;
     },
     setCategoryFilter: (state, action: PayloadAction<number>) => {
       state.categoryFilter = state.categoryFilter.includes(action.payload)
