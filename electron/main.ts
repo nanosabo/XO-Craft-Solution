@@ -5,6 +5,9 @@ import actualParts from "./actual_parts.json";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
+import { IData } from "@src/store/slices/market.slice";
+import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
+import { getOneItem } from "./oneItemCalc";
 
 const IS_DEV = !app.isPackaged;
 
@@ -114,24 +117,72 @@ interface SolveResult {
   totalParts: number;
 }
 
+export interface CalcParams {
+  itemId: number;
+  type: "b" | "s";
+  mode: "optimal" | "allcraft" | "buyIng";
+  overdrive: number[];
+  onlyCraft: number[];
+}
+
 let interval: NodeJS.Timeout | null = null;
+let fetchedItems: IItem[];
+let fetchedPrices: Record<string, IData>;
+let lastCraft: CalcParams | null = null;
 
-ipcMain.handle("market", async (e) => {
-  const win = BrowserWindow.fromWebContents(e.sender);
-
+ipcMain.handle("market", async () => {
   if (interval !== null) {
     clearInterval(interval);
   }
 
   interval = setInterval(
     async () => {
-      const updated = await fetchItems();
-      win?.webContents.send("update", updated);
+      const {
+        initialData: { items, marketData, ...rest },
+      } = await fetchItems();
+      const analytics = getEnhancedAnalytics(items, marketData);
+
+      fetchedItems = items;
+      fetchedPrices = marketData;
+
+      win?.webContents.send("update", { ...rest, items: analytics });
+
+      if (lastCraft) {
+        const { itemId, type, overdrive, onlyCraft, mode } = lastCraft;
+        const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+        const analyzed = fnForItem(itemId, type, {
+          overdrive,
+          onlyCraft,
+          isCraftAll: mode === "allcraft",
+        });
+        win?.webContents.send("updateCraft", analyzed);
+      }
     },
     1000 * 60 * 2.5,
   );
 
-  return await fetchItems();
+  const {
+    initialData: { items, marketData, ...rest },
+  } = await fetchItems();
+  const analytics = getEnhancedAnalytics(items, marketData);
+
+  fetchedItems = items;
+  fetchedPrices = marketData;
+
+  return { ...rest, items: analytics };
+});
+
+ipcMain.handle("marketCraft", async (_, params: CalcParams) => {
+  const { itemId, type, overdrive, onlyCraft, mode } = params;
+  lastCraft = params;
+  const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+  const analyzed = fnForItem(itemId, type, {
+    overdrive,
+    onlyCraft,
+    isCraftAll: mode === "allcraft",
+  });
+
+  return analyzed;
 });
 
 ipcMain.handle(

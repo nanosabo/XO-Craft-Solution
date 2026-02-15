@@ -4,24 +4,25 @@ import { IItemAnalytics } from "@src/store/slices/market.slice";
 import MarketItemImage from "./MarketItemImage";
 import { FC, memo } from "react";
 import Badge from "../Badge";
-
-const rarities = [
-  "",
-  "common",
-  "rare",
-  "epic",
-  "legendary",
-  "relic",
-  "special",
-];
+import { rarities } from "../../helpers/rarities";
+import { useAppDispatch } from "@src/store/store";
+import { setMarketModalItem } from "@src/store/slices/marketModal.slice";
 
 type Props = {
   item: IItemAnalytics;
 };
 
 const MarketItem: FC<Props> = memo(({ item }) => {
+  const dispatch = useAppDispatch();
+
+  const onClick = () => {
+    dispatch(setMarketModalItem(item.id));
+  };
+
+  const dontHasRecipe = item.recipe === "$undefined" || item.craftable === 0;
+
   return (
-    <div className={styles.item}>
+    <div className={styles.item} onClick={onClick}>
       <div className={styles.header}>
         <div
           className={[styles.image, styles[rarities[item.rarityId]]].join(" ")}
@@ -68,7 +69,7 @@ const MarketItem: FC<Props> = memo(({ item }) => {
           {item.spread} <img src="/coin.png" draggable={false} />
         </Badge>
 
-        {item.recipe !== "$undefined" ? (
+        {!dontHasRecipe ? (
           <Badge
             title="Прибыль в случае крафта в оптимальном режиме с учетом комиссии"
             text="Крафт:"

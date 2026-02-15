@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { NavigateFunction } from "react-router-dom";
 import { setAppLoadedStatus } from "./app.slice";
+import { IIngredientInfo } from "@electron/oneItemCalc";
 
 export interface ICategory {
   id: number;
@@ -33,6 +34,8 @@ export interface IItemAnalytics {
   name: string;
   amount: number;
   rarityId: number;
+  craftable: number;
+  craftCost: number;
   recipe:
     | "$undefined"
     | {
@@ -42,6 +45,7 @@ export interface IItemAnalytics {
           amount: number;
         }[];
       };
+  ingredients: IIngredientInfo[];
   categoryId: number;
   offers: {
     b: number;

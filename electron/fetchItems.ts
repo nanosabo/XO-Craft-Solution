@@ -1,5 +1,4 @@
 import axios from "axios";
-import { getEnhancedAnalytics } from "./craftItemsCalc";
 
 export const fetchItems = async () => {
   try {
@@ -24,22 +23,15 @@ export const fetchItems = async () => {
         const cleanJson = line.substring(jsonStartIndex);
 
         try {
-          const {
-            initialData: { items, marketData, ...rest },
-          } = JSON.parse(cleanJson);
-          const analytics = getEnhancedAnalytics(items, marketData);
-
-          return { ...rest, items: analytics };
+          const data = JSON.parse(cleanJson);
+          return data;
         } catch (e) {
           const lastBrace = cleanJson.lastIndexOf("}");
           const fixedJson = cleanJson.substring(0, lastBrace + 1);
 
-          const {
-            initialData: { items, marketData, ...rest },
-          } = JSON.parse(fixedJson);
+          const data = JSON.parse(fixedJson);
 
-          const analytics = getEnhancedAnalytics(items, marketData);
-          return { ...rest, items: analytics };
+          return data;
         }
       }
     }

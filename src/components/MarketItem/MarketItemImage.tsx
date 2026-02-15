@@ -1,13 +1,18 @@
-import { FC, memo, useState } from "react";
+import { FC, memo, useEffect, useState } from "react";
 
 type Props = {
   id: number;
+  title?: string;
 };
 
-const MarketItemImage: FC<Props> = memo(({ id }) => {
+const MarketItemImage: FC<Props> = memo(({ id, title }) => {
   const [imgSrc, setImgSrc] = useState(
     `https://crossoutcore.ru/images/items/${id}.png`,
   );
+
+  useEffect(() => {
+    setImgSrc(`https://crossoutcore.ru/images/items/${id}.png`);
+  }, [id]);
 
   return (
     <img
@@ -15,6 +20,7 @@ const MarketItemImage: FC<Props> = memo(({ id }) => {
       alt=""
       draggable={false}
       onError={() => setImgSrc("/question.png")}
+      title={title}
     />
   );
 });

@@ -24,7 +24,7 @@ const Header = () => {
     window.ipcRenderer.on("update", listener);
 
     return () => {
-      window.ipcRenderer.removeListener("from-main", listener);
+      window.ipcRenderer.removeListener("update", listener);
     };
   }, [dispatch]);
 

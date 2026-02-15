@@ -1,5 +1,6 @@
 import MarketFilters from "@src/containers/MarketFilters";
 import MarketItems from "@src/containers/MarketItems";
+import MarketModal from "@src/containers/MarketModal";
 import AnimatePageLayout from "@src/layouts/AnimatePageLayout";
 import {
   MarketStateStatus,
@@ -21,6 +22,7 @@ const MarketPage = () => {
     <AnimatePageLayout>
       <MarketFilters />
       <MarketItems />
+      <MarketModal />
     </AnimatePageLayout>
   );
 };

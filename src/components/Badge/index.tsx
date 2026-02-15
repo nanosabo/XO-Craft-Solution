@@ -4,10 +4,11 @@ import classNames from "classnames";
 
 type Props = {
   text: string;
-  title: string;
+  title?: string;
   center?: boolean;
   warning?: boolean;
   grey?: boolean;
+  className?: string;
 };
 
 const Badge: FC<PropsWithChildren<Props>> = ({
@@ -17,16 +18,16 @@ const Badge: FC<PropsWithChildren<Props>> = ({
   warning,
   grey,
   children,
+  className,
 }) => {
+  const classes = classNames(styles.badge, className, {
+    [styles.warn]: warning,
+    [styles.grey]: grey,
+    [styles.center]: center,
+  });
+
   return (
-    <div
-      className={classNames(styles.badge, {
-        [styles.warn]: warning,
-        [styles.grey]: grey,
-        [styles.center]: center,
-      })}
-      title={title}
-    >
+    <div className={classes} title={title}>
       <span>{text}</span>
       <p>{children}</p>
     </div>

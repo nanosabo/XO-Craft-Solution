@@ -1,0 +1,273 @@
+@import "@styles/theme";
+
+.root {
+  display: flex;
+  gap: 12px;
+
+  & > div {
+    flex-grow: 3;
+  }
+}
+
+.recipe {
+  flex-shrink: 0;
+  width: 345px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    & > p {
+      @include bodyMax;
+    }
+  }
+}
+
+.no_recipe {
+  flex-shrink: 0;
+  width: 345px;
+  height: 188px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background-color: rgba($bg, 0.5);
+  border-radius: 16px;
+  border: 1px solid rgba($white, 0.1);
+
+  p {
+    @include bodyMax;
+  }
+
+  svg {
+    color: $default;
+  }
+}
+
+.components {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  &:has(> :nth-child(5)) {
+    .resource_item {
+      height: auto;
+      padding: 4px;
+    }
+  }
+}
+
+.resource_item,
+.part_item {
+  padding: 9px;
+  border-radius: 12px;
+
+  &:hover .recource_type {
+    opacity: 1;
+  }
+
+  & > b {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    font-size: 15px;
+    line-height: 100%;
+    text-shadow: -2px -2px 2px rgba(0, 0, 0, 0.8);
+    z-index: 2;
+  }
+
+  & > img {
+    width: 60px;
+    height: auto;
+  }
+}
+
+.resource_item {
+  height: 80px;
+  max-width: 80px;
+}
+
+.part_item {
+  height: 96px;
+  padding: 9px 16px;
+  transition: border-color 0.2s ease-in-out;
+
+  &:hover {
+    cursor: pointer;
+    border-color: rgba($white, 0.2);
+
+    & > img {
+      transform: scale(1.1);
+    }
+  }
+
+  & > img {
+    width: 80px;
+    transition: transform 0.2s ease-in-out;
+  }
+
+  & > b {
+    bottom: 8px;
+    right: 8px;
+    font-size: 18px;
+    text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.8);
+  }
+}
+
+.recource_type {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  height: 70%;
+  padding: 6px;
+  z-index: 2;
+  cursor: default;
+  opacity: 0;
+
+  transition: opacity 0.2s ease-in-out;
+
+  background: linear-gradient(180deg, rgba(17, 19, 22, 0) 0%, #111316 100%);
+
+  .resource_type_item {
+    width: 100%;
+    padding: 6px 4px 3px;
+    border-radius: 6px;
+    background-color: $bg;
+    color: $white;
+    cursor: default;
+    border: 1px solid transparent;
+
+    transition:
+      border-color 0.2s ease-in-out,
+      background-color 0.2s ease-in-out;
+
+    font-size: 13px;
+    line-height: 100%;
+
+    &:hover:not(:disabled):not(.active) {
+      border-color: rgba($white, 0.1);
+      background-color: lighten($bg, 1%);
+      cursor: pointer;
+    }
+
+    &.active {
+      background-color: #214d17;
+    }
+  }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: 12px;
+  width: 350px;
+}
+
+.info_inner {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 3px;
+}
+
+.info_item {
+  flex: 1;
+  width: 100%;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: $secondary;
+  border-radius: 12px;
+
+  span {
+    @include caption;
+    color: $default;
+  }
+
+  p {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 100%;
+
+    svg,
+    img {
+      margin-top: -4px;
+      width: 22px;
+      height: 22px;
+      color: $yellow;
+    }
+  }
+}
+
+.part_badge {
+  padding: 3px 6px 0px 6px;
+  width: auto;
+  position: absolute;
+  bottom: 9px;
+  left: 6px;
+  z-index: 2;
+
+  span {
+    font-size: 13px;
+  }
+}
+
+.switches {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch_button {
+  padding: 6px 12px 4px;
+  font-size: 14px;
+  font-weight: 200;
+  line-height: 100%;
+  border-radius: 6px;
+  color: $white;
+  background-color: transparent;
+  border: 1px solid rgba($white, 0.1);
+  cursor: default;
+
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+
+  &:hover:not(:disabled):not(.active) {
+    cursor: pointer;
+    border-color: $white;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+  }
+
+  &.active {
+    border-color: transparent;
+    background-color: $bg;
+  }
+}

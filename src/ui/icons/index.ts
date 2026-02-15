@@ -12,3 +12,5 @@ export { default as MarketIcon } from "./MarketIcon";
 export { default as RuporIcon } from "./RuporIcon";
 export { default as CartIcon } from "./CartIcon";
 export { default as ArrowIcon } from "./ArrowIcon";
+export { default as ChevronIcon } from "./ChevronIcon";
+export { default as FileWarningIcon } from "./FileWarningIcon";
