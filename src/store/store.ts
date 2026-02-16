@@ -5,7 +5,9 @@ import appReducer from "./slices/app.slice";
 import solveInputsReducer from "./slices/solveInputs.slice";
 import requiredPartsReducer from "./slices/requiredParts.slice";
 import marketReducer from "./slices/market.slice";
-import marketModalReducer from "./slices/marketModal.slice";
+import marketModalReducer, {
+  marketMiddleware,
+} from "./slices/marketModal.slice";
 import logger from "redux-logger";
 
 export const store = configureStore({
@@ -18,9 +20,13 @@ export const store = configureStore({
     marketModal: marketModalReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat([logger as ThunkMiddleware]),
+    getDefaultMiddleware().concat([
+      logger as ThunkMiddleware,
+      marketMiddleware,
+    ]),
 });
 
+export type AppStore = typeof store;
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 

@@ -4,14 +4,24 @@ import MarketImageSection from "../MarketImageSection";
 import MarketItemImage from "../MarketItem/MarketItemImage";
 import styles from "./styles/MarketModalTop.module.scss";
 import { useAppDispatch } from "@src/store/store";
-import { closeMarketModal } from "@src/store/slices/marketModal.slice";
+import {
+  closeMarketModal,
+  MarketModalState,
+  setMarketModalShow,
+} from "@src/store/slices/marketModal.slice";
 import { rarities } from "@src/helpers/rarities";
 import useMarketModal from "@src/hooks/useMarketModal";
 import classNames from "classnames";
 import MarketModalTree from "./MarketModalTree";
 
+const buttons = [
+  { id: "craft", label: "Создание предмета" },
+  { id: "own", label: "Свой рецепт" },
+  { id: "chart", label: "Динамика цен" },
+];
+
 const MarketModalTop = () => {
-  const { item, itemCost } = useMarketModal();
+  const { item, itemCost, show } = useMarketModal();
 
   const dispatch = useAppDispatch();
 
@@ -22,6 +32,10 @@ const MarketModalTop = () => {
 
   const onClose = () => {
     dispatch(closeMarketModal());
+  };
+
+  const onClickTab = (id: string) => {
+    dispatch(setMarketModalShow(id as MarketModalState["show"]));
   };
 
   return (
@@ -56,24 +70,33 @@ const MarketModalTop = () => {
             </>
           )}
 
-          <Badge
-            title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
-            text="ROI:"
-            className={styles.badge}
-            grey
-          >
-            {item.roi}%
-          </Badge>
+          {!isNaN(item.roi) && (
+            <Badge
+              title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
+              text="ROI:"
+              className={styles.badge}
+              grey
+            >
+              {item.roi}%
+            </Badge>
+          )}
         </div>
 
         <div
           className={classNames(styles.tabs, styles[rarities[item.rarityId]])}
         >
-          <button className={classNames(styles.tab_button, styles.active)}>
-            Создание предмета
-          </button>
-          <button className={styles.tab_button}>Свой рецепт</button>
-          <button className={styles.tab_button}>Динамика цен</button>
+          {buttons.map((btn) => (
+            <button
+              key={btn.id}
+              className={classNames(styles.tab_button, {
+                [styles.active]: btn.id === show,
+              })}
+              onClick={() => onClickTab(btn.id)}
+              disabled={btn.id === show}
+            >
+              {btn.label}
+            </button>
+          ))}
         </div>
 
         <MarketModalTree />

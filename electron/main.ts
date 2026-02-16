@@ -9,6 +9,7 @@ import { IData } from "@src/store/slices/market.slice";
 import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
 import { getOneItem } from "./oneItemCalc";
 import { fetchUpdate } from "./fetchUpdate";
+import { buildChartData, fetchChartData, TimeRange } from "./fetchChartData";
 
 const IS_DEV = !app.isPackaged;
 
@@ -131,6 +132,7 @@ let fetchedItems: IItem[];
 let fetchedPrices: Record<string, IData>;
 let lastCraft: CalcParams | null = null;
 let lastUpdate: number;
+let lastChartData: IData[] = [];
 
 ipcMain.handle("market", async () => {
   if (interval !== null) {
@@ -180,7 +182,9 @@ ipcMain.handle("market", async () => {
 ipcMain.handle("marketCraft", async (_, params: CalcParams) => {
   const { itemId, type, overdrive, onlyCraft, mode } = params;
   lastCraft = params;
+
   const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+
   const analyzed = fnForItem(itemId, type, {
     overdrive,
     onlyCraft,
@@ -188,6 +192,16 @@ ipcMain.handle("marketCraft", async (_, params: CalcParams) => {
   });
 
   return analyzed;
+});
+
+ipcMain.handle("fetchMarketChartData", async (_, id: number) => {
+  const chartData = await fetchChartData(id);
+  lastChartData = chartData !== undefined ? chartData : [];
+  return buildChartData(lastChartData, "6m");
+});
+
+ipcMain.handle("getMarketChartData", async (_, time: TimeRange) => {
+  return buildChartData(lastChartData, time);
 });
 
 ipcMain.handle(

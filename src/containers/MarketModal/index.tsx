@@ -10,9 +10,16 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { ISolveResult } from "@electron/oneItemCalc";
+import MarketModalChart from "../MarketModalChart";
+
+const blocks = {
+  craft: <MarketModalBottom />,
+  own: <></>,
+  chart: <MarketModalChart />,
+};
 
 const MarketModal = () => {
-  const { open } = useAppSelector(selectMarketModalState);
+  const { open, show } = useAppSelector(selectMarketModalState);
   const dispatch = useAppDispatch();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,7 +66,7 @@ const MarketModal = () => {
         >
           <div ref={containerRef} className={styles.container}>
             <MarketModalTop />
-            <MarketModalBottom />
+            {blocks[show]}
           </div>
         </motion.div>
       )}

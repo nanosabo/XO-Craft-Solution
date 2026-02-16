@@ -16,6 +16,8 @@
     "@types/lodash.debounce": "^4.0.9",
     "axios": "^1.5.1",
     "classnames": "^2.3.2",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.6",
     "framer-motion": "^10.16.4",
     "i18next": "^23.5.1",
     "i18next-browser-languagedetector": "^7.1.0",

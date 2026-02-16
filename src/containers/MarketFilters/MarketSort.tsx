@@ -19,7 +19,7 @@ const techStack = [
 ];
 
 const MarketSort = () => {
-  const { sort_order } = useAppSelector(selectMarketState);
+  const { sort_order, sort_by } = useAppSelector(selectMarketState);
   const dispatch = useAppDispatch();
 
   const handleSelectChange = useCallback(
@@ -32,7 +32,7 @@ const MarketSort = () => {
   return (
     <MarketSectionFilter title="Сортировка" className={styles.sort}>
       <Select
-        defaultValue="sell_offers"
+        defaultValue={sort_by}
         options={techStack}
         onChange={handleSelectChange}
         order={sort_order}

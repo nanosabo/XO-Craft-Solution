@@ -7,11 +7,11 @@ type Props = {
 
 const MarketItemImage: FC<Props> = memo(({ id, title }) => {
   const [imgSrc, setImgSrc] = useState(
-    `https://crossoutcore.ru/images/items/${id}.png`,
+    `https://crossoutcore.ru/images/items/${id}.webp`,
   );
 
   useEffect(() => {
-    setImgSrc(`https://crossoutcore.ru/images/items/${id}.png`);
+    setImgSrc(`https://crossoutcore.ru/images/items/${id}.webp`);
   }, [id]);
 
   return (

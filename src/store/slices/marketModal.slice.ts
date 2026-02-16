@@ -1,7 +1,15 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  AnyAction,
+  createAsyncThunk,
+  createSlice,
+  isAnyOf,
+  Middleware,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { IIngredientInfo, ISolveResult } from "@electron/oneItemCalc";
 import { CalcParams } from "@electron/main";
+import { ChartData } from "@electron/fetchChartData";
 
 export interface TreeItem {
   id: number;
@@ -14,11 +22,13 @@ export interface MarketModalState {
   item: number;
   type: "b" | "s";
   mode: "optimal" | "allcraft" | "buyIng";
+  show: "craft" | "own" | "chart";
   overdrive: number[];
   onlyCraft: number[];
   ingredients: IIngredientInfo[];
   cost: number | null;
   tree: TreeItem[];
+  chartData: ChartData;
 }
 
 const initialState: MarketModalState = {
@@ -27,10 +37,12 @@ const initialState: MarketModalState = {
   ingredients: [],
   type: "b",
   mode: "optimal",
+  show: "craft",
   overdrive: [],
   onlyCraft: [],
   cost: null,
   tree: [],
+  chartData: { t: [], s: [], b: [], so: [], bo: [] },
 };
 
 export const calcMarketItem = createAsyncThunk(
@@ -39,6 +51,17 @@ export const calcMarketItem = createAsyncThunk(
     const data: ISolveResult = await window.ipcRenderer.invoke(
       "marketCraft",
       dto,
+    );
+    return data;
+  },
+);
+
+export const fetchMarketChartData = createAsyncThunk(
+  "marketModal/fetchMarketChartData",
+  async (item: number) => {
+    const data: ChartData = await window.ipcRenderer.invoke(
+      "fetchMarketChartData",
+      item,
     );
     return data;
   },
@@ -117,6 +140,12 @@ export const MarketModalSlice = createSlice({
       state.ingredients = payload.ingredients;
       state.cost = Math.round(payload.craftCoast * 100) / 100;
     },
+    setMarketModalShow: (
+      state,
+      action: PayloadAction<MarketModalState["show"]>,
+    ) => {
+      state.show = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(
@@ -124,6 +153,12 @@ export const MarketModalSlice = createSlice({
       (state, { payload }: { payload: ISolveResult }) => {
         state.ingredients = payload.ingredients;
         state.cost = Math.round(payload.craftCoast * 100) / 100;
+      },
+    );
+    builder.addCase(
+      fetchMarketChartData.fulfilled,
+      (state, { payload }: { payload: ChartData }) => {
+        state.chartData = payload;
       },
     );
   },
@@ -138,8 +173,48 @@ export const {
   setMarketModalOnlyCraft,
   setMarketModalOverdrive,
   setMarketModalCalc,
+  setMarketModalShow,
 } = MarketModalSlice.actions;
 
 export const selectMarketModalState = (state: RootState) => state.marketModal;
 
 export default MarketModalSlice.reducer;
+
+export const marketMiddleware: Middleware = (store) => (next) => (action) => {
+  const result = next(action);
+
+  if (
+    isAnyOf(
+      setMarketModalItem,
+      setMarketModalFromTree,
+      setMarketModalType,
+      setMarketModalMode,
+      setMarketModalOverdrive,
+      setMarketModalOnlyCraft,
+    )(action)
+  ) {
+    const dispatch = store.dispatch;
+
+    dispatch(
+      calcMarketItem({
+        itemId: store.getState().marketModal.item,
+        type: store.getState().marketModal.type,
+        mode: store.getState().marketModal.mode,
+        onlyCraft: store.getState().marketModal.onlyCraft,
+        overdrive: store.getState().marketModal.overdrive,
+      }) as unknown as AnyAction,
+    );
+  }
+
+  if (setMarketModalShow.match(action) && action.payload === "chart") {
+    const dispatch = store.dispatch;
+
+    dispatch(
+      fetchMarketChartData(
+        store.getState().marketModal.item,
+      ) as unknown as AnyAction,
+    );
+  }
+
+  return result;
+};

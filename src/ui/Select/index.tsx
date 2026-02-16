@@ -25,6 +25,12 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+      setSelected(
+        options.find((opt) => opt.value === defaultValue) || options[0],
+      );
+    }, [defaultValue, options]);
+
+    useEffect(() => {
       const handleOutsideClick = (e: MouseEvent) => {
         if (!containerRef.current?.contains(e.target as Node)) setIsOpen(false);
       };
