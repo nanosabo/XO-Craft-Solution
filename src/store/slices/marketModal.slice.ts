@@ -146,6 +146,9 @@ export const MarketModalSlice = createSlice({
     ) => {
       state.show = action.payload;
     },
+    setMarketModalChart: (state, { payload }: { payload: ChartData }) => {
+      state.chartData = payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(
@@ -174,6 +177,7 @@ export const {
   setMarketModalOverdrive,
   setMarketModalCalc,
   setMarketModalShow,
+  setMarketModalChart,
 } = MarketModalSlice.actions;
 
 export const selectMarketModalState = (state: RootState) => state.marketModal;
@@ -206,7 +210,11 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
     );
   }
 
-  if (setMarketModalShow.match(action) && action.payload === "chart") {
+  if (
+    setMarketModalShow.match(action) &&
+    action.payload === "chart" &&
+    store.getState().marketModal.chartData.t.length === 0
+  ) {
     const dispatch = store.dispatch;
 
     dispatch(

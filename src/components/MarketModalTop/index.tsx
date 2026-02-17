@@ -70,7 +70,7 @@ const MarketModalTop = () => {
             </>
           )}
 
-          {!isNaN(item.roi) && (
+          {isFinite(item.roi) && item.roi > -100 && (
             <Badge
               title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
               text="ROI:"
