@@ -49,7 +49,7 @@
     "maxPowerScores": {
       "title": "Max build power scores",
       "tooltip": {
-        "title": "The maximum number of Power Scores that you need to get in the end. Leave 0 if there are no restrictions",
+        "title": "The maximum number of Power Scores that you need to get in the end. Leave 99999 if there are no restrictions",
         "subtitle": "Cannot be less than the current PP value"
       }
     },

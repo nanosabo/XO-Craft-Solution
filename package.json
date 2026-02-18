@@ -1,13 +1,14 @@
 {
   "name": "xo-craft-solution",
   "private": true,
-  "version": "2.0.1",
+  "version": "2.0.2-beta.1",
   "author": "SABOTAGE",
   "description": "Desktop application that helps you design optimal crafts",
   "scripts": {
     "solver:build": "dotnet publish ./solver/knapsack-solver.csproj -c Release",
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
+    "release": "electron-builder --publish always",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -18,6 +19,7 @@
     "classnames": "^2.3.2",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.6",
+    "electron-updater": "^6.8.3",
     "framer-motion": "^10.16.4",
     "i18next": "^23.5.1",
     "i18next-browser-languagedetector": "^7.1.0",

@@ -10,6 +10,9 @@ import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
 import { getOneItem } from "./oneItemCalc";
 import { fetchUpdate } from "./fetchUpdate";
 import { buildChartData, fetchChartData } from "./fetchChartData";
+import { autoUpdater } from "electron-updater";
+
+autoUpdater.allowPrerelease = true;
 
 const IS_DEV = !app.isPackaged;
 
@@ -95,7 +98,15 @@ ipcMain.on("close", (e) => {
 });
 
 ipcMain.on("openDiscordExternal", () => {
-  shell.openExternal("https://discord.gg/2dWevuMVwZ");
+  shell.openExternal("https://discord.gg/cwtHShAfZx");
+});
+
+app.on("ready", () => {
+  autoUpdater.checkForUpdatesAndNotify();
+});
+
+ipcMain.handle("get-app-version", () => {
+  return app.getVersion();
 });
 
 interface DataToSolve {

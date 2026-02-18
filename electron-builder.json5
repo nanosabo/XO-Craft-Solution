@@ -10,6 +10,13 @@
     output: "release",
     buildResources: "build",
   },
+  publish: [
+    {
+      provider: "github",
+      owner: "nanosabo",
+      repo: "XO-Craft-Solution",
+    },
+  ],
   extraResources: [
     {
       from: "build/icon.ico",
