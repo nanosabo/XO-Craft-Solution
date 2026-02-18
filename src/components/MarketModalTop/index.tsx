@@ -77,7 +77,7 @@ const MarketModalTop = () => {
               </Badge>
 
               <Badge text="Экономия:" className={styles.badge}>
-                {selfProfit} <img src="/coin.png" draggable={false} />
+                {selfProfit} <img src="./coin.png" draggable={false} />
               </Badge>
             </>
           )}

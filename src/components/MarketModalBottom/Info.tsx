@@ -62,10 +62,10 @@ const Info = () => {
 
       <div className={styles.info_inner}>
         <InfoItem title="Продажа">
-          {item.rawPrices.s} <img src="/coin.png" draggable={false} />
+          {item.rawPrices.s} <img src="./coin.png" draggable={false} />
         </InfoItem>
         <InfoItem title="Покупка">
-          {item.rawPrices.b} <img src="/coin.png" draggable={false} />
+          {item.rawPrices.b} <img src="./coin.png" draggable={false} />
         </InfoItem>
         <InfoItem title="Предложений на рынке">
           <RuporIcon /> {item.offers.s}
@@ -79,13 +79,13 @@ const Info = () => {
           ) : (
             <>
               {itemCost}
-              <img src="/coin.png" draggable={false} />
+              <img src="./coin.png" draggable={false} />
             </>
           )}
         </InfoItem>
         <InfoItem title="Прибыль">
           {dontHasRecipe ? 0 : profit}
-          <img src="/coin.png" draggable={false} />
+          <img src="./coin.png" draggable={false} />
         </InfoItem>
       </div>
     </div>

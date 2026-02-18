@@ -38,13 +38,13 @@ const MarketItem: FC<Props> = memo(({ item }) => {
           <div className={styles.price}>
             <span>Продажа:</span>
             <p>
-              {item.rawPrices.s} <img src="/coin.png" draggable={false} />
+              {item.rawPrices.s} <img src="./coin.png" draggable={false} />
             </p>
           </div>
           <div className={styles.price}>
             <span>Покупка:</span>
             <p>
-              {item.rawPrices.b} <img src="/coin.png" draggable={false} />
+              {item.rawPrices.b} <img src="./coin.png" draggable={false} />
             </p>
           </div>
         </div>
@@ -66,7 +66,7 @@ const MarketItem: FC<Props> = memo(({ item }) => {
           text="Спред:"
           warning={item.spread <= 0}
         >
-          {item.spread} <img src="/coin.png" draggable={false} />
+          {item.spread} <img src="./coin.png" draggable={false} />
         </Badge>
 
         {!dontHasRecipe || item.isOwn ? (
@@ -75,7 +75,7 @@ const MarketItem: FC<Props> = memo(({ item }) => {
             text="Крафт:"
             warning={item.profit <= 0}
           >
-            {item.profit} <img src="/coin.png" draggable={false} />
+            {item.profit} <img src="./coin.png" draggable={false} />
           </Badge>
         ) : (
           <Badge
