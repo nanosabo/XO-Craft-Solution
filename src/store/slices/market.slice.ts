@@ -29,6 +29,27 @@ export enum MarketStateStatus {
   ERROR = "error",
 }
 
+export interface RecipeIng {
+  id: number;
+  amount: number;
+}
+
+export interface OwnRecipeIng extends RecipeIng {
+  categoryId: number;
+  rarityId: number;
+  name: string;
+}
+
+export interface Recipe {
+  resultAmount: number;
+  ingredients: RecipeIng[];
+}
+
+export interface OwnRecipe extends Recipe {
+  rent: number;
+  ingredients: OwnRecipeIng[];
+}
+
 export interface IItemAnalytics {
   id: number;
   name: string;
@@ -36,15 +57,9 @@ export interface IItemAnalytics {
   rarityId: number;
   craftable: number;
   craftCost: number;
-  recipe:
-    | "$undefined"
-    | {
-        resultAmount: number;
-        ingredients: {
-          id: number;
-          amount: number;
-        }[];
-      };
+  recipe: "$undefined" | Recipe;
+  own_ingredients: IIngredientInfo[];
+  isOwn: boolean;
   ingredients: IIngredientInfo[];
   categoryId: number;
   offers: {
@@ -84,6 +99,7 @@ export interface MarketState extends Filters {
   categories: ICategory[];
   rarities: IRarity[];
   items: IItemAnalytics[];
+  own_recipes: Record<string, OwnRecipe>;
 }
 
 export interface FetchedData {
@@ -112,6 +128,7 @@ const saveFilters = (state: MarketState) => {
 };
 
 const storage = localStorage.getItem("market");
+const storageRecipes = localStorage.getItem("own");
 
 const defaultFilters: Filters = {
   categoryFilter: [],
@@ -125,19 +142,31 @@ const defaultFilters: Filters = {
 };
 
 const filters = storage ? (JSON.parse(storage) as Filters) : defaultFilters;
+const own_recipes = storageRecipes
+  ? (JSON.parse(storageRecipes) as Record<string, OwnRecipe>)
+  : {};
 
 const initialState: MarketState = {
   status: MarketStateStatus.INITIAL,
   categories: [],
   rarities: [],
   items: [],
+  own_recipes: own_recipes,
+
   ...filters,
 };
 
 export const fetchData = createAsyncThunk(
   "market/fetch",
   async (navigate: NavigateFunction, { dispatch }) => {
-    const data: FetchedData = await window.ipcRenderer.invoke("market");
+    const own_recipes_json = localStorage.getItem("own");
+    const own_recipes = own_recipes_json ? JSON.parse(own_recipes_json) : {};
+
+    const data: FetchedData = await window.ipcRenderer.invoke(
+      "market",
+      own_recipes,
+    );
+
     dispatch(setAppLoadedStatus());
     navigate("/");
     return data;
@@ -199,6 +228,17 @@ export const MarketSLice = createSlice({
         : [...state.followedItems, action.payload];
       saveFilters(state);
     },
+    setOwnRecipe: (
+      state,
+      action: PayloadAction<{ id: number; recipe: OwnRecipe }>,
+    ) => {
+      state.own_recipes[action.payload.id] = action.payload.recipe;
+      localStorage.setItem("own", JSON.stringify(state.own_recipes));
+    },
+    removeOwnRecipe: (state, action: PayloadAction<number>) => {
+      delete state.own_recipes[action.payload];
+      localStorage.setItem("own", JSON.stringify(state.own_recipes));
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -231,6 +271,8 @@ export const {
   setMarketView,
   setFollowedItem,
   switchMarketFollowed,
+  setOwnRecipe,
+  removeOwnRecipe,
 } = MarketSLice.actions;
 
 export const selectMarketState = (state: RootState) => state.market;

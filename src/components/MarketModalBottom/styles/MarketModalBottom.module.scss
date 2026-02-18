@@ -47,6 +47,10 @@
   border-radius: 16px;
   border: 1px solid rgba($white, 0.1);
 
+  &.own {
+    width: auto;
+  }
+
   p {
     @include bodyMax;
   }
@@ -67,6 +71,11 @@
       padding: 4px;
     }
   }
+}
+
+.item_wrapper:has(.own) {
+  width: 100%;
+  max-width: 240px;
 }
 
 .resource_item,
@@ -97,6 +106,10 @@
 .resource_item {
   height: 80px;
   max-width: 80px;
+
+  &.own {
+    max-width: 240px;
+  }
 }
 
 .part_item {
@@ -104,7 +117,11 @@
   padding: 9px 16px;
   transition: border-color 0.2s ease-in-out;
 
-  &:hover {
+  &.own {
+    max-width: 240px;
+  }
+
+  &:hover:not(.own) {
     cursor: pointer;
     border-color: rgba($white, 0.2);
 

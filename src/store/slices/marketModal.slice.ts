@@ -10,11 +10,18 @@ import { RootState } from "../store";
 import { IIngredientInfo, ISolveResult } from "@electron/oneItemCalc";
 import { CalcParams } from "@electron/main";
 import { ChartData } from "@electron/fetchChartData";
+import {
+  OwnRecipe,
+  OwnRecipeIng,
+  removeOwnRecipe,
+  setOwnRecipe,
+} from "./market.slice";
 
 export interface TreeItem {
   id: number;
   name: string;
   rarityId: number;
+  isOwn: boolean;
 }
 
 export interface MarketModalState {
@@ -23,12 +30,15 @@ export interface MarketModalState {
   type: "b" | "s";
   mode: "optimal" | "allcraft" | "buyIng";
   show: "craft" | "own" | "chart";
+  own_set: "craft" | "edit";
   overdrive: number[];
   onlyCraft: number[];
   ingredients: IIngredientInfo[];
   cost: number | null;
+  isOwn: boolean;
   tree: TreeItem[];
   chartData: ChartData;
+  own_recipe: OwnRecipe;
 }
 
 const initialState: MarketModalState = {
@@ -38,11 +48,18 @@ const initialState: MarketModalState = {
   type: "b",
   mode: "optimal",
   show: "craft",
+  own_set: "craft",
   overdrive: [],
   onlyCraft: [],
   cost: null,
+  isOwn: false,
   tree: [],
   chartData: { t: [], s: [], b: [], so: [], bo: [] },
+  own_recipe: {
+    rent: 0,
+    resultAmount: 1,
+    ingredients: [],
+  },
 };
 
 export const calcMarketItem = createAsyncThunk(
@@ -114,7 +131,11 @@ export const MarketModalSlice = createSlice({
     },
     setMarketModalFromTree: (
       state,
-      action: PayloadAction<{ item: number; treeItem: TreeItem }>,
+      action: PayloadAction<{
+        item: number;
+        treeItem: TreeItem;
+        show: MarketModalState["show"];
+      }>,
     ) => {
       const newState = {
         ...initialState,
@@ -133,6 +154,8 @@ export const MarketModalSlice = createSlice({
         newState.tree.length = index;
       }
 
+      newState.show = action.payload.show;
+
       return newState;
     },
 
@@ -145,9 +168,50 @@ export const MarketModalSlice = createSlice({
       action: PayloadAction<MarketModalState["show"]>,
     ) => {
       state.show = action.payload;
+      state.own_set = "craft";
     },
     setMarketModalChart: (state, { payload }: { payload: ChartData }) => {
       state.chartData = payload;
+    },
+    switchMarketModalOwn: (state) => {
+      state.own_set = state.own_set === "craft" ? "edit" : "craft";
+    },
+    setModalOwnRecipe: (state, { payload }: { payload: OwnRecipe }) => {
+      state.own_recipe = payload;
+    },
+    setOwnRecipeResult: (state, { payload }: { payload: number }) => {
+      state.own_recipe.resultAmount = payload;
+    },
+    setOwnRecipeRent: (state, { payload }: { payload: number }) => {
+      state.own_recipe.rent = payload;
+    },
+    addOwnRecipeIng: (state, { payload }: { payload: OwnRecipeIng }) => {
+      const countRes = state.own_recipe.ingredients.filter(
+        (ing) => ing.categoryId === 8,
+      ).length;
+      const countParts = state.own_recipe.ingredients.filter(
+        (ing) => ing.categoryId !== 8,
+      ).length;
+
+      const canAddRes = countRes < 5 && payload.categoryId === 8;
+      const canAddPart = countParts < 4 && payload.categoryId !== 8;
+
+      if (canAddRes || canAddPart) {
+        state.own_recipe.ingredients.push(payload);
+      }
+    },
+    removeOwnRecipeIng: (state, { payload }: { payload: number }) => {
+      state.own_recipe.ingredients = state.own_recipe.ingredients.filter(
+        (ing) => ing.id !== payload,
+      );
+    },
+    updateAmountOwnRecipeIng: (
+      state,
+      { payload }: { payload: { id: number; amount: number } },
+    ) => {
+      state.own_recipe.ingredients = state.own_recipe.ingredients.map((ing) =>
+        ing.id === payload.id ? { ...ing, amount: payload.amount } : ing,
+      );
     },
   },
   extraReducers: (builder) => {
@@ -156,6 +220,7 @@ export const MarketModalSlice = createSlice({
       (state, { payload }: { payload: ISolveResult }) => {
         state.ingredients = payload.ingredients;
         state.cost = Math.round(payload.craftCoast * 100) / 100;
+        state.isOwn = payload.isOwn;
       },
     );
     builder.addCase(
@@ -178,6 +243,13 @@ export const {
   setMarketModalCalc,
   setMarketModalShow,
   setMarketModalChart,
+  switchMarketModalOwn,
+  setOwnRecipeRent,
+  setOwnRecipeResult,
+  addOwnRecipeIng,
+  removeOwnRecipeIng,
+  updateAmountOwnRecipeIng,
+  setModalOwnRecipe,
 } = MarketModalSlice.actions;
 
 export const selectMarketModalState = (state: RootState) => state.marketModal;
@@ -195,9 +267,16 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
       setMarketModalMode,
       setMarketModalOverdrive,
       setMarketModalOnlyCraft,
+      setMarketModalShow,
+      setOwnRecipe,
+      removeOwnRecipe,
     )(action)
   ) {
     const dispatch = store.dispatch;
+
+    const isRecipeChanged =
+      action.type === "market/setOwnRecipe" ||
+      action.type === "market/removeOwnRecipe";
 
     dispatch(
       calcMarketItem({
@@ -206,6 +285,10 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
         mode: store.getState().marketModal.mode,
         onlyCraft: store.getState().marketModal.onlyCraft,
         overdrive: store.getState().marketModal.overdrive,
+        is_own: store.getState().marketModal.show === "own",
+        own_rec: isRecipeChanged
+          ? store.getState().market.own_recipes
+          : undefined,
       }) as unknown as AnyAction,
     );
   }

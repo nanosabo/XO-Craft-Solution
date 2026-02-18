@@ -69,7 +69,7 @@ const MarketItem: FC<Props> = memo(({ item }) => {
           {item.spread} <img src="/coin.png" draggable={false} />
         </Badge>
 
-        {!dontHasRecipe ? (
+        {!dontHasRecipe || item.isOwn ? (
           <Badge
             title="Прибыль в случае крафта в оптимальном режиме с учетом комиссии"
             text="Крафт:"

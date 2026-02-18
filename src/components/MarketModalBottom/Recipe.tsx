@@ -12,7 +12,7 @@ import {
 import classNames from "classnames";
 
 const Recipe = () => {
-  const { item, recipe, type } = useMarketModal();
+  const { item, recipe, type, show } = useMarketModal();
   const dispatch = useAppDispatch();
 
   if (!recipe) return <NoRecipe />;
@@ -28,10 +28,17 @@ const Recipe = () => {
     id: item.id,
     name: item.name,
     rarityId: item.rarityId,
+    isOwn: show === "own",
   };
 
-  const onClickRecipe = (id: number) => {
-    dispatch(setMarketModalFromTree({ item: id, treeItem: thisTreeItem }));
+  const onClickRecipe = ({ id, isOwn }: { id: number; isOwn: boolean }) => {
+    dispatch(
+      setMarketModalFromTree({
+        item: id,
+        treeItem: thisTreeItem,
+        show: isOwn ? "own" : "craft",
+      }),
+    );
   };
 
   return (
@@ -83,7 +90,10 @@ const Recipe = () => {
               id={ing.id}
               rarity={ing.rarityId}
               title={ing.name}
-              onClick={onClickRecipe.bind(this, ing.id)}
+              onClick={onClickRecipe.bind(this, {
+                id: ing.id,
+                isOwn: ing.isOwn,
+              })}
               buyCost={ing.buyCost}
               craftCost={ing.craftCost}
               typeOfCost={ing.type === "buy" ? "buy" : "craft"}

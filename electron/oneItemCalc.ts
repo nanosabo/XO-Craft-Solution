@@ -1,5 +1,6 @@
-import { IData } from "@src/store/slices/market.slice";
+import { IData, OwnRecipe, Recipe } from "@src/store/slices/market.slice";
 import { IItem } from "./craftItemsCalc";
+import { getOwnRecipe } from "./main";
 
 export interface IIngredientInfo {
   id: number;
@@ -10,6 +11,7 @@ export interface IIngredientInfo {
   categoryId: number;
   hasRecipe: boolean;
   type: "buy" | "craft";
+  isOwn: boolean;
 }
 
 export interface ISolveResult {
@@ -17,6 +19,7 @@ export interface ISolveResult {
   craftCoast: number;
   ingredients: IIngredientInfo[];
   type: "buy" | "craft";
+  isOwn: boolean;
 }
 
 const FEES: Record<number, number> = {
@@ -50,12 +53,16 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
       needed = 1,
       isCraftAll = false,
       isIngredient = false,
+      ownPriority = false,
+      initialPriority = false,
     }: {
       overdrive?: number[];
       onlyCraft?: number[];
       needed?: number;
       isCraftAll?: boolean;
       isIngredient?: boolean;
+      ownPriority?: boolean;
+      initialPriority?: boolean;
     } = {},
   ): ISolveResult {
     const cacheKey = `${itemId}_${type}_${needed}_${isCraftAll}`;
@@ -63,8 +70,16 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
 
     const item = itemsMap.get(itemId);
     if (!item) {
-      return { cost: 0, craftCoast: 0, ingredients: [], type: "buy" };
+      return {
+        cost: 0,
+        craftCoast: 0,
+        ingredients: [],
+        type: "buy",
+        isOwn: false,
+      };
     }
+
+    const own_recipe = getOwnRecipe(item.id);
 
     needed = Math.max(1, needed);
 
@@ -72,23 +87,49 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
     const itemAmount = Math.max(1, item.amount);
     const buyCost = (needed / itemAmount) * marketPrice;
 
-    if (item.recipe === "$undefined" || item.craftable === 0) {
+    const noInitialRecipe =
+      item.recipe === "$undefined" || item.craftable === 0;
+
+    const noOwnRecipe = own_recipe === undefined;
+    const noAnyRecipes = noInitialRecipe && noOwnRecipe;
+
+    const noRecipeIfInitial = initialPriority && noInitialRecipe;
+    const noRecipeIfOwn = ownPriority && noOwnRecipe;
+
+    if (noAnyRecipes || noRecipeIfInitial || noRecipeIfOwn) {
       const result = {
         cost: buyCost,
         craftCoast: buyCost,
         ingredients: [],
         type: "buy" as const,
+        isOwn: false,
       };
       memo.set(cacheKey, result);
       return result;
     }
 
-    const cycles = needed / item.recipe.resultAmount;
+    let recipe: Recipe | OwnRecipe | undefined;
+
+    if (item.recipe !== "$undefined" && item.craftable !== 0) {
+      recipe = item.recipe;
+    }
+
+    if ((ownPriority && !noOwnRecipe) || (noInitialRecipe && !noOwnRecipe)) {
+      recipe = own_recipe;
+    }
+
+    if (!recipe) {
+      throw new Error("Bad recipe for item " + item.id);
+    }
+
+    const rent = "rent" in recipe ? recipe.rent : FEES[item.rarityId];
+
+    const cycles = needed / recipe.resultAmount;
     const ingredients: IIngredientInfo[] = [];
 
-    let craftCost = FEES[item.rarityId] * cycles;
+    let craftCost = rent * cycles;
 
-    for (const ing of item.recipe.ingredients) {
+    for (const ing of recipe.ingredients) {
       const ingItem = itemsMap.get(ing.id);
       const amountNeeded = ing.amount * cycles;
 
@@ -96,7 +137,9 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
       const ingAmount = Math.max(1, ingItem?.amount ?? 1);
 
       const buyIngCost = (amountNeeded / ingAmount) * ingBuyPrice;
-      const hasRecipe = !!(ingItem?.recipe && ingItem.craftable);
+      const ingHasOwnRecipe = getOwnRecipe(ing.id) !== undefined;
+      const hasRecipe =
+        !!(ingItem?.recipe && ingItem.craftable) || ingHasOwnRecipe;
 
       const solved = solveItem(ing.id, type, {
         overdrive,
@@ -131,6 +174,7 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
         craftCost: round2(solved.craftCoast),
         type: finalType,
         hasRecipe,
+        isOwn: solved.isOwn,
       });
     }
 
@@ -139,6 +183,7 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
       craftCoast: craftCost,
       ingredients: isIngredient ? [] : ingredients,
       type: craftCost < buyCost ? "craft" : "buy",
+      isOwn: "rent" in recipe || ownPriority,
     };
 
     memo.set(cacheKey, result);

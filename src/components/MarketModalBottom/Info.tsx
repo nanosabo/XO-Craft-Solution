@@ -25,10 +25,14 @@ const buttons: { name: string; mode: MarketModalState["mode"] }[] = [
 ];
 
 const Info = () => {
-  const { item, itemCost, profit, mode, recipe } = useMarketModal();
+  const { item, itemCost, profit, mode, recipe, isOwn, show } =
+    useMarketModal();
   const dispatch = useDispatch();
 
-  const dontHasRecipe = item.recipe === "$undefined" || item.craftable === 0;
+  const dontHasRecipe =
+    show === "own"
+      ? !isOwn
+      : item.recipe === "$undefined" || item.craftable === 0;
 
   const onSetMode = (mode: MarketModalState["mode"]) => {
     dispatch(
@@ -80,7 +84,8 @@ const Info = () => {
           )}
         </InfoItem>
         <InfoItem title="Прибыль">
-          {dontHasRecipe ? 0 : profit} <img src="/coin.png" draggable={false} />
+          {dontHasRecipe ? 0 : profit}
+          <img src="/coin.png" draggable={false} />
         </InfoItem>
       </div>
     </div>

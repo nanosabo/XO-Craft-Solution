@@ -10,20 +10,20 @@ import {
   setMarketModalOverdrive,
 } from "@src/store/slices/marketModal.slice";
 
-interface Props extends PropsWithChildren {
+export interface RecipeItemProps extends PropsWithChildren {
   type: "resource" | "part";
-  amount: number;
+  amount?: number;
   id: number;
   rarity?: number;
   title?: string;
-  buyCost: number;
+  buyCost?: number;
   craftCost?: number;
   onClick?: () => void;
-  typeOfCost: "buy" | "craft";
+  typeOfCost?: "buy" | "craft";
   hasRecipe: boolean;
 }
 
-const RecipeItem: FC<Props> = ({
+const RecipeItem: FC<RecipeItemProps> = ({
   type,
   amount,
   id,
@@ -46,47 +46,55 @@ const RecipeItem: FC<Props> = ({
     }
   };
 
+  const isRegularRecipe = craftCost !== undefined || buyCost !== undefined;
+
   return (
-    <div onClick={onClick}>
+    <div
+      className={styles.item_wrapper}
+      onClick={isRegularRecipe ? onClick : undefined}
+    >
       <MarketImageSection
         className={classNames({
           [styles.resource_item]: type === "resource",
           [styles.part_item]: type === "part",
+          [styles.own]: !isRegularRecipe,
         })}
         rare={rarity ? rarities[rarity] : undefined}
         title={title}
       >
         <MarketItemImage id={id} />
         {children}
-        <b>{amount}</b>
+        {amount !== undefined && <b>{amount}</b>}
 
-        <div
-          className={styles.recource_type}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <button
-            className={classNames(styles.resource_type_item, {
-              [styles.active]: typeOfCost === "buy",
-            })}
-            onClick={onClickCraft.bind(this, "buy")}
-            disabled={typeOfCost === "buy"}
+        {isRegularRecipe && (
+          <div
+            className={styles.recource_type}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
-            💰 {buyCost}
-          </button>
-          {hasRecipe && (
             <button
               className={classNames(styles.resource_type_item, {
-                [styles.active]: typeOfCost === "craft",
+                [styles.active]: typeOfCost === "buy",
               })}
-              disabled={typeOfCost === "craft"}
-              onClick={onClickCraft.bind(this, "craft")}
+              onClick={onClickCraft.bind(this, "buy")}
+              disabled={typeOfCost === "buy"}
             >
-              ⚒️ {craftCost}
+              💰 {buyCost}
             </button>
-          )}
-        </div>
+            {hasRecipe && (
+              <button
+                className={classNames(styles.resource_type_item, {
+                  [styles.active]: typeOfCost === "craft",
+                })}
+                disabled={typeOfCost === "craft"}
+                onClick={onClickCraft.bind(this, "craft")}
+              >
+                ⚒️ {craftCost}
+              </button>
+            )}
+          </div>
+        )}
       </MarketImageSection>
     </div>
   );

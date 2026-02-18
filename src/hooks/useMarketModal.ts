@@ -4,7 +4,7 @@ import { useAppSelector } from "@src/store/store";
 
 const useMarketModal = () => {
   const { items } = useAppSelector(selectMarketState);
-  const { item, ingredients, type, mode, cost, show } = useAppSelector(
+  const { item, ingredients, type, mode, cost, show, isOwn } = useAppSelector(
     selectMarketModalState,
   );
 
@@ -39,6 +39,7 @@ const useMarketModal = () => {
     itemCost,
     profit,
     show,
+    isOwn,
   };
 };
 

@@ -13,6 +13,8 @@ import { rarities } from "@src/helpers/rarities";
 import useMarketModal from "@src/hooks/useMarketModal";
 import classNames from "classnames";
 import MarketModalTree from "./MarketModalTree";
+import { AnimatePresence } from "framer-motion";
+import MarketModalOwnButton from "./MarketModalOwnButton";
 
 const buttons = [
   { id: "craft", label: "Создание предмета" },
@@ -21,7 +23,7 @@ const buttons = [
 ];
 
 const MarketModalTop = () => {
-  const { item, itemCost, show } = useMarketModal();
+  const { item, itemCost, isOwn, show } = useMarketModal();
 
   const dispatch = useAppDispatch();
 
@@ -38,6 +40,11 @@ const MarketModalTop = () => {
     dispatch(setMarketModalShow(id as MarketModalState["show"]));
   };
 
+  const dontHasRecipe =
+    show === "own"
+      ? !isOwn
+      : item.recipe === "$undefined" || item.craftable === 0;
+
   return (
     <>
       <button className={styles.close} onClick={onClose}>
@@ -53,7 +60,7 @@ const MarketModalTop = () => {
         <MarketItemImage id={item.id} title={item.name} />
 
         <div className={styles.craft_decision}>
-          {item.recipe !== "$undefined" && (
+          {!dontHasRecipe && (
             <>
               <Badge
                 title="Лучший вариант для вас"
@@ -98,6 +105,10 @@ const MarketModalTop = () => {
             </button>
           ))}
         </div>
+
+        <AnimatePresence>
+          {show === "own" && <MarketModalOwnButton />}
+        </AnimatePresence>
 
         <MarketModalTree />
       </MarketImageSection>

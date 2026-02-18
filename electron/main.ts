@@ -5,7 +5,7 @@ import actualParts from "./actual_parts.json";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
-import { IData } from "@src/store/slices/market.slice";
+import { IData, OwnRecipe } from "@src/store/slices/market.slice";
 import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
 import { getOneItem } from "./oneItemCalc";
 import { fetchUpdate } from "./fetchUpdate";
@@ -125,6 +125,8 @@ export interface CalcParams {
   mode: "optimal" | "allcraft" | "buyIng";
   overdrive: number[];
   onlyCraft: number[];
+  is_own: boolean;
+  own_rec?: Record<string, OwnRecipe>;
 }
 
 let interval: NodeJS.Timeout | null = null;
@@ -132,8 +134,15 @@ let fetchedItems: IItem[];
 let fetchedPrices: Record<string, IData>;
 let lastCraft: CalcParams | null = null;
 let lastUpdate: number;
+let own_recipes: Record<string, OwnRecipe> = {};
 
-ipcMain.handle("market", async () => {
+export const getOwnRecipe = (id: number): OwnRecipe | undefined => {
+  return own_recipes[id];
+};
+
+ipcMain.handle("market", async (_, own_rec: Record<string, OwnRecipe>) => {
+  own_recipes = own_rec;
+
   if (interval !== null) {
     clearInterval(interval);
   }
@@ -152,13 +161,15 @@ ipcMain.handle("market", async () => {
     win?.webContents.send("update", { items: analytics });
 
     if (lastCraft) {
-      const { itemId, type, overdrive, onlyCraft, mode } = lastCraft;
+      const { itemId, type, overdrive, onlyCraft, mode, is_own } = lastCraft;
       const fnForItem = getOneItem(fetchedItems, fetchedPrices);
 
       const analyzed = fnForItem(itemId, type, {
         overdrive,
         onlyCraft,
         isCraftAll: mode === "allcraft",
+        initialPriority: !is_own,
+        ownPriority: is_own,
       });
 
       const chartData = await fetchChartData(itemId);
@@ -186,8 +197,14 @@ ipcMain.handle("market", async () => {
 });
 
 ipcMain.handle("marketCraft", async (_, params: CalcParams) => {
-  const { itemId, type, overdrive, onlyCraft, mode } = params;
-  lastCraft = params;
+  const { itemId, type, overdrive, onlyCraft, mode, is_own } = params;
+
+  const { own_rec, ...rest } = params;
+  lastCraft = rest;
+
+  if (own_rec !== undefined) {
+    own_recipes = own_rec;
+  }
 
   const fnForItem = getOneItem(fetchedItems, fetchedPrices);
 
@@ -195,6 +212,8 @@ ipcMain.handle("marketCraft", async (_, params: CalcParams) => {
     overdrive,
     onlyCraft,
     isCraftAll: mode === "allcraft",
+    initialPriority: !is_own,
+    ownPriority: is_own,
   });
 
   return analyzed;

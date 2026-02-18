@@ -11,10 +11,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { ISolveResult } from "@electron/oneItemCalc";
 import MarketModalChart from "../MarketModalChart";
+import MarketModalOwn from "@src/components/MarketModalOwn";
 
 const blocks = {
   craft: <MarketModalBottom />,
-  own: <></>,
+  own: <MarketModalOwn />,
   chart: <MarketModalChart />,
 };
 

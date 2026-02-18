@@ -1,0 +1,31 @@
+@import "@styles/theme";
+
+.input {
+  display: flex;
+  align-items: center;
+  background-color: rgba($input, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 8px;
+  width: 68px;
+  padding: 5px 12px 2px;
+
+  input {
+    width: 100%;
+    color: $white;
+    font-weight: 500;
+    font-size: 14px;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+
+  p {
+    color: $default;
+    font-weight: 500;
+    font-size: 14px;
+  }
+}

@@ -14,3 +14,6 @@ export { default as CartIcon } from "./CartIcon";
 export { default as ArrowIcon } from "./ArrowIcon";
 export { default as ChevronIcon } from "./ChevronIcon";
 export { default as FileWarningIcon } from "./FileWarningIcon";
+export { default as PlusIcon } from "./PlusIcon";
+export { default as EditIcon } from "./EditIcon";
+export { default as SaveIcon } from "./SaveIcon";

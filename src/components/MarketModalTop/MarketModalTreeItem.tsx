@@ -20,7 +20,13 @@ const MarketModalTreeItem: FC<Props> = (props) => {
   const dispatch = useAppDispatch();
 
   const onClick = () => {
-    dispatch(setMarketModalFromTree({ item: props.id, treeItem: rest }));
+    dispatch(
+      setMarketModalFromTree({
+        item: props.id,
+        treeItem: rest,
+        show: rest.isOwn ? "own" : "craft",
+      }),
+    );
   };
 
   return (

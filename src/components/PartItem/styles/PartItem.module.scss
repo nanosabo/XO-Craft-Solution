@@ -66,8 +66,11 @@
     height: 32px;
     border-radius: 4px;
     background-color: #c21010;
+    color: $white;
 
-    transition: bottom 0.2s ease-in-out, background-color 0.2s ease-in-out;
+    transition:
+      bottom 0.2s ease-in-out,
+      background-color 0.2s ease-in-out;
 
     &:hover {
       background-color: darken(#c21010, 10);
