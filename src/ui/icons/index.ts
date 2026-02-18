@@ -17,3 +17,4 @@ export { default as FileWarningIcon } from "./FileWarningIcon";
 export { default as PlusIcon } from "./PlusIcon";
 export { default as EditIcon } from "./EditIcon";
 export { default as SaveIcon } from "./SaveIcon";
+export { default as UnavaibleIcon } from "./UnavaibleIcon";

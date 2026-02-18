@@ -204,6 +204,24 @@
   }
 }
 
+.trigger_btn {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background-color: $bg;
+  color: $white;
+  z-index: 1;
+
+  &.active {
+    color: $red;
+  }
+}
+
 .line {
   width: 10px;
   height: 2px;

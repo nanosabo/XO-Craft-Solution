@@ -3,7 +3,7 @@ import { selectMarketModalState } from "@src/store/slices/marketModal.slice";
 import { useAppSelector } from "@src/store/store";
 
 const useMarketModal = () => {
-  const { items } = useAppSelector(selectMarketState);
+  const { items, no_recipes } = useAppSelector(selectMarketState);
   const { item, ingredients, type, mode, cost, show, isOwn } = useAppSelector(
     selectMarketModalState,
   );
@@ -31,6 +31,8 @@ const useMarketModal = () => {
           return { ...ing, name: ingredient.name };
         });
 
+  const noRecipeMarked = no_recipes.includes(item);
+
   return {
     item: selectedItem,
     recipe,
@@ -40,6 +42,7 @@ const useMarketModal = () => {
     profit,
     show,
     isOwn,
+    noRecipeMarked
   };
 };
 

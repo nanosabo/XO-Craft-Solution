@@ -1,6 +1,6 @@
 import { IData, OwnRecipe, Recipe } from "@src/store/slices/market.slice";
 import { IItem } from "./craftItemsCalc";
-import { getOwnRecipe } from "./main";
+import { getNoRecipeMarked, getOwnRecipe } from "./main";
 
 export interface IIngredientInfo {
   id: number;
@@ -80,6 +80,7 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
     }
 
     const own_recipe = getOwnRecipe(item.id);
+    const isNoRecipeMarked = getNoRecipeMarked(item.id);
 
     needed = Math.max(1, needed);
 
@@ -96,7 +97,12 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
     const noRecipeIfInitial = initialPriority && noInitialRecipe;
     const noRecipeIfOwn = ownPriority && noOwnRecipe;
 
-    if (noAnyRecipes || noRecipeIfInitial || noRecipeIfOwn) {
+    if (
+      noAnyRecipes ||
+      noRecipeIfInitial ||
+      noRecipeIfOwn ||
+      isNoRecipeMarked
+    ) {
       const result = {
         cost: buyCost,
         craftCoast: buyCost,
@@ -130,6 +136,7 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
     let craftCost = rent * cycles;
 
     for (const ing of recipe.ingredients) {
+      const isNoRecipeMarkedIng = getNoRecipeMarked(ing.id);
       const ingItem = itemsMap.get(ing.id);
       const amountNeeded = ing.amount * cycles;
 
@@ -139,7 +146,8 @@ export function getOneItem(items: IItem[], prices: Record<string, IData>) {
       const buyIngCost = (amountNeeded / ingAmount) * ingBuyPrice;
       const ingHasOwnRecipe = getOwnRecipe(ing.id) !== undefined;
       const hasRecipe =
-        !!(ingItem?.recipe && ingItem.craftable) || ingHasOwnRecipe;
+        (!!(ingItem?.recipe && ingItem.craftable) || ingHasOwnRecipe) &&
+        !isNoRecipeMarkedIng;
 
       const solved = solveItem(ing.id, type, {
         overdrive,

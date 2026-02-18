@@ -100,6 +100,7 @@ export interface MarketState extends Filters {
   rarities: IRarity[];
   items: IItemAnalytics[];
   own_recipes: Record<string, OwnRecipe>;
+  no_recipes: number[];
 }
 
 export interface FetchedData {
@@ -129,6 +130,7 @@ const saveFilters = (state: MarketState) => {
 
 const storage = localStorage.getItem("market");
 const storageRecipes = localStorage.getItem("own");
+const storageNoRecipes = localStorage.getItem("norec");
 
 const defaultFilters: Filters = {
   categoryFilter: [],
@@ -145,6 +147,9 @@ const filters = storage ? (JSON.parse(storage) as Filters) : defaultFilters;
 const own_recipes = storageRecipes
   ? (JSON.parse(storageRecipes) as Record<string, OwnRecipe>)
   : {};
+const no_recipes = storageNoRecipes
+  ? (JSON.parse(storageNoRecipes) as number[])
+  : [];
 
 const initialState: MarketState = {
   status: MarketStateStatus.INITIAL,
@@ -152,6 +157,7 @@ const initialState: MarketState = {
   rarities: [],
   items: [],
   own_recipes: own_recipes,
+  no_recipes: no_recipes,
 
   ...filters,
 };
@@ -162,10 +168,13 @@ export const fetchData = createAsyncThunk(
     const own_recipes_json = localStorage.getItem("own");
     const own_recipes = own_recipes_json ? JSON.parse(own_recipes_json) : {};
 
-    const data: FetchedData = await window.ipcRenderer.invoke(
-      "market",
-      own_recipes,
-    );
+    const no_recipes_json = localStorage.getItem("norec");
+    const no_recipes = no_recipes_json ? JSON.parse(no_recipes_json) : [];
+
+    const data: FetchedData = await window.ipcRenderer.invoke("market", {
+      own_rec: own_recipes,
+      no_rec: no_recipes,
+    });
 
     dispatch(setAppLoadedStatus());
     navigate("/");
@@ -239,6 +248,15 @@ export const MarketSLice = createSlice({
       delete state.own_recipes[action.payload];
       localStorage.setItem("own", JSON.stringify(state.own_recipes));
     },
+    switchNoRecipe: (state, action: PayloadAction<number>) => {
+      const includes = state.no_recipes.includes(action.payload);
+
+      state.no_recipes = includes
+        ? state.no_recipes.filter((item) => item !== action.payload)
+        : [...state.no_recipes, action.payload];
+
+      localStorage.setItem("norec", JSON.stringify(state.no_recipes));
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -273,6 +291,7 @@ export const {
   switchMarketFollowed,
   setOwnRecipe,
   removeOwnRecipe,
+  switchNoRecipe,
 } = MarketSLice.actions;
 
 export const selectMarketState = (state: RootState) => state.market;

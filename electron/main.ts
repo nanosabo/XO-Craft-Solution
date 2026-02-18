@@ -127,6 +127,7 @@ export interface CalcParams {
   onlyCraft: number[];
   is_own: boolean;
   own_rec?: Record<string, OwnRecipe>;
+  no_rec?: number[];
 }
 
 let interval: NodeJS.Timeout | null = null;
@@ -135,75 +136,97 @@ let fetchedPrices: Record<string, IData>;
 let lastCraft: CalcParams | null = null;
 let lastUpdate: number;
 let own_recipes: Record<string, OwnRecipe> = {};
+let no_recipes: number[] = [];
 
 export const getOwnRecipe = (id: number): OwnRecipe | undefined => {
   return own_recipes[id];
 };
 
-ipcMain.handle("market", async (_, own_rec: Record<string, OwnRecipe>) => {
-  own_recipes = own_rec;
+export const getNoRecipeMarked = (id: number) => no_recipes.includes(id);
 
-  if (interval !== null) {
-    clearInterval(interval);
-  }
+ipcMain.handle(
+  "market",
+  async (
+    _,
+    {
+      own_rec,
+      no_rec,
+    }: { own_rec: Record<string, OwnRecipe>; no_rec: number[] },
+  ) => {
+    own_recipes = own_rec;
+    no_recipes = no_rec;
 
-  interval = setInterval(async () => {
-    const response = await fetchUpdate(lastUpdate);
-    if (!response || !response.updated) return;
-
-    const { data, lastUpdateTimestamp } = response;
-
-    lastUpdate = lastUpdateTimestamp;
-    fetchedPrices = data.marketData;
-
-    const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
-
-    win?.webContents.send("update", { items: analytics });
-
-    if (lastCraft) {
-      const { itemId, type, overdrive, onlyCraft, mode, is_own } = lastCraft;
-      const fnForItem = getOneItem(fetchedItems, fetchedPrices);
-
-      const analyzed = fnForItem(itemId, type, {
-        overdrive,
-        onlyCraft,
-        isCraftAll: mode === "allcraft",
-        initialPriority: !is_own,
-        ownPriority: is_own,
-      });
-
-      const chartData = await fetchChartData(itemId);
-      const buildChartDataResult = buildChartData(
-        chartData !== undefined ? chartData : [],
-        "6m",
-      );
-
-      win?.webContents.send("updateCraft", analyzed);
-      win?.webContents.send("updateChart", buildChartDataResult);
+    if (interval !== null) {
+      clearInterval(interval);
     }
-  }, 1000 * 30);
 
-  const {
-    initialData: { items, marketData, ...rest },
-  } = await fetchItems();
-  const analytics = getEnhancedAnalytics(items, marketData);
+    interval = setInterval(async () => {
+      const response = await fetchUpdate(lastUpdate);
+      if (!response || !response.updated) return;
 
-  lastUpdate = rest.lastUpdateTimestamp;
+      const { data, lastUpdateTimestamp } = response;
 
-  fetchedItems = items;
-  fetchedPrices = marketData;
+      lastUpdate = lastUpdateTimestamp;
+      fetchedPrices = data.marketData;
 
-  return { ...rest, items: analytics };
-});
+      const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
+
+      win?.webContents.send("update", { items: analytics });
+
+      if (lastCraft) {
+        const { itemId, type, overdrive, onlyCraft, mode, is_own } = lastCraft;
+        const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+
+        const analyzed = fnForItem(itemId, type, {
+          overdrive,
+          onlyCraft,
+          isCraftAll: mode === "allcraft",
+          initialPriority: !is_own,
+          ownPriority: is_own,
+        });
+
+        const chartData = await fetchChartData(itemId);
+        const buildChartDataResult = buildChartData(
+          chartData !== undefined ? chartData : [],
+          "6m",
+        );
+
+        win?.webContents.send("updateCraft", analyzed);
+        win?.webContents.send("updateChart", buildChartDataResult);
+      }
+    }, 1000 * 30);
+
+    const {
+      initialData: { items, marketData, ...rest },
+    } = await fetchItems();
+    const analytics = getEnhancedAnalytics(items, marketData);
+
+    lastUpdate = rest.lastUpdateTimestamp;
+
+    fetchedItems = items;
+    fetchedPrices = marketData;
+
+    return { ...rest, items: analytics };
+  },
+);
 
 ipcMain.handle("marketCraft", async (_, params: CalcParams) => {
-  const { itemId, type, overdrive, onlyCraft, mode, is_own } = params;
+  const { itemId, type, overdrive, onlyCraft, mode, is_own, no_rec } = params;
 
   const { own_rec, ...rest } = params;
   lastCraft = rest;
 
   if (own_rec !== undefined) {
     own_recipes = own_rec;
+  }
+
+  if (no_rec !== undefined) {
+    no_recipes = no_rec;
+  }
+
+  if (own_rec !== undefined || no_rec !== undefined) {
+    const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
+    win?.webContents.send("update", { items: analytics });
   }
 
   const fnForItem = getOneItem(fetchedItems, fetchedPrices);

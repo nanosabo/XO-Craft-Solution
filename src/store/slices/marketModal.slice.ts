@@ -15,6 +15,7 @@ import {
   OwnRecipeIng,
   removeOwnRecipe,
   setOwnRecipe,
+  switchNoRecipe,
 } from "./market.slice";
 
 export interface TreeItem {
@@ -270,6 +271,7 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
       setMarketModalShow,
       setOwnRecipe,
       removeOwnRecipe,
+      switchNoRecipe,
     )(action)
   ) {
     const dispatch = store.dispatch;
@@ -277,6 +279,8 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
     const isRecipeChanged =
       action.type === "market/setOwnRecipe" ||
       action.type === "market/removeOwnRecipe";
+
+    const isNoRecipeChanged = action.type === "market/switchNoRecipe";
 
     dispatch(
       calcMarketItem({
@@ -288,6 +292,9 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
         is_own: store.getState().marketModal.show === "own",
         own_rec: isRecipeChanged
           ? store.getState().market.own_recipes
+          : undefined,
+        no_rec: isNoRecipeChanged
+          ? store.getState().market.no_recipes
           : undefined,
       }) as unknown as AnyAction,
     );

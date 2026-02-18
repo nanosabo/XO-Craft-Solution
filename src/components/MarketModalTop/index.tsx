@@ -1,4 +1,4 @@
-import { ChevronIcon } from "@src/ui/icons";
+import { ChevronIcon, UnavaibleIcon } from "@src/ui/icons";
 import Badge from "../Badge";
 import MarketImageSection from "../MarketImageSection";
 import MarketItemImage from "../MarketItem/MarketItemImage";
@@ -15,6 +15,7 @@ import classNames from "classnames";
 import MarketModalTree from "./MarketModalTree";
 import { AnimatePresence } from "framer-motion";
 import MarketModalOwnButton from "./MarketModalOwnButton";
+import { switchNoRecipe } from "@src/store/slices/market.slice";
 
 const buttons = [
   { id: "craft", label: "Создание предмета" },
@@ -23,7 +24,7 @@ const buttons = [
 ];
 
 const MarketModalTop = () => {
-  const { item, itemCost, isOwn, show } = useMarketModal();
+  const { item, itemCost, isOwn, show, noRecipeMarked } = useMarketModal();
 
   const dispatch = useAppDispatch();
 
@@ -38,6 +39,10 @@ const MarketModalTop = () => {
 
   const onClickTab = (id: string) => {
     dispatch(setMarketModalShow(id as MarketModalState["show"]));
+  };
+
+  const onClickNoRecipe = () => {
+    dispatch(switchNoRecipe(item.id));
   };
 
   const dontHasRecipe =
@@ -109,6 +114,20 @@ const MarketModalTop = () => {
         <AnimatePresence>
           {show === "own" && <MarketModalOwnButton />}
         </AnimatePresence>
+
+        <button
+          className={classNames(
+            styles.trigger_btn,
+            styles[rarities[item.rarityId]],
+            {
+              [styles.active]: noRecipeMarked,
+            },
+          )}
+          title="Пометить как недоступен для производства"
+          onClick={onClickNoRecipe}
+        >
+          <UnavaibleIcon />
+        </button>
 
         <MarketModalTree />
       </MarketImageSection>

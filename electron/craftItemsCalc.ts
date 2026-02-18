@@ -1,5 +1,6 @@
 import { IData, IItemAnalytics, Recipe } from "@src/store/slices/market.slice";
 import { getOneItem } from "./oneItemCalc";
+import { getNoRecipeMarked } from "./main";
 
 export interface IItem {
   id: number;
@@ -29,6 +30,8 @@ export function getEnhancedAnalytics(
       "b",
     );
 
+    const isNoRecipeMarked = getNoRecipeMarked(item.id);
+
     const optCost = type === "buy" ? cost : craftCoast;
 
     return {
@@ -36,7 +39,7 @@ export function getEnhancedAnalytics(
       name: item.name,
       amount: item.amount,
       rarityId: item.rarityId,
-      recipe: item.recipe,
+      recipe: isNoRecipeMarked ? "$undefined" : item.recipe,
       categoryId: item.categoryId,
       craftCost: Math.round(craftCoast * 100) / 100,
       ingredients: isOwn ? [] : ingredients,
@@ -57,7 +60,8 @@ export function getEnhancedAnalytics(
       optimalCost: Math.round(optCost * 100) / 100,
       sellPriceNet: sellNet,
       profit:
-        (item.recipe === "$undefined" || item.craftable === 0) && !isOwn
+        ((item.recipe === "$undefined" || item.craftable === 0) && !isOwn) ||
+        isNoRecipeMarked
           ? 0
           : Math.round((sellNet - craftCoast) * 100) / 100,
       roi: Math.round(((sellNet - p.b) / p.b) * 10000) / 100,
