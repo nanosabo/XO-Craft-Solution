@@ -8,7 +8,7 @@
     "solver:build": "dotnet publish ./solver/knapsack-solver.csproj -c Release",
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
-    "release": "electron-builder --publish always",
+    "release": "tsc && vite build && electron-builder --publish always",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
