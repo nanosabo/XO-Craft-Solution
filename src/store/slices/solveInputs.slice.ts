@@ -47,9 +47,9 @@ export const solveInputsSlice = createSlice({
       state[action.payload.key] = action.payload.value;
       localStorage.setItem("solveInputs", JSON.stringify(state));
     },
-    setSolveValues(state, action: PayloadAction<solveInputsState>) {
-      state = action.payload;
-      localStorage.setItem("solveInputs", JSON.stringify(state));
+    setSolveValues(_, action: PayloadAction<solveInputsState>) {
+      localStorage.setItem("solveInputs", JSON.stringify(action.payload));
+      return action.payload;
     },
   },
 });
