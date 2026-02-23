@@ -121,6 +121,7 @@ export const requiredPartsSlice = createSlice({
     clearRequiredParts(state) {
       state.parts = [];
       state.forbidden = [];
+      localStorage.setItem("requiredParts", JSON.stringify(state));
     },
   },
 });
