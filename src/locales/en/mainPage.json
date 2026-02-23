@@ -92,6 +92,7 @@
     "max_parts_less_than_parts": "Cannot be less than the number already used",
     "maxps_less_than_ps_or_not_zero": "Must be greater than current PS or equal to 0"
   },
+  "clear": "Clear required and forbidden parts",
   "solve": {
     "title": "Get Solution"
   },

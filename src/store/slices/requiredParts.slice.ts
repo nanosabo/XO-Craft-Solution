@@ -38,7 +38,7 @@ export const requiredPartsSlice = createSlice({
           eng_name: string;
           maxCount: number;
         };
-      }
+      },
     ) {
       state[state.switched] = [
         { ...action.payload, count: 1 },
@@ -55,7 +55,7 @@ export const requiredPartsSlice = createSlice({
           eng_name: string;
           maxCount: number;
         };
-      }
+      },
     ) {
       state.forbidden = [{ ...action.payload, count: 1 }, ...state.forbidden];
       localStorage.setItem("requiredParts", JSON.stringify(state));
@@ -64,10 +64,10 @@ export const requiredPartsSlice = createSlice({
       state: requiredPartsState,
       action: {
         payload: string;
-      }
+      },
     ) {
       state.forbidden = state.forbidden.filter(
-        (part) => part.id !== action.payload
+        (part) => part.id !== action.payload,
       );
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
@@ -75,10 +75,10 @@ export const requiredPartsSlice = createSlice({
       state: requiredPartsState,
       action: {
         payload: string;
-      }
+      },
     ) {
       state[state.switched] = state[state.switched].filter(
-        (part) => part.id !== action.payload
+        (part) => part.id !== action.payload,
       );
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
@@ -86,7 +86,7 @@ export const requiredPartsSlice = createSlice({
       state: requiredPartsState,
       action: {
         payload: string;
-      }
+      },
     ) {
       const part = state[state.switched].find((p) => p.id === action.payload);
       if (part) {
@@ -98,14 +98,14 @@ export const requiredPartsSlice = createSlice({
       state: requiredPartsState,
       action: {
         payload: string;
-      }
+      },
     ) {
       const part = state[state.switched].find((p) => p.id === action.payload);
       if (part && part.count > 1) {
         part.count -= 1;
       } else if (part && part.count === 1) {
         state[state.switched] = state[state.switched].filter(
-          (p) => p.id !== action.payload
+          (p) => p.id !== action.payload,
         );
       }
 
@@ -113,10 +113,14 @@ export const requiredPartsSlice = createSlice({
     },
     setSwitched(
       state: requiredPartsState,
-      action: { payload: requiredPartsState["switched"] }
+      action: { payload: requiredPartsState["switched"] },
     ) {
       state.switched = action.payload;
       localStorage.setItem("requiredParts", JSON.stringify(state));
+    },
+    clearRequiredParts(state) {
+      state.parts = [];
+      state.forbidden = [];
     },
   },
 });
@@ -129,6 +133,7 @@ export const {
   setSwitched,
   excludePart,
   returnPart,
+  clearRequiredParts,
 } = requiredPartsSlice.actions;
 
 export const selectRequiredPartsState = (state: RootState) =>
