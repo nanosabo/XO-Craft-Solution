@@ -116,7 +116,10 @@ ipcMain.on("openDiscordExternal", () => {
 });
 
 app.on("ready", () => {
-  autoUpdater.checkForUpdatesAndNotify();
+  autoUpdater.checkForUpdatesAndNotify({
+    title: "Доступно обновление",
+    body: "Обновление будет автоматически загружено и установится после закрытия приложения",
+  });
 });
 
 ipcMain.handle("get-app-version", () => {
