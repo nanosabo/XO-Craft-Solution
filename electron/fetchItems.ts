@@ -1,8 +1,8 @@
-import axios from "axios";
+import axios from "./api";
 
 export const fetchItems = async () => {
   try {
-    const response = await axios.get("https://crossoutcore.ru/market/", {
+    const response = await axios.get("/market/", {
       headers: {
         RSC: "1",
         Cookie: "NEXT_LOCALE=ru",

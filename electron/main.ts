@@ -1,7 +1,6 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, shell } from "electron";
 import path from "node:path";
 import { spawn } from "child_process";
-import actualParts from "./actual_parts.json";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
@@ -11,6 +10,7 @@ import { getOneItem } from "./oneItemCalc";
 import { fetchUpdate } from "./fetchUpdate";
 import { buildChartData, fetchChartData } from "./fetchChartData";
 import { autoUpdater } from "electron-updater";
+import axios from "axios";
 
 autoUpdater.allowPrerelease = true;
 
@@ -37,6 +37,20 @@ process.env.VITE_PUBLIC = app.isPackaged
 let win: BrowserWindow | null;
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
+
+interface Part {
+  id: string;
+  category: string;
+  name: string;
+  eng_name: string;
+  power: number;
+  durability: number;
+  weight: number;
+  maxCount: number;
+  build_hp: number;
+}
+
+let actualParts: Part[] = [];
 
 function createWindow() {
   win = new BrowserWindow({
@@ -148,6 +162,11 @@ let lastCraft: CalcParams | null = null;
 let lastUpdate: number;
 let own_recipes: Record<string, OwnRecipe> = {};
 let no_recipes: number[] = [];
+let isMirror: boolean = false;
+
+export const setIsMirror = () => {
+  isMirror = true;
+};
 
 export const getOwnRecipe = (id: number): OwnRecipe | undefined => {
   return own_recipes[id];
@@ -167,46 +186,6 @@ ipcMain.handle(
     own_recipes = own_rec;
     no_recipes = no_rec;
 
-    if (interval !== null) {
-      clearInterval(interval);
-    }
-
-    interval = setInterval(async () => {
-      const response = await fetchUpdate(lastUpdate);
-      if (!response || !response.updated) return;
-
-      const { data, lastUpdateTimestamp } = response;
-
-      lastUpdate = lastUpdateTimestamp;
-      fetchedPrices = data.marketData;
-
-      const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
-
-      win?.webContents.send("update", { items: analytics });
-
-      if (lastCraft) {
-        const { itemId, type, overdrive, onlyCraft, mode, is_own } = lastCraft;
-        const fnForItem = getOneItem(fetchedItems, fetchedPrices);
-
-        const analyzed = fnForItem(itemId, type, {
-          overdrive,
-          onlyCraft,
-          isCraftAll: mode === "allcraft",
-          initialPriority: !is_own,
-          ownPriority: is_own,
-        });
-
-        const chartData = await fetchChartData(itemId);
-        const buildChartDataResult = buildChartData(
-          chartData !== undefined ? chartData : [],
-          "6m",
-        );
-
-        win?.webContents.send("updateCraft", analyzed);
-        win?.webContents.send("updateChart", buildChartDataResult);
-      }
-    }, 1000 * 30);
-
     const {
       initialData: { items, marketData, ...rest },
     } = await fetchItems();
@@ -216,6 +195,50 @@ ipcMain.handle(
 
     fetchedItems = items;
     fetchedPrices = marketData;
+
+    if (interval !== null) {
+      clearInterval(interval);
+    }
+
+    interval = setInterval(
+      async () => {
+        const response = await fetchUpdate(lastUpdate);
+        if (!response || !response.updated) return;
+
+        const { data, lastUpdateTimestamp } = response;
+
+        lastUpdate = lastUpdateTimestamp;
+        fetchedPrices = data.marketData;
+
+        const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
+
+        win?.webContents.send("update", { items: analytics });
+
+        if (lastCraft) {
+          const { itemId, type, overdrive, onlyCraft, mode, is_own } =
+            lastCraft;
+          const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+
+          const analyzed = fnForItem(itemId, type, {
+            overdrive,
+            onlyCraft,
+            isCraftAll: mode === "allcraft",
+            initialPriority: !is_own,
+            ownPriority: is_own,
+          });
+
+          const chartData = await fetchChartData(itemId);
+          const buildChartDataResult = buildChartData(
+            chartData !== undefined ? chartData : [],
+            "6m",
+          );
+
+          win?.webContents.send("updateCraft", analyzed);
+          win?.webContents.send("updateChart", buildChartDataResult);
+        }
+      },
+      isMirror ? 1000 * 60 * 5 : 1000 * 30,
+    );
 
     return { ...rest, items: analytics };
   },
@@ -412,4 +435,9 @@ ipcMain.handle("search-required-parts", async (_, value) => {
   );
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  actualParts = (
+    await axios.get("https://nanosabo.github.io/xocs-imgs/actual_parts.json")
+  ).data;
+  createWindow();
+});

@@ -48,7 +48,10 @@ const SearchedDetail: FC<Props> = ({
       onClick={!withControls && onClickAdd ? onClickAdd : undefined}
     >
       <div className={styles.info}>
-        <DetailSearchPicture src={`parts/${id}.png`} alt={partName} />
+        <DetailSearchPicture
+          src={`https://nanosabo.github.io/xocs-imgs/images/parts/${id}.png`}
+          alt={partName}
+        />
         <p>{partName}</p>
       </div>
 

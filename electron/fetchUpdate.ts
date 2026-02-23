@@ -1,5 +1,5 @@
 import { IData } from "@src/store/slices/market.slice";
-import axios from "axios";
+import axios from "./api";
 
 export interface IUpdate {
   updated: boolean;
@@ -10,7 +10,7 @@ export interface IUpdate {
 export const fetchUpdate = async (lastupdate: number) => {
   try {
     const response: string = (
-      await axios.post("https://crossoutcore.ru/market/", [lastupdate], {
+      await axios.post("/market/", [lastupdate], {
         headers: {
           Cookie: "NEXT_LOCALE=ru",
           "User-Agent":

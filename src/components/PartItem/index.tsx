@@ -48,7 +48,11 @@ const PartItem: FC<Props> = memo(
         onClick={onClick}
       >
         <p>{partName}</p>
-        <img src={`parts/${id}.png`} alt={partName} draggable={false} />
+        <img
+          src={`https://nanosabo.github.io/xocs-imgs/images/parts/${id}.png`}
+          alt={partName}
+          draggable={false}
+        />
         <span>
           {count} {t("totals.partsUsed.prefix")}
         </span>
@@ -64,7 +68,7 @@ const PartItem: FC<Props> = memo(
         </button>
       </div>
     );
-  }
+  },
 );
 
 export default PartItem;

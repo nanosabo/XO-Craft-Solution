@@ -1,5 +1,5 @@
 import { IData } from "@src/store/slices/market.slice";
-import axios from "axios";
+import axios from "./api";
 
 export type TimeRange = "1h" | "6h" | "12h" | "1d" | "1w" | "1m" | "2m" | "6m";
 
@@ -25,7 +25,7 @@ const TIME_RANGE_SECONDS: Record<TimeRange, number> = {
 export const fetchChartData = async (id: number) => {
   try {
     const response: string = (
-      await axios.post("https://crossoutcore.ru/market/", [id], {
+      await axios.post("/market/", [id], {
         headers: {
           Cookie: "NEXT_LOCALE=ru",
           "User-Agent":
