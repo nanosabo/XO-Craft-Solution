@@ -82,16 +82,14 @@ const MarketModalTop = () => {
             </>
           )}
 
-          {isFinite(item.roi) && item.roi > -100 && (
-            <Badge
-              title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
-              text="ROI:"
-              className={styles.badge}
-              grey
-            >
-              {item.roi}%
-            </Badge>
-          )}
+          <Badge
+            title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
+            text="ROI:"
+            className={styles.badge}
+            grey
+          >
+            {item.roi}%
+          </Badge>
         </div>
 
         <div

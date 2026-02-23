@@ -73,6 +73,24 @@
       }
     }
 
+    .badge {
+      width: auto;
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      z-index: 1;
+      gap: 6px;
+      backdrop-filter: blur(5px);
+
+      span {
+        font-size: 13px;
+      }
+
+      p {
+        font-size: 13px;
+      }
+    }
+
     h3 {
       @include body;
       padding: 0 10px;

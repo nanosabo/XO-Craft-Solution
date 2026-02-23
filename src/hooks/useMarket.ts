@@ -12,6 +12,7 @@ const sortMapping: Record<string, (item: IItemAnalytics) => number> = {
   buy_price: (item) => item.rawPrices.b,
   spread: (item) => item.spread,
   profit: (item) => item.profit,
+  roi: (item) => item.roi,
 };
 
 const useMarket = () => {

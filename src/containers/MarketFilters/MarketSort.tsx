@@ -16,6 +16,7 @@ const techStack = [
   { value: "buy_price", label: "Цена покупки" },
   { value: "spread", label: "Выгода перепродажи" },
   { value: "profit", label: "Выгода по крафту" },
+  { value: "roi", label: "Процент окупаемости" },
 ];
 
 const MarketSort = () => {

@@ -29,6 +29,14 @@ const MarketItem: FC<Props> = memo(({ item }) => {
           title={item.name}
         >
           <MarketItemImage id={item.id} />
+          <Badge
+            className={styles.badge}
+            title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
+            text="ROI:"
+            grey
+          >
+            {item.roi}%
+          </Badge>
         </div>
         <h3 title={item.name}>{item.name}</h3>
       </div>

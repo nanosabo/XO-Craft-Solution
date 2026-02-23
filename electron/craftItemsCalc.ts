@@ -34,6 +34,8 @@ export function getEnhancedAnalytics(
 
     const optCost = type === "buy" ? cost : craftCoast;
 
+    const roi = Math.round(((sellNet - p.b) / p.b) * 10000) / 100;
+
     return {
       id: item.id,
       name: item.name,
@@ -64,7 +66,7 @@ export function getEnhancedAnalytics(
         isNoRecipeMarked
           ? 0
           : Math.round((sellNet - craftCoast) * 100) / 100,
-      roi: Math.round(((sellNet - p.b) / p.b) * 10000) / 100,
+      roi: isFinite(roi) && roi > -100 ? roi : 0,
       spread: p.b > 0 ? Math.round((sellNet - p.b) * 100) / 100 : 0,
     };
   });
