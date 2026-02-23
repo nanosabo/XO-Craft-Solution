@@ -315,9 +315,10 @@ ipcMain.handle(
 
     /* ---------------- limits ---------------- */
 
+    const maxPS = inputs.maxPowerScores === 0 ? 999999 : inputs.maxPowerScores;
+
     const dataToSolve = {
-      maxPower:
-        inputs.maxPowerScores - inputs.powerScores - requiredStats.power,
+      maxPower: maxPS - inputs.powerScores - requiredStats.power,
       maxWeight: inputs.tonnage - inputs.weight - requiredStats.weight - 1,
       maxParts: inputs.maxParts - inputs.parts - requiredStats.parts,
     };

@@ -13,7 +13,9 @@
     border: 1px solid rgba($white, 0.1);
     border-radius: 8px;
 
-    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    transition:
+      background-color 0.2s ease-in-out,
+      border-color 0.2s ease-in-out;
   }
 
   input {
@@ -77,6 +79,11 @@
       opacity: 0.5;
     }
   }
+
+  &.error:has(input[type="number"]) {
+    background-color: rgba($red, 0.3);
+    border-color: $red;
+  }
 }
 
 .input:has(input:focus) {
@@ -90,4 +97,13 @@
 
 .input:has(input:disabled:not([type="checkbox"])) {
   background-color: rgba($default, 0.5);
+}
+
+.error_message {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: $red;
 }

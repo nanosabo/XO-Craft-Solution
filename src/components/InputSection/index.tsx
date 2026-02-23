@@ -3,14 +3,16 @@ import InputIcons from "@src/ui/icons/InputIcons";
 import { FC, InputHTMLAttributes, useEffect, useRef, useState } from "react";
 import styles from "./styles/InputSection.module.scss";
 import Tooltip from "../Tooltip";
+import { UseFormRegisterReturn } from "react-hook-form";
 
-export interface InputSectionProps
-  extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputSectionProps extends InputHTMLAttributes<HTMLInputElement> {
   icon: keyof Omit<typeof InputIcons, "QuestionIcon">;
   title: string;
   tooltipTitle: string;
   toolTipSubtitle: string;
   tooltipImage?: string;
+  register?: UseFormRegisterReturn;
+  error?: string;
 }
 
 const InputSection: FC<InputSectionProps> = ({
@@ -20,6 +22,7 @@ const InputSection: FC<InputSectionProps> = ({
   tooltipTitle,
   toolTipSubtitle,
   tooltipImage,
+  error,
   ...props
 }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
@@ -32,13 +35,13 @@ const InputSection: FC<InputSectionProps> = ({
       tooltipVisibilityTimerRef.current &&
         clearTimeout(tooltipVisibilityTimerRef.current);
     },
-    []
+    [],
   );
 
   const handleQuestionHover = () => {
     tooltipVisibilityTimerRef.current = setTimeout(
       () => setIsTooltipVisible(true),
-      500
+      500,
     );
   };
 
@@ -67,7 +70,7 @@ const InputSection: FC<InputSectionProps> = ({
           <InputIcons.QuestionIcon />
         </span>
       </div>
-      <Input {...props} type={type} />
+      <Input {...props} type={type} error={error} />
     </div>
   );
 };

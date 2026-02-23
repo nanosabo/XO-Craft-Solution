@@ -49,7 +49,7 @@
     "maxPowerScores": {
       "title": "Max build power scores",
       "tooltip": {
-        "title": "The maximum number of Power Scores that you need to get in the end. Leave 99999 if there are no restrictions",
+        "title": "The maximum number of Power Scores that you need to get in the end. Leave 0 if there are no restrictions",
         "subtitle": "Cannot be less than the current PP value"
       }
     },
@@ -83,6 +83,14 @@
     },
     "placeholder": "Enter value...",
     "searchPlaceholder": "Search by name..."
+  },
+  "errors": {
+    "type": "Value must be a number",
+    "required": "This field is required",
+    "more_then_zero": "Value must be greater than zero",
+    "tonnage_less_then_weight": "Cannot be less than the current weight",
+    "max_parts_less_than_parts": "Cannot be less than the number already used",
+    "maxps_less_than_ps_or_not_zero": "Must be greater than current PS or equal to 0"
   },
   "solve": {
     "title": "Get Solution"

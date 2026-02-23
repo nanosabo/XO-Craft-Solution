@@ -5,6 +5,9 @@ import styles from "./styles/MainPageHeader.module.scss";
 import { useAppDispatch } from "@src/store/store";
 import { useNavigate } from "react-router-dom";
 import { setLoaderSolvingStatus } from "@src/store/slices/loader.slice";
+import { useFormContext } from "react-hook-form";
+import { VehicleFormData } from "@src/helpers/validation";
+import { setSolveValues } from "@src/store/slices/solveInputs.slice";
 
 const MainPageHeader = () => {
   const { t } = useTranslation("mainPage");
@@ -13,10 +16,13 @@ const MainPageHeader = () => {
 
   const dispatch = useAppDispatch();
 
-  const onClickSolve = () => {
+  const { handleSubmit } = useFormContext<VehicleFormData>();
+
+  const onClickSolve = handleSubmit((data) => {
+    dispatch(setSolveValues(data));
     dispatch(setLoaderSolvingStatus());
     navigate("/loading");
-  };
+  });
 
   return (
     <div className={styles.header}>

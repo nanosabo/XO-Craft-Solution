@@ -2,66 +2,66 @@ import InputSection from "@src/components/InputSection";
 import { useTranslation } from "react-i18next";
 import styles from "./styles/ColumtInputs.module.scss";
 import { allColumns } from "./inputsTypes";
-import { ChangeEvent } from "react";
-import { useAppDispatch, useAppSelector } from "@src/store/store";
+import { useEffect } from "react";
+import { useAppSelector } from "@src/store/store";
 import {
   selectSolveInputsState,
-  setSolveInput,
   solveInputsState,
 } from "@src/store/slices/solveInputs.slice";
 import RequiredParts from "./RequiredParts";
+import { useFormContext } from "react-hook-form";
+import { VehicleFormData } from "@src/helpers/validation";
 
 const ColumnInputs = () => {
-  const { t, i18n } = useTranslation("mainPage", { keyPrefix: "inputs" });
+  const { t, i18n } = useTranslation("mainPage");
 
   const data = useAppSelector(selectSolveInputsState);
-  const dispatch = useAppDispatch();
 
-  const onChange = (
-    name: keyof solveInputsState,
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
-    dispatch(
-      setSolveInput({
-        key: name,
-        value:
-          e.target.type === "checkbox"
-            ? e.target.checked
-            : Number(e.target.value) || 0,
-      })
-    );
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useFormContext<VehicleFormData>();
+
+  useEffect(() => {
+    Object.keys(data).forEach((key) => {
+      setValue(
+        key as keyof VehicleFormData,
+        data[key as keyof VehicleFormData],
+      );
+    });
+  }, [data, setValue]);
 
   return (
-    <div className={styles.wrapper}>
+    <form className={styles.wrapper} onSubmit={handleSubmit(() => {})}>
       {allColumns.map((inputs, key) => (
         <div key={key} className={styles.block}>
           {Object.entries(inputs).map(([name, { icon, type }]) => (
             <InputSection
               key={name}
+              register={register(name as keyof VehicleFormData)}
               icon={icon}
               type={type}
-              value={data[name as keyof solveInputsState] as string | number}
-              checked={
-                typeof data[name as keyof solveInputsState] === "boolean"
-                  ? (data[name as keyof solveInputsState] as boolean)
-                  : undefined
-              }
               min={
                 typeof data[name as keyof solveInputsState] === "number"
                   ? 0
                   : undefined
               }
-              onChange={(value) =>
-                onChange(name as keyof solveInputsState, value)
-              }
-              title={t(`${name}.title`)}
-              placeholder={t("placeholder")}
-              tooltipTitle={t(`${name}.tooltip.title`)}
-              toolTipSubtitle={t(`${name}.tooltip.subtitle`)}
+              title={t(`inputs.${name}.title`)}
+              placeholder={t("inputs.placeholder")}
+              tooltipTitle={t(`inputs.${name}.tooltip.title`)}
+              toolTipSubtitle={t(`inputs.${name}.tooltip.subtitle`)}
               tooltipImage={
                 inputs[name].image
                   ? `tooltips/${i18n.language}/${name}.png`
+                  : undefined
+              }
+              error={
+                errors[name as keyof solveInputsState]
+                  ? t(
+                      `errors.${errors[name as keyof solveInputsState]?.message}`,
+                    )
                   : undefined
               }
             />
@@ -70,7 +70,7 @@ const ColumnInputs = () => {
       ))}
 
       <RequiredParts />
-    </div>
+    </form>
   );
 };
 

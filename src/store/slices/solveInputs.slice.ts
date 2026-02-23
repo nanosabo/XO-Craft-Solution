@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 
 export interface solveInputsState {
@@ -42,15 +42,19 @@ export const solveInputsSlice = createSlice({
           key: K;
           value: solveInputsState[K];
         };
-      }
+      },
     ) {
       state[action.payload.key] = action.payload.value;
+      localStorage.setItem("solveInputs", JSON.stringify(state));
+    },
+    setSolveValues(state, action: PayloadAction<solveInputsState>) {
+      state = action.payload;
       localStorage.setItem("solveInputs", JSON.stringify(state));
     },
   },
 });
 
-export const { setSolveInput } = solveInputsSlice.actions;
+export const { setSolveInput, setSolveValues } = solveInputsSlice.actions;
 
 export const selectSolveInputsState = (state: RootState) => state.solveInputs;
 

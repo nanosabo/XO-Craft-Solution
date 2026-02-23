@@ -1,9 +1,12 @@
+import { yupResolver } from "@hookform/resolvers/yup";
 import ColumnInputs from "@src/containers/ColumnInputs";
 import MainPageHeader from "@src/containers/Headers";
+import { VehicleFormData, vehicleSchema } from "@src/helpers/validation";
 import AnimatePageLayout from "@src/layouts/AnimatePageLayout";
 import { AppStateStatus, selectAppState } from "@src/store/slices/app.slice";
 import { useAppSelector } from "@src/store/store";
 import { useEffect } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
 const MainPage = () => {
@@ -14,10 +17,16 @@ const MainPage = () => {
     if (status === AppStateStatus.INITIAL) navigate("/loading");
   }, [navigate, status]);
 
+  const methods = useForm<VehicleFormData>({
+    resolver: yupResolver(vehicleSchema),
+  });
+
   return (
     <AnimatePageLayout>
-      <MainPageHeader />
-      <ColumnInputs />
+      <FormProvider {...methods}>
+        <MainPageHeader />
+        <ColumnInputs />
+      </FormProvider>
     </AnimatePageLayout>
   );
 };
