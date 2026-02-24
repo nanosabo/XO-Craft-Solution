@@ -11,6 +11,7 @@ import debounce from "lodash.debounce";
 import { AnimatePresence } from "framer-motion";
 import MarketModalSearched from "./MarketModalSearched";
 import { selectMarketModalState } from "@src/store/slices/marketModal.slice";
+import { useTranslation } from "react-i18next";
 
 const MarketModalOwnSearch = () => {
   const { items } = useAppSelector(selectMarketState);
@@ -19,6 +20,7 @@ const MarketModalOwnSearch = () => {
     own_recipe: { ingredients },
   } = useAppSelector(selectMarketModalState);
   const [searched, setSearched] = useState<IItemAnalytics[]>([]);
+  const { t } = useTranslation("marketPage");
 
   const includes = ingredients.map((ing) => ing.id);
   includes.push(item);
@@ -49,10 +51,13 @@ const MarketModalOwnSearch = () => {
   };
 
   return (
-    <MarketSectionFilter className={styles.search} title="Поиск">
+    <MarketSectionFilter
+      className={styles.search}
+      title={t("modal.names.search")}
+    >
       <Input
         type="search"
-        placeholder="Название детали"
+        placeholder={t("modal.names.search_placeholder")}
         onChange={onSearchChange}
       />
 

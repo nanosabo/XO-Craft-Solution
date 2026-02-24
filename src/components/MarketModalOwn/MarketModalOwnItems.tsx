@@ -3,11 +3,13 @@ import OwnRecipeItem from "./OwnRecipeItem";
 import { useAppSelector } from "@src/store/store";
 import { selectMarketModalState } from "@src/store/slices/marketModal.slice";
 import NoRecipe from "../MarketModalBottom/NoRecipe";
+import { useTranslation } from "react-i18next";
 
 const MarketModalOwnItems = () => {
   const {
     own_recipe: { ingredients },
   } = useAppSelector(selectMarketModalState);
+  const { t } = useTranslation("marketPage");
 
   if (ingredients.length === 0) return <NoRecipe own />;
 
@@ -17,7 +19,7 @@ const MarketModalOwnItems = () => {
   return (
     <div className={styles.recipe}>
       <div className={styles.title}>
-        <p>Компоненты</p>
+        <p>{t("modal.names.components")}</p>
       </div>
       <div className={styles.items}>
         <div className={styles.components}>

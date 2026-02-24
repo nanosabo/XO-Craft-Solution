@@ -10,10 +10,12 @@ import {
   TreeItem,
 } from "@src/store/slices/marketModal.slice";
 import classNames from "classnames";
+import { useTranslation } from "react-i18next";
 
 const Recipe = () => {
   const { item, recipe, type, show } = useMarketModal();
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("marketPage");
 
   if (!recipe) return <NoRecipe />;
 
@@ -44,7 +46,7 @@ const Recipe = () => {
   return (
     <div className={styles.recipe}>
       <div className={styles.title}>
-        <p>Компоненты</p>
+        <p>{t("modal.names.components")}</p>
 
         <div className={styles.switches}>
           <button
@@ -53,7 +55,7 @@ const Recipe = () => {
             })}
             onClick={onChangeType.bind(this, "b")}
           >
-            По нижней
+            {t("modal.buttons.buy_price")}
           </button>
           <button
             className={classNames(styles.switch_button, {
@@ -61,7 +63,7 @@ const Recipe = () => {
             })}
             onClick={onChangeType.bind(this, "s")}
           >
-            По верхней
+            {t("modal.buttons.sell_price")}
           </button>
         </div>
       </div>
@@ -100,7 +102,11 @@ const Recipe = () => {
               hasRecipe={ing.hasRecipe}
             >
               <Badge
-                text={ing.type === "buy" ? "Купить" : "Крафтить"}
+                text={
+                  ing.type === "buy"
+                    ? t("modal.names.buy")
+                    : t("modal.names.craft")
+                }
                 warning={ing.type === "buy"}
                 className={styles.part_badge}
               />

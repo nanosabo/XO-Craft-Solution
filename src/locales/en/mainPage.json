@@ -54,7 +54,7 @@
       }
     },
     "minPartHp": {
-      "title": "Min detail HP",
+      "title": "Min part HP",
       "tooltip": {
         "title": "Parts whose strength is lower than specified will not be taken into account in the solution",
         "subtitle": ""

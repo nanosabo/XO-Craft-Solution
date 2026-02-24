@@ -7,6 +7,7 @@ import Badge from "../Badge";
 import { rarities } from "../../helpers/rarities";
 import { useAppDispatch } from "@src/store/store";
 import { setMarketModalItem } from "@src/store/slices/marketModal.slice";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   item: IItemAnalytics;
@@ -14,6 +15,7 @@ type Props = {
 
 const MarketItem: FC<Props> = memo(({ item }) => {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("marketPage");
 
   const onClick = () => {
     dispatch(setMarketModalItem(item.id));
@@ -31,7 +33,7 @@ const MarketItem: FC<Props> = memo(({ item }) => {
           <MarketItemImage id={item.id} />
           <Badge
             className={styles.badge}
-            title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
+            title={t("titles.roi")}
             text="ROI:"
             grey
           >
@@ -44,13 +46,13 @@ const MarketItem: FC<Props> = memo(({ item }) => {
       <div className={styles.body}>
         <div className={styles.prices}>
           <div className={styles.price}>
-            <span>Продажа:</span>
+            <span>{t("names.sell")}:</span>
             <p>
               {item.rawPrices.s} <img src="./coin.png" draggable={false} />
             </p>
           </div>
           <div className={styles.price}>
-            <span>Покупка:</span>
+            <span>{t("names.buy")}:</span>
             <p>
               {item.rawPrices.b} <img src="./coin.png" draggable={false} />
             </p>
@@ -58,20 +60,20 @@ const MarketItem: FC<Props> = memo(({ item }) => {
         </div>
 
         <div className={styles.offers}>
-          <div className={styles.offer} title="Запросы на продажу">
+          <div className={styles.offer} title={t("titles.sell_offers")}>
             <RuporIcon />
             {item.offers.s}
           </div>
 
-          <div className={styles.offer} title="Запросы на покупку">
+          <div className={styles.offer} title={t("titles.buy_offers")}>
             {item.offers.b}
             <CartIcon />
           </div>
         </div>
 
         <Badge
-          title="Прибыль при перепродаже, с учетом комиссии рынка"
-          text="Спред:"
+          title={t("titles.spread")}
+          text={`${t("names.spread")}:`}
           warning={item.spread <= 0}
         >
           {item.spread} <img src="./coin.png" draggable={false} />
@@ -79,19 +81,14 @@ const MarketItem: FC<Props> = memo(({ item }) => {
 
         {!dontHasRecipe || item.isOwn ? (
           <Badge
-            title="Прибыль в случае крафта в оптимальном режиме с учетом комиссии"
-            text="Крафт:"
+            title={t("titles.craft")}
+            text={`${t("names.craft")}:`}
             warning={item.profit <= 0}
           >
             {item.profit} <img src="./coin.png" draggable={false} />
           </Badge>
         ) : (
-          <Badge
-            title="Прибыль при перепродаже, с учетом комиссии рынка"
-            text="Нет рецепта"
-            grey
-            center
-          />
+          <Badge text={t("names.no_recipe")} grey center />
         )}
       </div>
     </div>

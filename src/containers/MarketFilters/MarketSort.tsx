@@ -8,20 +8,22 @@ import {
 } from "@src/store/slices/market.slice";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 const techStack = [
-  { value: "sell_offers", label: "Запросы на продажу" },
-  { value: "buy_offers", label: "Запросы на покупку" },
-  { value: "sell_price", label: "Цена продажи" },
-  { value: "buy_price", label: "Цена покупки" },
-  { value: "spread", label: "Выгода перепродажи" },
-  { value: "profit", label: "Выгода по крафту" },
-  { value: "roi", label: "Процент окупаемости" },
+  "sell_offers",
+  "buy_offers",
+  "sell_price",
+  "buy_price",
+  "spread",
+  "profit",
+  "roi",
 ];
 
 const MarketSort = () => {
   const { sort_order, sort_by } = useAppSelector(selectMarketState);
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("marketPage");
 
   const handleSelectChange = useCallback(
     (value: string) => {
@@ -30,11 +32,16 @@ const MarketSort = () => {
     [dispatch],
   );
 
+  const values = techStack.map((key) => ({
+    value: key,
+    label: t(`sort.${key}`),
+  }));
+
   return (
-    <MarketSectionFilter title="Сортировка" className={styles.sort}>
+    <MarketSectionFilter title={t("filters.sort")} className={styles.sort}>
       <Select
         defaultValue={sort_by}
-        options={techStack}
+        options={values}
         onChange={handleSelectChange}
         order={sort_order}
       />

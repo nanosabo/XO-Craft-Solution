@@ -7,6 +7,7 @@ import {
 import { useSelector } from "react-redux";
 import styles from "./styles/MarketFilters.module.scss";
 import { useAppDispatch } from "@src/store/store";
+import { useTranslation } from "react-i18next";
 
 const items = [
   {
@@ -37,9 +38,10 @@ const items = [
 
 const MarketRarities = () => {
   const { rarities, rarityFilter } = useSelector(selectMarketState);
+  const { t } = useTranslation("marketPage");
 
   const getName = (id: number) => {
-    return rarities.find((rar) => rar.id === id)?.name || "Неизвестно";
+    return rarities.find((rar) => rar.id === id)?.name || t("titles.unknown");
   };
 
   const dispatch = useAppDispatch();
@@ -49,7 +51,7 @@ const MarketRarities = () => {
   };
 
   return (
-    <MarketSectionFilter title="Редкость">
+    <MarketSectionFilter title={t("filters.rarity")}>
       <div className={styles.buttons}>
         {items.map(({ id, name }) => (
           <MarketFilterButton

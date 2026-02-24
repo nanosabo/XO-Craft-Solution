@@ -7,6 +7,7 @@ import {
 import MarketIcons from "@src/ui/icons/MarketFilterIcons";
 import styles from "./styles/MarketFilters.module.scss";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
+import { useTranslation } from "react-i18next";
 
 const icons = [
   {
@@ -43,8 +44,10 @@ const MarketCategories = () => {
   const { categories, categoryFilter } = useAppSelector(selectMarketState);
   const dispatch = useAppDispatch();
 
+  const { t } = useTranslation("marketPage");
+
   const getName = (id: number) => {
-    return categories.find((cat) => cat.id === id)?.name || "Неизвестно";
+    return categories.find((cat) => cat.id === id)?.name || t("titles.unknown");
   };
 
   const onClick = (id: number) => {
@@ -52,7 +55,7 @@ const MarketCategories = () => {
   };
 
   return (
-    <MarketSectionFilter title="Категория">
+    <MarketSectionFilter title={t("filters.category")}>
       <div className={styles.buttons}>
         {icons.map(({ id, Icon }) => (
           <MarketFilterButton

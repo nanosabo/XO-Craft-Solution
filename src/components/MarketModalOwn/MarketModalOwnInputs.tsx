@@ -16,6 +16,7 @@ import {
 } from "@src/store/slices/marketModal.slice";
 import { ChangeEvent } from "react";
 import { removeOwnRecipe, setOwnRecipe } from "@src/store/slices/market.slice";
+import { useTranslation } from "react-i18next";
 
 const MarketModalOwnInputs = () => {
   const { item } = useMarketModal();
@@ -23,6 +24,7 @@ const MarketModalOwnInputs = () => {
     own_recipe: { rent, resultAmount, ingredients },
   } = useAppSelector(selectMarketModalState);
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("marketPage");
 
   const onChange = (type: "rent" | "amount") => {
     return (e: ChangeEvent<HTMLInputElement>) => {
@@ -64,11 +66,11 @@ const MarketModalOwnInputs = () => {
       <MarketModalOwnSearch />
 
       <div className={styles.row}>
-        <MarketSectionFilter title="Цена станка">
+        <MarketSectionFilter title={t("modal.names.craft_price")}>
           <Input type="number" value={rent} onChange={onChange("rent")} />
         </MarketSectionFilter>
 
-        <MarketSectionFilter title="Кол-во в итоге">
+        <MarketSectionFilter title={t("modal.names.result_amount")}>
           <Input
             type="number"
             value={resultAmount}
@@ -89,11 +91,11 @@ const MarketModalOwnInputs = () => {
           {hasIngs ? (
             <>
               <SaveIcon />
-              Сохранить
+              {t("modal.names.save")}
             </>
           ) : (
             <>
-              <BackArrowIcon /> Отмена
+              <BackArrowIcon /> {t("modal.names.cancel")}
             </>
           )}
         </button>

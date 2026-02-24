@@ -6,6 +6,7 @@ import {
   setMarketModalChart,
 } from "@src/store/slices/marketModal.slice";
 import { ChartData } from "@electron/fetchChartData";
+import { useTranslation } from "react-i18next";
 
 interface ZoomState {
   start: number;
@@ -15,6 +16,7 @@ interface ZoomState {
 const useMarketChart = () => {
   const { chartData: data } = useAppSelector(selectMarketModalState);
   const [zoom, setZoom] = useState<ZoomState>({ start: 99.5, end: 100 });
+  const { t } = useTranslation("marketPage", { keyPrefix: "chart" });
 
   const dispatch = useAppDispatch();
 
@@ -66,7 +68,7 @@ const useMarketChart = () => {
 
       tooltip: {
         trigger: "axis",
-        backgroundColor: "rgba(28, 28, 28, 0.9)", // Темный тултип
+        backgroundColor: "rgba(28, 28, 28, 0.9)",
         borderColor: "#444",
         textStyle: { color: "#eee" },
         axisPointer: {
@@ -87,7 +89,7 @@ const useMarketChart = () => {
       yAxis: [
         {
           type: "value",
-          name: "Цена",
+          name: t("price"),
           nameTextStyle: { color: "#666", align: "right" },
           position: "left",
           splitLine: { lineStyle: { color: "#333", type: "dashed" } },
@@ -95,7 +97,7 @@ const useMarketChart = () => {
         },
         {
           type: "value",
-          name: "Лоты",
+          name: t("lots"),
           nameTextStyle: { color: "#666", align: "left" },
           position: "right",
           splitLine: { show: false },
@@ -105,31 +107,33 @@ const useMarketChart = () => {
 
       series: [
         {
-          name: "Продажа",
+          name: t("sell"),
           type: "line",
-          step: "end", // Ступенчатый график как на скриншоте
+          step: "end",
           data: data.s,
           symbol: "none",
-          lineStyle: { width: 2, color: "#fffc4d" }, // Красный
-          sampling: "average", // Обязательно для уменьшения нагрузки на GPU
+          lineStyle: { width: 2, color: "#fffc4d" },
+          itemStyle: { color: "#fffc4d" },
+          sampling: "average",
           large: true,
           largeThreshold: 2000,
           z: 10,
         },
         {
-          name: "Покупка",
+          name: t("buy"),
           type: "line",
           step: "end",
           data: data.b,
           symbol: "none",
-          lineStyle: { width: 2, color: "#6bff4d" }, // Синий
-          sampling: "average", // Обязательно для уменьшения нагрузки на GPU
+          lineStyle: { width: 2, color: "#6bff4d" },
+          itemStyle: { color: "#6bff4d" },
+          sampling: "average",
           large: true,
           largeThreshold: 2000,
           z: 10,
         },
         {
-          name: "Предложения",
+          name: t("sell_offers"),
           type: "line",
           yAxisIndex: 1,
           data: data.so,
@@ -142,12 +146,13 @@ const useMarketChart = () => {
               { offset: 1, color: "rgba(120, 100, 80, 0)" },
             ]),
           },
+          itemStyle: { color: "#786450" },
           z: 5,
           large: true,
           largeThreshold: 2000,
         },
         {
-          name: "Запросы",
+          name: t("buy_offers"),
           type: "line",
           yAxisIndex: 1,
           data: data.bo,
@@ -162,6 +167,7 @@ const useMarketChart = () => {
               { offset: 1, color: "rgba(80, 120, 150, 0)" },
             ]),
           },
+          itemStyle: { color: "#507896" },
           z: 4,
         },
       ],
@@ -197,11 +203,11 @@ const useMarketChart = () => {
         },
       ],
     }),
-    [data],
+    [data, t],
   );
 
   const loadingOption = {
-    text: "ЗАГРУЗКА",
+    text: t("loading"),
     color: "#fffc4d",
     textColor: "#888",
     maskColor: "rgba(17, 19, 22, 0.6)",

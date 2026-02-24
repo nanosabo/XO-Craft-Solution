@@ -232,6 +232,7 @@ const onUpdate = async () => {
     const buildChartDataResult = buildChartData(
       chartData !== undefined ? chartData : [],
       "6m",
+      lang,
     );
 
     win?.webContents.send("updateCraft", analyzed);
@@ -309,7 +310,7 @@ ipcMain.handle("marketCraft", async (_, params: CalcParams) => {
 
 ipcMain.handle("fetchMarketChartData", async (_, id: number) => {
   const chartData = await fetchChartData(id);
-  return buildChartData(chartData !== undefined ? chartData : [], "6m");
+  return buildChartData(chartData !== undefined ? chartData : [], "6m", lang);
 });
 
 ipcMain.handle(

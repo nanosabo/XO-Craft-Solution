@@ -9,10 +9,12 @@ import {
   switchMarketFollowed,
 } from "@src/store/slices/market.slice";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 const MarketOther = () => {
   const { followed } = useAppSelector(selectMarketState);
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("marketPage");
 
   const onReset = useCallback(() => {
     dispatch(resetMarketFilter());
@@ -25,12 +27,12 @@ const MarketOther = () => {
   return (
     <MarketSectionFilter title="">
       <div className={styles.buttons}>
-        <MarketFilterButton title={"Сброс фильтров"} onClick={onReset}>
+        <MarketFilterButton title={t("titles.clear_filters")} onClick={onReset}>
           <MarketIcons.BackIcon />
         </MarketFilterButton>
 
         <MarketFilterButton
-          title={"Отслеживаемые"}
+          title={t("titles.followed")}
           onClick={onFollowed}
           isActive={followed}
         >

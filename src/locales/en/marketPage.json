@@ -1,0 +1,83 @@
+{
+  "filters": {
+    "search": "Search",
+    "category": "Category",
+    "rarity": "Rarity",
+    "view": "View",
+    "sort": "Sort by"
+  },
+  "names": {
+    "sell": "Sell",
+    "buy": "Buy",
+    "spread": "Spread",
+    "craft": "Craft",
+    "no_recipe": "No recipe"
+  },
+  "titles": {
+    "unknown": "Unknown",
+    "cards": "Card view",
+    "table": "Table view",
+    "clear_filters": "Clear filters",
+    "followed": "Watchlist",
+    "roi": "Return on investment per resale (after marketplace fees)",
+    "spread": "Resale profit (after marketplace fees)",
+    "craft": "Crafting profit (after marketplace fees)",
+    "buy_offers": "Buy orders",
+    "sell_offers": "Sell orders"
+  },
+  "sort": {
+    "sell_offers": "Sell orders",
+    "buy_offers": "Buy orders",
+    "sell_price": "Sell price",
+    "buy_price": "Buy price",
+    "spread": "Resale profit",
+    "profit": "Crafting profit",
+    "roi": "ROI (%)"
+  },
+  "modal": {
+    "names": {
+      "craft_or_buy": "Craft or Buy?",
+      "craft": "Craft",
+      "buy": "Buy",
+      "saving": "Savings",
+      "components": "Components",
+      "no_recipe": "No recipe available",
+      "add_components": "Add ingredients",
+      "sell_price": "Sell price",
+      "buy_price": "Buy price",
+      "sell_orders": "Sell orders",
+      "buy_orders": "Buy orders",
+      "self_cost": "Production cost",
+      "profit": "Profit",
+      "search": "Search",
+      "search_placeholder": "Enter part name",
+      "craft_price": "Craft fee",
+      "result_amount": "Result amount",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "titles": {
+      "craft_or_buy": "Best option based on market price and production cost",
+      "mark_no_recipe": "Mark as not craftable"
+    },
+    "buttons": {
+      "craft": "Craft item",
+      "own": "Custom recipe",
+      "chart": "Price chart",
+      "sell_price": "Sell price",
+      "buy_price": "Buy price",
+      "optimal": "Optimal",
+      "allcraft": "Craft all",
+      "buyIng": "Buy all"
+    }
+  },
+  "chart": {
+    "price": "Price",
+    "lots": "Volume",
+    "sell": "Sell",
+    "buy": "Buy",
+    "sell_offers": "Sell orders",
+    "buy_offers": "Buy orders",
+    "loading": "Loading..."
+  }
+}

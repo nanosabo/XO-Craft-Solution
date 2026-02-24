@@ -16,15 +16,13 @@ import MarketModalTree from "./MarketModalTree";
 import { AnimatePresence } from "framer-motion";
 import MarketModalOwnButton from "./MarketModalOwnButton";
 import { switchNoRecipe } from "@src/store/slices/market.slice";
+import { useTranslation } from "react-i18next";
 
-const buttons = [
-  { id: "craft", label: "Создание предмета" },
-  { id: "own", label: "Свой рецепт" },
-  { id: "chart", label: "Динамика цен" },
-];
+const buttons = ["craft", "own", "chart"];
 
 const MarketModalTop = () => {
   const { item, itemCost, isOwn, show, noRecipeMarked } = useMarketModal();
+  const { t } = useTranslation("marketPage");
 
   const dispatch = useAppDispatch();
 
@@ -50,6 +48,11 @@ const MarketModalTop = () => {
       ? !isOwn
       : item.recipe === "$undefined" || item.craftable === 0;
 
+  const tabs = buttons.map((key) => ({
+    id: key,
+    label: t(`modal.buttons.${key}`),
+  }));
+
   return (
     <>
       <button className={styles.close} onClick={onClose}>
@@ -68,22 +71,25 @@ const MarketModalTop = () => {
           {!dontHasRecipe && (
             <>
               <Badge
-                title="Лучший вариант для вас"
-                text="Крафтить или купить?"
+                title={t("modal.titles.craft_or_buy")}
+                text={t("modal.names.craft_or_buy")}
                 warning={buyIsBetter}
                 className={styles.badge}
               >
-                {buyIsBetter ? "Купить" : "Крафтить"}
+                {buyIsBetter ? t("modal.names.craft") : t("modal.names.buy")}
               </Badge>
 
-              <Badge text="Экономия:" className={styles.badge}>
+              <Badge
+                text={`${t("modal.names.saving")}:`}
+                className={styles.badge}
+              >
                 {selfProfit} <img src="./coin.png" draggable={false} />
               </Badge>
             </>
           )}
 
           <Badge
-            title="Процент окупаемости вложений за сделку от перепродажи, комиссия учтена"
+            title={t("titles.roi")}
             text="ROI:"
             className={styles.badge}
             grey
@@ -95,7 +101,7 @@ const MarketModalTop = () => {
         <div
           className={classNames(styles.tabs, styles[rarities[item.rarityId]])}
         >
-          {buttons.map((btn) => (
+          {tabs.map((btn) => (
             <button
               key={btn.id}
               className={classNames(styles.tab_button, {
@@ -107,11 +113,11 @@ const MarketModalTop = () => {
               {btn.label}
             </button>
           ))}
-        </div>
 
-        <AnimatePresence>
-          {show === "own" && <MarketModalOwnButton />}
-        </AnimatePresence>
+          <AnimatePresence>
+            {show === "own" && <MarketModalOwnButton />}
+          </AnimatePresence>
+        </div>
 
         <button
           className={classNames(
@@ -121,7 +127,7 @@ const MarketModalTop = () => {
               [styles.active]: noRecipeMarked,
             },
           )}
-          title="Пометить как недоступен для производства"
+          title={t("modal.titles.mark_no_recipe")}
           onClick={onClickNoRecipe}
         >
           <UnavaibleIcon />

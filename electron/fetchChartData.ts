@@ -59,8 +59,10 @@ export const fetchChartData = async (id: number) => {
 export function buildChartData(
   data: IData[],
   range: TimeRange,
-  locale: string = "ru-RU",
+  lang: string = "ru",
 ): ChartData {
+  const locale = lang === "ru" ? "ru-RU" : "en-US";
+
   if (!data.length) {
     return { t: [], s: [], b: [], so: [], bo: [] };
   }

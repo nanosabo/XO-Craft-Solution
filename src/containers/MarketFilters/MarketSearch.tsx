@@ -5,12 +5,14 @@ import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import debounce from "lodash.debounce";
 import { selectMarketState, setSearch } from "@src/store/slices/market.slice";
+import { useTranslation } from "react-i18next";
 
 const MarketSearch = () => {
   const [isLoaded, setIsloaded] = useState(false);
   const [value, setValue] = useState("");
   const { search } = useAppSelector(selectMarketState);
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("marketPage");
 
   const debouncedSearch = useMemo(
     () =>
@@ -37,7 +39,7 @@ const MarketSearch = () => {
   };
 
   return (
-    <MarketSectionFilter title="Поиск" className={styles.search}>
+    <MarketSectionFilter title={t("filters.search")} className={styles.search}>
       <Input type="search" onChange={onSearchChange} value={value} />
     </MarketSectionFilter>
   );

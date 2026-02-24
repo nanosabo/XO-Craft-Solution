@@ -8,26 +8,15 @@ import {
   setMarketModalMode,
 } from "@src/store/slices/marketModal.slice";
 import classNames from "classnames";
+import { useTranslation } from "react-i18next";
 
-const buttons: { name: string; mode: MarketModalState["mode"] }[] = [
-  {
-    name: "Оптимально",
-    mode: "optimal",
-  },
-  {
-    name: "Крафтить все",
-    mode: "allcraft",
-  },
-  {
-    name: "Купить все",
-    mode: "buyIng",
-  },
-];
+const buttons: MarketModalState["mode"][] = ["optimal", "allcraft", "buyIng"];
 
 const Info = () => {
   const { item, itemCost, profit, mode, recipe, isOwn, show } =
     useMarketModal();
   const dispatch = useDispatch();
+  const { t } = useTranslation("marketPage");
 
   const dontHasRecipe =
     show === "own"
@@ -43,10 +32,15 @@ const Info = () => {
     );
   };
 
+  const tabs = buttons.map((key) => ({
+    name: t(`modal.buttons.${key}`),
+    mode: key,
+  }));
+
   return (
     <div className={styles.info}>
       <div className={styles.switches}>
-        {buttons.map((btn) => (
+        {tabs.map((btn) => (
           <button
             key={btn.name}
             className={classNames(styles.switch_button, {
@@ -61,21 +55,21 @@ const Info = () => {
       </div>
 
       <div className={styles.info_inner}>
-        <InfoItem title="Продажа">
+        <InfoItem title={t("modal.names.sell_price")}>
           {item.rawPrices.s} <img src="./coin.png" draggable={false} />
         </InfoItem>
-        <InfoItem title="Покупка">
+        <InfoItem title={t("modal.names.buy_price")}>
           {item.rawPrices.b} <img src="./coin.png" draggable={false} />
         </InfoItem>
-        <InfoItem title="Предложений на рынке">
+        <InfoItem title={t("modal.names.sell_orders")}>
           <RuporIcon /> {item.offers.s}
         </InfoItem>
-        <InfoItem title="Запросов на рынке">
+        <InfoItem title={t("modal.names.buy_orders")}>
           <CartIcon /> {item.offers.b}
         </InfoItem>
-        <InfoItem title="Стоимость производства">
+        <InfoItem title={t("modal.names.self_cost")}>
           {dontHasRecipe ? (
-            "Неизвестно"
+            t("titles.unknown")
           ) : (
             <>
               {itemCost}
@@ -83,7 +77,7 @@ const Info = () => {
             </>
           )}
         </InfoItem>
-        <InfoItem title="Прибыль">
+        <InfoItem title={t("modal.names.profit")}>
           {dontHasRecipe ? 0 : profit}
           <img src="./coin.png" draggable={false} />
         </InfoItem>

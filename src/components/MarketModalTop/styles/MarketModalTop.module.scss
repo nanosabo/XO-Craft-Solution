@@ -158,8 +158,8 @@
 
 .own_recipe_btn {
   position: absolute;
-  bottom: 10px;
-  right: 112px;
+  top: 0;
+  left: calc(100% + 12px);
   width: 34px;
   height: 34px;
   color: $bg;
