@@ -25,6 +25,8 @@ import { autoUpdater } from "electron-updater";
 import locales from "./locales.json";
 import axios from "axios";
 
+app.setAppUserModelId("xo.craft.solution");
+
 autoUpdater.allowPrerelease = true;
 
 const IS_DEV = !app.isPackaged;
@@ -33,7 +35,9 @@ const exePath = IS_DEV
   ? path.resolve(__dirname, "../build/solver/knapsack-solver.exe")
   : path.resolve(process.resourcesPath, "build/solver/knapsack-solver.exe");
 
-const iconPath = path.resolve(__dirname, "../build/icon.ico");
+const iconPath = IS_DEV
+  ? path.resolve(__dirname, "../build/icon.ico")
+  : path.resolve(process.resourcesPath, "build/icon.ico");
 
 // The built directory structure
 //
