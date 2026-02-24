@@ -1,11 +1,15 @@
 import axios from "./api";
+import { getLanguage } from "./main";
 
 export const fetchItems = async () => {
   try {
-    const response = await axios.get("/market/", {
+    const lang = getLanguage();
+    const url = `${lang === "en" ? "en" : ""}/market/`;
+
+    const response = await axios.get(url, {
       headers: {
         RSC: "1",
-        Cookie: "NEXT_LOCALE=ru",
+        Cookie: "NEXT_LOCALE=" + lang,
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "*/*",

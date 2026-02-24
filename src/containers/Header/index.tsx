@@ -8,7 +8,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { headerAnimation } from "./animation";
 import { useAppDispatch } from "@src/store/store";
 import { useEffect } from "react";
-import { IItemAnalytics, updateMarket } from "@src/store/slices/market.slice";
+import {
+  fetchData,
+  IItemAnalytics,
+  updateMarket,
+} from "@src/store/slices/market.slice";
+import i18n from "../../i18n";
 
 const Header = () => {
   const location = useLocation();
@@ -24,10 +29,16 @@ const Header = () => {
       dispatch(updateMarket(items));
     };
 
+    const langListener = () => {
+      dispatch(fetchData(null));
+    };
+
+    i18n.on("languageChanged", langListener);
     window.ipcRenderer.on("update", listener);
 
     return () => {
       window.ipcRenderer.removeListener("update", listener);
+      i18n.off("languageChanged", langListener);
     };
   }, [dispatch]);
 

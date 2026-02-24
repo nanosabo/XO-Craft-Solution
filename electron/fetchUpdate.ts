@@ -1,5 +1,6 @@
 import { IData } from "@src/store/slices/market.slice";
 import axios from "./api";
+import { getLanguage } from "./main";
 
 export interface IUpdate {
   updated: boolean;
@@ -9,10 +10,13 @@ export interface IUpdate {
 
 export const fetchUpdate = async (lastupdate: number) => {
   try {
+    const lang = getLanguage();
+    const url = `${lang === "en" ? "en" : ""}/market/`;
+
     const response: string = (
-      await axios.post("/market/", [lastupdate], {
+      await axios.post(url, [lastupdate], {
         headers: {
-          Cookie: "NEXT_LOCALE=ru",
+          Cookie: "NEXT_LOCALE=" + lang,
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           Accept: "*/*",

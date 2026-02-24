@@ -1,4 +1,14 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  nativeImage,
+  shell,
+  Tray,
+  Notification,
+} from "electron";
 import path from "node:path";
 import { spawn } from "child_process";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
@@ -10,6 +20,7 @@ import { getOneItem } from "./oneItemCalc";
 import { fetchUpdate } from "./fetchUpdate";
 import { buildChartData, fetchChartData } from "./fetchChartData";
 import { autoUpdater } from "electron-updater";
+import locales from "./locales.json";
 import axios from "axios";
 
 autoUpdater.allowPrerelease = true;
@@ -19,6 +30,8 @@ const IS_DEV = !app.isPackaged;
 const exePath = IS_DEV
   ? path.resolve(__dirname, "../build/solver/knapsack-solver.exe")
   : path.resolve(process.resourcesPath, "build/solver/knapsack-solver.exe");
+
+const iconPath = path.resolve(__dirname, "../build/icon.ico");
 
 // The built directory structure
 //
@@ -51,6 +64,11 @@ interface Part {
 }
 
 let actualParts: Part[] = [];
+let lang: "ru" | "en" = "ru";
+
+export const getLanguage = () => {
+  return lang;
+};
 
 function createWindow() {
   win = new BrowserWindow({
@@ -106,9 +124,17 @@ ipcMain.on("minimize", (e) => {
   win?.minimize();
 });
 
-ipcMain.on("close", (e) => {
-  const win = BrowserWindow.fromWebContents(e.sender);
-  win?.close();
+ipcMain.on("close", () => {
+  // const win = BrowserWindow.fromWebContents(e.sender);
+  // win?.close();
+  win?.hide();
+  const notification = new Notification({
+    title: locales[lang].hide.title,
+    body: locales[lang].hide.body,
+    icon: iconPath,
+  });
+
+  notification.show();
 });
 
 ipcMain.on("openDiscordExternal", () => {
@@ -117,8 +143,8 @@ ipcMain.on("openDiscordExternal", () => {
 
 app.on("ready", () => {
   autoUpdater.checkForUpdatesAndNotify({
-    title: "Доступно обновление",
-    body: "Обновление будет автоматически загружено и установится после закрытия приложения",
+    title: locales[lang].update.title,
+    body: locales[lang].update.body,
   });
 });
 
@@ -177,6 +203,46 @@ export const getOwnRecipe = (id: number): OwnRecipe | undefined => {
 
 export const getNoRecipeMarked = (id: number) => no_recipes.includes(id);
 
+const onUpdate = async () => {
+  const response = await fetchUpdate(lastUpdate);
+  if (!response || !response.updated) return;
+
+  const { data, lastUpdateTimestamp } = response;
+
+  lastUpdate = lastUpdateTimestamp;
+  fetchedPrices = data.marketData;
+
+  const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
+
+  win?.webContents.send("update", { items: analytics });
+
+  if (lastCraft) {
+    const { itemId, type, overdrive, onlyCraft, mode, is_own } = lastCraft;
+    const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+
+    const analyzed = fnForItem(itemId, type, {
+      overdrive,
+      onlyCraft,
+      isCraftAll: mode === "allcraft",
+      initialPriority: !is_own,
+      ownPriority: is_own,
+    });
+
+    const chartData = await fetchChartData(itemId);
+    const buildChartDataResult = buildChartData(
+      chartData !== undefined ? chartData : [],
+      "6m",
+    );
+
+    win?.webContents.send("updateCraft", analyzed);
+    win?.webContents.send("updateChart", buildChartDataResult);
+  }
+};
+
+ipcMain.on("lang", (_, language) => {
+  lang = language;
+});
+
 ipcMain.handle(
   "market",
   async (
@@ -203,45 +269,7 @@ ipcMain.handle(
       clearInterval(interval);
     }
 
-    interval = setInterval(
-      async () => {
-        const response = await fetchUpdate(lastUpdate);
-        if (!response || !response.updated) return;
-
-        const { data, lastUpdateTimestamp } = response;
-
-        lastUpdate = lastUpdateTimestamp;
-        fetchedPrices = data.marketData;
-
-        const analytics = getEnhancedAnalytics(fetchedItems, fetchedPrices);
-
-        win?.webContents.send("update", { items: analytics });
-
-        if (lastCraft) {
-          const { itemId, type, overdrive, onlyCraft, mode, is_own } =
-            lastCraft;
-          const fnForItem = getOneItem(fetchedItems, fetchedPrices);
-
-          const analyzed = fnForItem(itemId, type, {
-            overdrive,
-            onlyCraft,
-            isCraftAll: mode === "allcraft",
-            initialPriority: !is_own,
-            ownPriority: is_own,
-          });
-
-          const chartData = await fetchChartData(itemId);
-          const buildChartDataResult = buildChartData(
-            chartData !== undefined ? chartData : [],
-            "6m",
-          );
-
-          win?.webContents.send("updateCraft", analyzed);
-          win?.webContents.send("updateChart", buildChartDataResult);
-        }
-      },
-      isMirror ? 1000 * 60 * 5 : 1000 * 30,
-    );
+    interval = setInterval(onUpdate, isMirror ? 1000 * 60 * 5 : 1000 * 30);
 
     return { ...rest, items: analytics };
   },
@@ -439,9 +467,32 @@ ipcMain.handle("search-required-parts", async (_, value) => {
   );
 });
 
+let tray;
+
 app.whenReady().then(async () => {
+  const icon = nativeImage.createFromPath(iconPath);
+
+  tray = new Tray(icon);
+  tray.setToolTip(`XO Craft Solution v${app.getVersion()}`);
+
+  tray.on("click", () => {
+    win?.show();
+  });
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "Выход",
+      click: () => {
+        app.quit();
+        win = null;
+      },
+    },
+  ]);
+  tray.setContextMenu(contextMenu);
+
   actualParts = (
     await axios.get("https://nanosabo.github.io/xocs-imgs/actual_parts.json")
   ).data;
+
   createWindow();
 });

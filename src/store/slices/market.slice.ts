@@ -164,7 +164,7 @@ const initialState: MarketState = {
 
 export const fetchData = createAsyncThunk(
   "market/fetch",
-  async (navigate: NavigateFunction, { dispatch }) => {
+  async (navigate: NavigateFunction | null, { dispatch }) => {
     const own_recipes_json = localStorage.getItem("own");
     const own_recipes = own_recipes_json ? JSON.parse(own_recipes_json) : {};
 
@@ -177,7 +177,9 @@ export const fetchData = createAsyncThunk(
     });
 
     dispatch(setAppLoadedStatus());
-    navigate("/");
+    if (navigate) {
+      navigate("/");
+    }
     return data;
   },
 );

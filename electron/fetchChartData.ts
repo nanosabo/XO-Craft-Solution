@@ -1,5 +1,6 @@
 import { IData } from "@src/store/slices/market.slice";
 import axios from "./api";
+import { getLanguage } from "./main";
 
 export type TimeRange = "1h" | "6h" | "12h" | "1d" | "1w" | "1m" | "2m" | "6m";
 
@@ -24,10 +25,13 @@ const TIME_RANGE_SECONDS: Record<TimeRange, number> = {
 
 export const fetchChartData = async (id: number) => {
   try {
+    const lang = getLanguage();
+    const url = `${lang === "en" ? "en" : ""}/market/`;
+
     const response: string = (
-      await axios.post("/market/", [id], {
+      await axios.post(url, [id], {
         headers: {
-          Cookie: "NEXT_LOCALE=ru",
+          Cookie: "NEXT_LOCALE=" + lang,
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           Accept: "*/*",
