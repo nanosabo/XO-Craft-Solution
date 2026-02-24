@@ -8,7 +8,9 @@ import {
   shell,
   Tray,
   Notification,
+  screen,
 } from "electron";
+import fs from "fs";
 import path from "node:path";
 import { spawn } from "child_process";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
@@ -70,10 +72,45 @@ export const getLanguage = () => {
   return lang;
 };
 
+const statePath = path.join(app.getPath("userData"), "window-state.json");
+
+interface WindowState {
+  x?: number;
+  y?: number;
+}
+
+const WIDTH = 1160;
+const HEIGHT = 650;
+
 function createWindow() {
+  let x: number | undefined;
+  let y: number | undefined;
+
+  try {
+    if (fs.existsSync(statePath)) {
+      const state: WindowState = JSON.parse(fs.readFileSync(statePath, "utf8"));
+
+      const display = screen.getDisplayMatching({
+        x: state.x || 0,
+        y: state.y || 0,
+        width: WIDTH,
+        height: HEIGHT,
+      });
+
+      if (display) {
+        x = state.x;
+        y = state.y;
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load window state:", err);
+  }
+
   win = new BrowserWindow({
     width: 1160,
     height: 650,
+    x,
+    y,
     resizable: false,
     autoHideMenuBar: true,
     frame: false,
@@ -83,7 +120,6 @@ function createWindow() {
     },
   });
 
-  // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
     win?.webContents.openDevTools();
@@ -98,7 +134,6 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
-    // win.loadFile('dist/index.html')
     win.loadFile(path.join(process.env.DIST, "index.html"));
   }
 }
@@ -484,6 +519,11 @@ app.whenReady().then(async () => {
     {
       label: "Выход",
       click: () => {
+        if (win) {
+          const bounds = win.getBounds();
+          const state: WindowState = { x: bounds.x, y: bounds.y };
+          fs.writeFileSync(statePath, JSON.stringify(state));
+        }
         app.quit();
         win = null;
       },
