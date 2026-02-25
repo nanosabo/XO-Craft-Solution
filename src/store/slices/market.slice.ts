@@ -87,7 +87,9 @@ export interface Filters {
     | "sell_price"
     | "buy_price"
     | "spread"
-    | "profit";
+    | "profit"
+    | "roi"
+    | "crafting";
   sort_order: "asc" | "desc";
   followed: boolean;
   followedItems: number[];

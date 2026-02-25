@@ -46,13 +46,13 @@ const MarketItem: FC<Props> = memo(({ item }) => {
       <div className={styles.body}>
         <div className={styles.prices}>
           <div className={styles.price}>
-            <span>{t("names.sell")}:</span>
+            <span>{t("names.sell_price")}:</span>
             <p>
               {item.rawPrices.s} <img src="./coin.png" draggable={false} />
             </p>
           </div>
           <div className={styles.price}>
-            <span>{t("names.buy")}:</span>
+            <span>{t("names.buy_price")}:</span>
             <p>
               {item.rawPrices.b} <img src="./coin.png" draggable={false} />
             </p>

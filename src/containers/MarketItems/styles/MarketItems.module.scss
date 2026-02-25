@@ -1,11 +1,26 @@
 @import "@styles/theme";
 
+$market-columns: 240px // Название
+  95px // Продажа
+  95px // Покупка
+  95px // Предложения
+  100px // Запросы
+  90px // Спред
+  95px // ROI
+  120px // Производство
+  110px; // Прибыль
+
 .wrapper {
   width: calc(100% + 16px);
   height: 491px;
   overflow-y: auto;
   padding-right: 8px;
   margin-top: 12px;
+
+  &:has(.market__wrapper) {
+    margin-top: 0;
+    height: 437px;
+  }
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -21,4 +36,140 @@
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 10px;
+}
+
+.market {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+
+  &__header,
+  &__row {
+    display: grid;
+    grid-template-columns: $market-columns;
+    align-items: center;
+  }
+}
+
+.market__header {
+  padding: 14px 16px 12px;
+  border-radius: 8px;
+  background: $secondary;
+  border: 1px solid rgba($white, 0.1);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.market__row > div:not(:first-child),
+.market__header > .market__header__button,
+.market__header > div:not(:first-child) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  color: $white;
+
+  img {
+    margin-top: -4px;
+    width: 16px;
+    height: auto;
+  }
+}
+
+.market__header__button {
+  span {
+    position: relative;
+
+    svg {
+      position: absolute;
+      left: 100%;
+      top: 0;
+
+      transition: transform 0.2s ease-in-out;
+    }
+  }
+
+  &.desc span svg {
+    transform: rotate(180deg);
+  }
+}
+
+.market__row {
+  border-radius: 12px;
+  padding: 0 16px;
+  height: 60px;
+  background: rgba($input, 0.5);
+  backdrop-filter: blur(5px);
+  transition:
+    transform 0.2s ease,
+    background 0.1s ease-in-out;
+
+  &:nth-child(even) {
+    background: rgba($secondary, 0.7);
+  }
+
+  &:hover {
+    background: rgba(darken($primary, 20%), 0.7);
+    transform: translateY(-2px);
+    cursor: pointer;
+  }
+}
+
+.market__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.market__item {
+  margin-left: -8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: rgba($white, 0.2);
+
+  width: 46px;
+  height: 46px;
+
+  img {
+    margin-top: 5px;
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: $white;
+  }
+
+  @each $name, $color in $rarities {
+    &.#{$name} {
+      &::before {
+        background-color: $color;
+      }
+
+      background-color: rgba($color, 0.2);
+    }
+  }
+}
+
+.market__badge {
+  width: auto;
+}
+
+.market__wrapper {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }

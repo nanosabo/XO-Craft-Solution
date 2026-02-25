@@ -1,22 +1,14 @@
-import MarketItem from "@src/components/MarketItem";
-import styles from "./styles/MarketItems.module.scss";
 import useMarket from "@src/hooks/useMarket";
+import Cards from "./Cards";
+import Table from "./Table";
 
 const MarketItems = () => {
-  const { items, sentinelRef, wrapperRef } = useMarket();
+  const { items, sentinelRef, wrapperRef, view } = useMarket();
 
-  return (
-    <div ref={wrapperRef} className={styles.wrapper}>
-      <div className={styles.root}>
-        {items.map((item) => (
-          <MarketItem key={item.id} item={item} />
-        ))}
-      </div>
-      <div
-        ref={sentinelRef}
-        style={{ height: "50px", background: "transparent" }}
-      />
-    </div>
+  return view === "cards" ? (
+    <Cards items={items} sentinelRef={sentinelRef} wrapperRef={wrapperRef} />
+  ) : (
+    <Table items={items} sentinelRef={sentinelRef} wrapperRef={wrapperRef} />
   );
 };
 

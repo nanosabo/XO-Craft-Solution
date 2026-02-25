@@ -13,6 +13,7 @@ const sortMapping: Record<string, (item: IItemAnalytics) => number> = {
   spread: (item) => item.spread,
   profit: (item) => item.profit,
   roi: (item) => item.roi,
+  crafting: (item) => item.craftCost,
 };
 
 const useMarket = () => {
@@ -25,6 +26,7 @@ const useMarket = () => {
     sort_order,
     followed,
     followedItems,
+    view,
   } = useSelector(selectMarketState);
 
   const [limit, setLimit] = useState(18);
@@ -91,6 +93,7 @@ const useMarket = () => {
     sort_order,
     followed,
     followedItems,
+    view,
   ]);
 
   useEffect(() => {
@@ -105,11 +108,11 @@ const useMarket = () => {
 
     if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [limit, filteredAndSorted.length]);
+  }, [limit, filteredAndSorted.length, view]);
 
   const visibleItems = filteredAndSorted.slice(0, limit);
 
-  return { items: visibleItems, sentinelRef, wrapperRef };
+  return { items: visibleItems, sentinelRef, wrapperRef, view };
 };
 
 export default useMarket;

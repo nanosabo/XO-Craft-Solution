@@ -7,11 +7,17 @@
     "sort": "Sort by"
   },
   "names": {
-    "sell": "Sell",
-    "buy": "Buy",
+    "name": "Name",
+    "sell_price": "Sell",
+    "buy_price": "Buy",
     "spread": "Spread",
     "craft": "Craft",
-    "no_recipe": "No recipe"
+    "no_recipe": "No recipe",
+    "crafting": "Crafting",
+    "sell_offers": "Sell Orders",
+    "buy_offers": "Buy Orders",
+    "roi": "ROI",
+    "profit": "Profit"
   },
   "titles": {
     "unknown": "Unknown",
@@ -22,6 +28,7 @@
     "roi": "Return on investment per resale (after marketplace fees)",
     "spread": "Resale profit (after marketplace fees)",
     "craft": "Crafting profit (after marketplace fees)",
+    "crafting": "Production cost with optimal mode",
     "buy_offers": "Buy orders",
     "sell_offers": "Sell orders"
   },

@@ -35,15 +35,19 @@ export function getEnhancedAnalytics(
     const optCost = type === "buy" ? cost : craftCoast;
 
     const roi = Math.round(((sellNet - p.b) / p.b) * 10000) / 100;
+    const recipe = isNoRecipeMarked ? "$undefined" : item.recipe;
+    const noRecipe =
+      ((item.recipe === "$undefined" || item.craftable === 0) && !isOwn) ||
+      isNoRecipeMarked;
 
     return {
       id: item.id,
       name: item.name,
       amount: item.amount,
       rarityId: item.rarityId,
-      recipe: isNoRecipeMarked ? "$undefined" : item.recipe,
+      recipe: recipe,
       categoryId: item.categoryId,
-      craftCost: Math.round(craftCoast * 100) / 100,
+      craftCost: noRecipe ? 0 : Math.round(craftCoast * 100) / 100,
       ingredients: isOwn ? [] : ingredients,
       own_ingredients: isOwn ? ingredients : [],
       craftable: item.craftable,
@@ -61,13 +65,9 @@ export function getEnhancedAnalytics(
 
       optimalCost: Math.round(optCost * 100) / 100,
       sellPriceNet: sellNet,
-      profit:
-        ((item.recipe === "$undefined" || item.craftable === 0) && !isOwn) ||
-        isNoRecipeMarked
-          ? 0
-          : Math.round((sellNet - craftCoast) * 100) / 100,
+      profit: noRecipe ? 0 : Math.round((sellNet - craftCoast) * 100) / 100,
       roi: isFinite(roi) && roi > -100 ? roi : 0,
-      spread: p.b > 0 ? Math.round((sellNet - p.b) * 100) / 100 : 0,
+      spread: p.b > 0 && p.s > 0 ? Math.round((sellNet - p.b) * 100) / 100 : 0,
     };
   });
 }
