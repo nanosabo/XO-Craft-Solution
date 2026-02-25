@@ -130,6 +130,10 @@ function createWindow() {
 
     globalShortcut.register("F11", () => {});
 
+    win?.webContents.setWindowOpenHandler(() => {
+      return { action: "deny" };
+    });
+
     if (!IS_DEV) {
       globalShortcut.register("CommandOrControl+R", () => {});
     }
