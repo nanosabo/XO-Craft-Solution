@@ -54,7 +54,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    setIsMirror();
+    setIsMirror(fallbackBase === BASE_URLS[1]);
 
     cachedBaseUrl = fallbackBase;
     cacheExpiresAt = Date.now() + CACHE_TTL;

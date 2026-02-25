@@ -103,6 +103,7 @@ export interface MarketState extends Filters {
   items: IItemAnalytics[];
   own_recipes: Record<string, OwnRecipe>;
   no_recipes: number[];
+  isMirror: boolean;
 }
 
 export interface FetchedData {
@@ -160,6 +161,7 @@ const initialState: MarketState = {
   items: [],
   own_recipes: own_recipes,
   no_recipes: no_recipes,
+  isMirror: false,
 
   ...filters,
 };
@@ -261,6 +263,9 @@ export const MarketSLice = createSlice({
 
       localStorage.setItem("norec", JSON.stringify(state.no_recipes));
     },
+    setIsMirror: (state, action: PayloadAction<boolean>) => {
+      state.isMirror = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -296,6 +301,7 @@ export const {
   setOwnRecipe,
   removeOwnRecipe,
   switchNoRecipe,
+  setIsMirror,
 } = MarketSLice.actions;
 
 export const selectMarketState = (state: RootState) => state.market;

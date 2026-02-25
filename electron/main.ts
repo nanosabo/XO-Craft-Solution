@@ -191,6 +191,10 @@ ipcMain.handle("get-app-version", () => {
   return app.getVersion();
 });
 
+ipcMain.handle("get-is-mirror", () => {
+  return isMirror;
+});
+
 interface DataToSolve {
   inputs: solveInputsState;
   requiredParts: requiredPart[];
@@ -232,8 +236,10 @@ let own_recipes: Record<string, OwnRecipe> = {};
 let no_recipes: number[] = [];
 let isMirror: boolean = false;
 
-export const setIsMirror = () => {
-  isMirror = true;
+export const setIsMirror = (isMirr: boolean) => {
+  isMirror = isMirr;
+  console.log(isMirr);
+  win?.webContents.send("setMirror", isMirr);
 };
 
 export const getOwnRecipe = (id: number): OwnRecipe | undefined => {

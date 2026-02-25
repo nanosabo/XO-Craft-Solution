@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("ipcRenderer", withPrototype(ipcRenderer));
 
 contextBridge.exposeInMainWorld("electronAPI", {
   getVersion: () => ipcRenderer.invoke("get-app-version"),
+  getIsMirror: () => ipcRenderer.invoke("get-is-mirror"),
 });
 
 // `exposeInMainWorld` can't detect attributes and methods of `prototype`, manually patching it.

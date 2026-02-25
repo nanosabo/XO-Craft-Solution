@@ -4,6 +4,7 @@ export const loadingPageLayoutAnimation: Variants = {
   initial: { opacity: 0, position: "absolute", top: 0, left: 0 },
   animate: { opacity: 1 },
   exit: {
+    zIndex: -1,
     opacity: 0,
     position: "absolute",
     left: 0,

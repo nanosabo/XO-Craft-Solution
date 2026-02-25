@@ -26,5 +26,6 @@ interface Window {
   ipcRenderer: import("electron").IpcRenderer;
   electronAPI: {
     getVersion(): Promise<string>;
+    getIsMirror(): Promise<boolean>;
   };
 }

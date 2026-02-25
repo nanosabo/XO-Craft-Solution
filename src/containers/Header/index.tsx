@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import {
   fetchData,
   IItemAnalytics,
+  setIsMirror,
   updateMarket,
 } from "@src/store/slices/market.slice";
 import i18n from "../../i18n";
@@ -33,11 +34,24 @@ const Header = () => {
       dispatch(fetchData(null));
     };
 
+    const mirrorListener = (
+      _: Electron.IpcRendererEvent,
+      isMirror: boolean,
+    ) => {
+      dispatch(setIsMirror(isMirror));
+    };
+
+    window.electronAPI
+      .getIsMirror()
+      .then((isMirr) => dispatch(setIsMirror(isMirr)));
+
     i18n.on("languageChanged", langListener);
     window.ipcRenderer.on("update", listener);
+    window.ipcRenderer.on("setMirror", mirrorListener);
 
     return () => {
       window.ipcRenderer.removeListener("update", listener);
+      window.ipcRenderer.removeListener("setMirror", mirrorListener);
       i18n.off("languageChanged", langListener);
     };
   }, [dispatch]);
