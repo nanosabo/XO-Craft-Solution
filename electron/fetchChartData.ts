@@ -35,7 +35,7 @@ export const fetchChartData = async (id: number) => {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           Accept: "*/*",
-          "Next-Action": "40ea4e1a3b4d888504e984f76944b046896edb072c",
+          "Next-Action": "60ea4e1a3b4d888504e984f76944b046896edb072c",
         },
       })
     ).data;
