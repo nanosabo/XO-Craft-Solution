@@ -6,7 +6,10 @@ import { FC, memo } from "react";
 import Badge from "../Badge";
 import { rarities } from "../../helpers/rarities";
 import { useAppDispatch } from "@src/store/store";
-import { setMarketModalItem } from "@src/store/slices/marketModal.slice";
+import {
+  setMarketModalItem,
+  setMarketModalShow,
+} from "@src/store/slices/marketModal.slice";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -19,6 +22,9 @@ const MarketItem: FC<Props> = memo(({ item }) => {
 
   const onClick = () => {
     dispatch(setMarketModalItem(item.id));
+    if (item.recipe === "$undefined" && item.isOwn) {
+      dispatch(setMarketModalShow("own"));
+    }
   };
 
   const dontHasRecipe = item.recipe === "$undefined" || item.craftable === 0;

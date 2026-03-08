@@ -242,7 +242,6 @@ let isMirror: boolean = false;
 
 export const setIsMirror = (isMirr: boolean) => {
   isMirror = isMirr;
-  console.log(isMirr);
   win?.webContents.send("setMirror", isMirr);
 };
 

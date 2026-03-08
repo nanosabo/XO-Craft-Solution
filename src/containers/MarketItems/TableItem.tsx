@@ -5,7 +5,10 @@ import { IItemAnalytics } from "@src/store/slices/market.slice";
 import { FC, memo } from "react";
 import { rarities } from "@src/helpers/rarities";
 import { useAppDispatch } from "@src/store/store";
-import { setMarketModalItem } from "@src/store/slices/marketModal.slice";
+import {
+  setMarketModalItem,
+  setMarketModalShow,
+} from "@src/store/slices/marketModal.slice";
 import { useTranslation } from "react-i18next";
 import MarketItemImage from "@src/components/MarketItem/MarketItemImage";
 
@@ -18,6 +21,9 @@ const TableItem: FC<Props> = memo(({ item }) => {
 
   const onClick = () => {
     dispatch(setMarketModalItem(item.id));
+    if (item.recipe === "$undefined" && item.isOwn) {
+      dispatch(setMarketModalShow("own"));
+    }
   };
 
   const { t } = useTranslation("marketPage");

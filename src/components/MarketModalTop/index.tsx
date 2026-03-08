@@ -76,7 +76,7 @@ const MarketModalTop = () => {
                 warning={buyIsBetter}
                 className={styles.badge}
               >
-                {buyIsBetter ? t("modal.names.craft") : t("modal.names.buy")}
+                {buyIsBetter ? t("modal.names.buy") : t("modal.names.craft")}
               </Badge>
 
               <Badge
