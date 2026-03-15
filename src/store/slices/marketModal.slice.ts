@@ -30,7 +30,7 @@ export interface MarketModalState {
   item: number;
   type: "b" | "s";
   mode: "optimal" | "allcraft" | "buyIng";
-  show: "craft" | "own" | "chart";
+  show: "craft" | "own" | "chart" | "follow";
   own_set: "craft" | "edit";
   overdrive: number[];
   onlyCraft: number[];

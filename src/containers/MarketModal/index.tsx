@@ -17,6 +17,7 @@ const blocks = {
   craft: <MarketModalBottom />,
   own: <MarketModalOwn />,
   chart: <MarketModalChart />,
+  follow: <></>,
 };
 
 const MarketModal = () => {

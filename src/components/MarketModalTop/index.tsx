@@ -18,7 +18,7 @@ import MarketModalOwnButton from "./MarketModalOwnButton";
 import { switchNoRecipe } from "@src/store/slices/market.slice";
 import { useTranslation } from "react-i18next";
 
-const buttons = ["craft", "own", "chart"];
+const buttons = ["craft", "own", "chart", "follow"];
 
 const MarketModalTop = () => {
   const { item, itemCost, isOwn, show, noRecipeMarked } = useMarketModal();
