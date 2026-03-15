@@ -25,11 +25,12 @@ export interface ISolveResult {
 const FEES: Record<number, number> = {
   0: 0,
   1: 0,
-  2: 3,
-  3: 15,
-  4: 75,
-  5: 0,
-  6: 6,
+  2: 0,
+  3: 3,
+  4: 6,
+  5: 15,
+  6: 75,
+  7: 0,
 };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;

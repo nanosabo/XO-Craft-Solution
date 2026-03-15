@@ -11,27 +11,27 @@ import { useTranslation } from "react-i18next";
 
 const items = [
   {
-    id: 1,
+    id: 2,
     name: "common",
   },
   {
-    id: 2,
+    id: 3,
     name: "rare",
   },
   {
-    id: 6,
+    id: 4,
     name: "special",
   },
   {
-    id: 3,
+    id: 5,
     name: "epic",
   },
   {
-    id: 4,
+    id: 6,
     name: "legendary",
   },
   {
-    id: 5,
+    id: 7,
     name: "relic",
   },
 ];
