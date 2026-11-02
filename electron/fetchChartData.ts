@@ -1,5 +1,5 @@
 import { IData } from "@src/store/slices/market.slice";
-import axios from "./api";
+import { postServerAction } from "./actionIds";
 import { getLanguage } from "./main";
 
 export type TimeRange = "1h" | "6h" | "12h" | "1d" | "1w" | "1m" | "2m" | "6m";
@@ -28,21 +28,17 @@ export const fetchChartData = async (id: number) => {
     const lang = getLanguage();
     const url = `${lang === "en" ? "en" : ""}/market/`;
 
-    const response: string = (
-      await axios.post(
-        url,
-        [{ itemIds: [id], days: 180, aggregationMinutes: 60 }],
-        {
-          headers: {
-            Cookie: "NEXT_LOCALE=" + lang,
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            Accept: "*/*",
-            "Next-Action": "408474870e141dca918d8ac4e0bcf487654c081bf0",
-          },
-        },
-      )
-    ).data;
+    const response = await postServerAction(
+      "getItemsPriceHistory",
+      url,
+      [{ itemIds: [id], days: 180, aggregationMinutes: 60 }],
+      {
+        Cookie: "NEXT_LOCALE=" + lang,
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "*/*",
+      },
+    );
 
     const resultLine = response
       .split("\n")

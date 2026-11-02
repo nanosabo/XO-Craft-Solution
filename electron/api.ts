@@ -22,6 +22,20 @@ const api = axios.create({
   timeout: 5000,
 });
 
+/**
+ * A 4xx response usually means the request itself is wrong (e.g. 409 "Server
+ * Action unavailable" after a redeploy), so retrying it against the mirror is
+ * pointless. Fall back only on network errors, timeouts, rate limits, server
+ * errors and responses that look like the primary host is blocked.
+ */
+const shouldFallback = (error: AxiosError) => {
+  if (!error.response) return true;
+
+  const status = error.response.status;
+
+  return status === 429 || status === 403 || status === 451 || status >= 500;
+};
+
 api.interceptors.request.use((config) => {
   config.baseURL = getBaseUrl();
   return config;
@@ -42,6 +56,10 @@ api.interceptors.response.use(
     };
 
     if (!originalRequest || originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    if (!shouldFallback(error)) {
       return Promise.reject(error);
     }
 

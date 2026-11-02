@@ -1,5 +1,5 @@
 import { IData } from "@src/store/slices/market.slice";
-import axios from "./api";
+import { postServerAction } from "./actionIds";
 import { getLanguage } from "./main";
 
 export interface IUpdate {
@@ -13,17 +13,17 @@ export const fetchUpdate = async (lastupdate: number) => {
     const lang = getLanguage();
     const url = `${lang === "en" ? "en" : ""}/market/`;
 
-    const response: string = (
-      await axios.post(url, [lastupdate, lang], {
-        headers: {
-          Cookie: "NEXT_LOCALE=" + lang,
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "*/*",
-          "Next-Action": "602800bc979e30115d225b06abd01323db16a6fdad",
-        },
-      })
-    ).data;
+    const response = await postServerAction(
+      "checkUpdateStatus",
+      url,
+      [lastupdate, lang],
+      {
+        Cookie: "NEXT_LOCALE=" + lang,
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "*/*",
+      },
+    );
 
     const resultLine = response
       .split("\n")
