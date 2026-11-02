@@ -1,7 +1,6 @@
 import {
   app,
   BrowserWindow,
-  globalShortcut,
   ipcMain,
   Menu,
   nativeImage,
@@ -143,19 +142,25 @@ function createWindow() {
     },
   });
 
+  win.webContents.on("before-input-event", (event, input) => {
+    const isF11 = input.key === "F11";
+    const isReload =
+      !IS_DEV &&
+      (input.control || input.meta) &&
+      input.key.toLowerCase() === "r";
+
+    if (isF11 || isReload) {
+      event.preventDefault();
+    }
+  });
+
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
     win?.webContents.openDevTools();
 
-    globalShortcut.register("F11", () => {});
-
     win?.webContents.setWindowOpenHandler(() => {
       return { action: "deny" };
     });
-
-    if (!IS_DEV) {
-      globalShortcut.register("CommandOrControl+R", () => {});
-    }
   });
 
   if (VITE_DEV_SERVER_URL) {
