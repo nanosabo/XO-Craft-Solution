@@ -14,24 +14,29 @@ export const fetchUpdate = async (lastupdate: number) => {
     const url = `${lang === "en" ? "en" : ""}/market/`;
 
     const response: string = (
-      await axios.post(url, [lastupdate], {
+      await axios.post(url, [lastupdate, lang], {
         headers: {
           Cookie: "NEXT_LOCALE=" + lang,
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           Accept: "*/*",
-          "Next-Action": "6007a994cca94241fa010542ecfd4b56f344822f77",
+          "Next-Action": "602800bc979e30115d225b06abd01323db16a6fdad",
         },
       })
     ).data;
 
-    const cleanJson: IUpdate = response
+    const resultLine = response
       .split("\n")
       .filter(Boolean)
-      .map((line) => {
-        const jsonPart = line.substring(line.indexOf("{"));
-        return JSON.parse(jsonPart);
-      })[1];
+      .find((line) => line.startsWith("1:"));
+
+    if (!resultLine) return;
+
+    const raw = resultLine.slice(2).trim();
+
+    if (!raw || raw === "null") return;
+
+    const cleanJson: IUpdate = JSON.parse(raw);
 
     return cleanJson;
   } catch (error) {

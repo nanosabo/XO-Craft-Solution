@@ -29,28 +29,35 @@ export const fetchChartData = async (id: number) => {
     const url = `${lang === "en" ? "en" : ""}/market/`;
 
     const response: string = (
-      await axios.post(url, [id], {
-        headers: {
-          Cookie: "NEXT_LOCALE=" + lang,
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "*/*",
-          "Next-Action": "608788ea88f4160eee069fa0537e41a7b8d24332a5",
+      await axios.post(
+        url,
+        [{ itemIds: [id], days: 180, aggregationMinutes: 60 }],
+        {
+          headers: {
+            Cookie: "NEXT_LOCALE=" + lang,
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            Accept: "*/*",
+            "Next-Action": "408474870e141dca918d8ac4e0bcf487654c081bf0",
+          },
         },
-      })
+      )
     ).data;
 
-    const cleanJson: IData[] = response
+    const resultLine = response
       .split("\n")
       .filter(Boolean)
-      .map((line, i) => {
-        const jsonPart = line.substring(
-          i === 0 ? line.indexOf("{") : line.indexOf("["),
-        );
-        return JSON.parse(jsonPart);
-      })[1];
+      .find((line) => line.startsWith("1:"));
 
-    return cleanJson;
+    if (!resultLine) return;
+
+    const raw = resultLine.slice(2).trim();
+
+    if (!raw || raw === "null" || raw === "{}") return [];
+
+    const cleanJson: Record<string, IData[]> = JSON.parse(raw);
+
+    return cleanJson[String(id)] ?? [];
   } catch (error) {
     /* empty */
   }
