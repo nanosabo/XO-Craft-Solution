@@ -23,6 +23,10 @@
       to: "build/icon.ico",
     },
     {
+      from: "build/icon.png",
+      to: "build/icon.png",
+    },
+    {
       from: "build/solver",
       to: "build/solver",
     },
@@ -30,6 +34,7 @@
 
   files: ["dist", "dist-electron"],
   mac: {
+    icon: "build/icon.png",
     target: ["dmg"],
     artifactName: "${productName}-Mac-${version}-Installer.${ext}",
   },
@@ -50,6 +55,8 @@
     deleteAppDataOnUninstall: false,
   },
   linux: {
+    icon: "build/icon.png",
+    category: "Game",
     target: ["AppImage"],
     artifactName: "${productName}-Linux-${version}.${ext}",
   },

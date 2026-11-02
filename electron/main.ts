@@ -31,13 +31,18 @@ autoUpdater.allowPrerelease = true;
 
 const IS_DEV = !app.isPackaged;
 
+const solverBinary =
+  process.platform === "win32" ? "knapsack-solver.exe" : "knapsack-solver";
+
 const exePath = IS_DEV
-  ? path.resolve(__dirname, "../build/solver/knapsack-solver.exe")
-  : path.resolve(process.resourcesPath, "build/solver/knapsack-solver.exe");
+  ? path.resolve(__dirname, `../build/solver/${solverBinary}`)
+  : path.resolve(process.resourcesPath, `build/solver/${solverBinary}`);
+
+const iconFile = process.platform === "win32" ? "icon.ico" : "icon.png";
 
 const iconPath = IS_DEV
-  ? path.resolve(__dirname, "../build/icon.ico")
-  : path.resolve(process.resourcesPath, "build/icon.ico");
+  ? path.resolve(__dirname, `../build/${iconFile}`)
+  : path.resolve(process.resourcesPath, `build/${iconFile}`);
 
 // The built directory structure
 //
@@ -199,10 +204,14 @@ ipcMain.on("openDiscordExternal", () => {
 });
 
 app.on("ready", () => {
-  autoUpdater.checkForUpdatesAndNotify({
-    title: locales[lang].update.title,
-    body: locales[lang].update.body,
-  });
+  autoUpdater
+    .checkForUpdatesAndNotify({
+      title: locales[lang].update.title,
+      body: locales[lang].update.body,
+    })
+    .catch((err) => {
+      console.error("Update check failed:", err);
+    });
 });
 
 ipcMain.handle("get-app-version", () => {
@@ -378,6 +387,12 @@ ipcMain.handle("fetchMarketChartData", async (_, id: number) => {
 ipcMain.handle(
   "solve",
   async (_, { inputs, requiredParts, forbidden }: DataToSolve) => {
+    if (!fs.existsSync(exePath)) {
+      throw new Error(
+        `Solver not found at "${exePath}". Build it with "yarn solver:build".`,
+      );
+    }
+
     const proc = spawn(exePath);
 
     const forbiddenNames = forbidden.map((part) => part.eng_name);
@@ -443,6 +458,8 @@ ipcMain.handle(
     /* ---------------- run solver ---------------- */
 
     const result: SolveResult = await new Promise((resolve, reject) => {
+      proc.on("error", reject);
+
       proc.stdin.write(JSON.stringify(inputData));
       proc.stdin.end();
 

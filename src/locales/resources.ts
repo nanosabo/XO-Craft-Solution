@@ -7,8 +7,8 @@ import navigationRu from "./ru/navigation.json";
 import mainPageEn from "./en/mainPage.json";
 import mainPageRu from "./ru/mainPage.json";
 
-import solvePageRu from "./ru/SolvePage.json";
-import solvePageEn from "./en/SolvePage.json";
+import solvePageRu from "./ru/solvePage.json";
+import solvePageEn from "./en/solvePage.json";
 
 import marketPageRu from "./ru/marketPage.json";
 import marketPageEn from "./en/marketPage.json";
