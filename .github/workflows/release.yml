@@ -78,8 +78,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          # A previous attempt may have left a draft behind.
-          if gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null | grep -q true; then
+          # A previous attempt may have left a draft behind. Drafts are not
+          # returned by "gh release view", so look them up in the release list.
+          if gh release list --limit 100 --json tagName,isDraft \
+              --jq '.[] | select(.isDraft) | .tagName' \
+              | grep -qx "$TAG"; then
             gh release delete "$TAG" --yes --cleanup-tag=false
           fi
 
@@ -88,4 +91,18 @@ jobs:
             *-*) args+=(--prerelease) ;;
           esac
 
-          gh release create "$TAG" artifacts/* "${args[@]}"
+          if ! output=$(gh release create "$TAG" artifacts/* "${args[@]}" 2>&1); then
+            {
+              echo "### Release failed"
+              echo '```'
+              echo "$output"
+              echo '```'
+              echo "### Files"
+              echo '```'
+              ls -la artifacts
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "$output"
