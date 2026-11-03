@@ -240,6 +240,44 @@ ipcMain.handle("check-for-updates", async () => {
   }
 });
 
+ipcMain.handle(
+  "show-notification",
+  (
+    _,
+    { title, body, icon }: { title: string; body: string; icon?: string },
+  ) => {
+    if (!Notification.isSupported()) return false;
+
+    let notificationIcon: Electron.NativeImage | string = iconPath;
+
+    if (icon) {
+      try {
+        const image = nativeImage.createFromDataURL(icon);
+
+        if (!image.isEmpty()) {
+          notificationIcon = image;
+        }
+      } catch {
+        /* Fall back to the application icon. */
+      }
+    }
+
+    const notification = new Notification({
+      title,
+      body,
+      icon: notificationIcon,
+    });
+
+    notification.on("click", () => {
+      win?.show();
+      win?.focus();
+    });
+
+    notification.show();
+    return true;
+  },
+);
+
 ipcMain.handle("open-external", async (_, url: string) => {
   if (!/^https?:\/\//i.test(url)) return false;
 

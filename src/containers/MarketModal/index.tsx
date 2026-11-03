@@ -12,12 +12,13 @@ import { useEffect, useRef } from "react";
 import { ISolveResult } from "@electron/oneItemCalc";
 import MarketModalChart from "../MarketModalChart";
 import MarketModalOwn from "@src/components/MarketModalOwn";
+import MarketModalFollow from "@src/components/MarketModalFollow";
 
 const blocks = {
   craft: <MarketModalBottom />,
   own: <MarketModalOwn />,
   chart: <MarketModalChart />,
-  follow: <></>,
+  follow: <MarketModalFollow />,
 };
 
 const MarketModal = () => {

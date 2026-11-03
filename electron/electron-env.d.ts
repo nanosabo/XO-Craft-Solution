@@ -33,6 +33,11 @@ interface Window {
       latest: string | null;
       message?: string;
     }>;
+    showNotification(payload: {
+      title: string;
+      body: string;
+      icon?: string;
+    }): Promise<boolean>;
     openExternal(url: string): Promise<boolean>;
     openUserData(): Promise<boolean>;
     pickNotificationSound(): Promise<

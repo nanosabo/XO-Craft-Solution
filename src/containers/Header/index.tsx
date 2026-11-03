@@ -16,6 +16,7 @@ import {
 } from "@src/store/slices/market.slice";
 import i18n from "../../i18n";
 import useAutoUpdate from "@src/hooks/useAutoUpdate";
+import useMarketNotifications from "@src/hooks/useMarketNotifications";
 
 const Header = () => {
   const location = useLocation();
@@ -24,6 +25,7 @@ const Header = () => {
   const dispatch = useAppDispatch();
 
   useAutoUpdate();
+  useMarketNotifications();
 
   useEffect(() => {
     const listener = (

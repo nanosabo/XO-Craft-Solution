@@ -8,16 +8,32 @@ export interface SelectOption {
   label: string;
 }
 
+type MenuPlacement = "down" | "up" | "auto";
+
 interface CustomSelectProps {
   options: SelectOption[];
   defaultValue?: string;
   onChange?: (value: string) => void;
   order?: "asc" | "desc";
+  menuPlacement?: MenuPlacement;
 }
 
+const MAX_MENU_HEIGHT = 300;
+const MIN_MENU_HEIGHT = 120;
+const MENU_GAP = 6;
+const VIEWPORT_MARGIN = 12;
+
 const CustomSelect: React.FC<CustomSelectProps> = memo(
-  ({ options, defaultValue, onChange, order }) => {
+  ({
+    options,
+    defaultValue,
+    onChange,
+    order,
+    menuPlacement = "down",
+  }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [openUp, setOpenUp] = useState(false);
+    const [menuMaxHeight, setMenuMaxHeight] = useState<number>();
     const [selected, setSelected] = useState<SelectOption>(() => {
       return options.find((opt) => opt.value === defaultValue) || options[0];
     });
@@ -45,11 +61,43 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
       onChange?.(option.value);
     };
 
+    const handleToggle = () => {
+      if (isOpen) {
+        setIsOpen(false);
+        return;
+      }
+
+      if (menuPlacement !== "down" && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN;
+        const spaceAbove = rect.top - VIEWPORT_MARGIN;
+        const shouldOpenUp =
+          menuPlacement === "up" ||
+          (spaceBelow < MAX_MENU_HEIGHT && spaceAbove > spaceBelow);
+
+        setOpenUp(shouldOpenUp);
+        setMenuMaxHeight(
+          Math.max(
+            MIN_MENU_HEIGHT,
+            Math.min(
+              MAX_MENU_HEIGHT,
+              (shouldOpenUp ? spaceAbove : spaceBelow) - MENU_GAP,
+            ),
+          ),
+        );
+      } else {
+        setOpenUp(false);
+        setMenuMaxHeight(undefined);
+      }
+
+      setIsOpen(true);
+    };
+
     return (
       <div className={styles.container} ref={containerRef}>
         <div
           className={classNames(styles.control, { [styles.isOpen]: isOpen })}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={handleToggle}
           title={selected.label}
         >
           {order && (
@@ -66,7 +114,16 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
         </div>
 
         {isOpen && (
-          <div className={styles.menu}>
+          <div
+            className={classNames(styles.menu, {
+              [styles.menuUp]: openUp,
+            })}
+            style={
+              menuMaxHeight !== undefined
+                ? { maxHeight: menuMaxHeight }
+                : undefined
+            }
+          >
             {options.map((option) => (
               <div
                 key={option.value}

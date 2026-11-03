@@ -3,6 +3,15 @@ import { RootState } from "../store";
 import { NavigateFunction } from "react-router-dom";
 import { setAppLoadedStatus } from "./app.slice";
 import { IIngredientInfo } from "@electron/oneItemCalc";
+import {
+  FollowMetric,
+  FollowRule,
+  FollowRules,
+  followMetrics,
+  FollowValues,
+  mergeFollowRules,
+  roundFollowValue,
+} from "../follow";
 
 export interface ICategory {
   id: number;
@@ -93,6 +102,7 @@ export interface Filters {
   sort_order: "asc" | "desc";
   followed: boolean;
   followedItems: number[];
+  followRules: Record<number, FollowRules>;
   search: string;
 }
 
@@ -121,6 +131,7 @@ const saveFilters = (state: MarketState) => {
     "sort_order",
     "followed",
     "followedItems",
+    "followRules",
     "search",
   ];
 
@@ -143,10 +154,16 @@ const defaultFilters: Filters = {
   sort_order: "desc",
   followed: false,
   followedItems: [],
+  followRules: {},
   search: "",
 };
 
-const filters = storage ? (JSON.parse(storage) as Filters) : defaultFilters;
+const storedFilters = storage ? (JSON.parse(storage) as Partial<Filters>) : null;
+const filters: Filters = {
+  ...defaultFilters,
+  ...(storedFilters ?? {}),
+  followRules: storedFilters?.followRules ?? {},
+};
 const own_recipes = storageRecipes
   ? (JSON.parse(storageRecipes) as Record<string, OwnRecipe>)
   : {};
@@ -237,10 +254,77 @@ export const MarketSLice = createSlice({
       state.followed = !state.followed;
       saveFilters(state);
     },
-    setFollowedItem: (state, action: PayloadAction<number>) => {
-      state.followedItems = state.followedItems.includes(action.payload)
-        ? state.followedItems.filter((cat) => cat !== action.payload)
-        : [...state.followedItems, action.payload];
+    setFollowedItem: (
+      state,
+      action: PayloadAction<{ id: number; values: FollowValues }>,
+    ) => {
+      const { id, values } = action.payload;
+
+      if (state.followedItems.includes(id)) {
+        state.followedItems = state.followedItems.filter((item) => item !== id);
+        delete state.followRules[id];
+      } else {
+        state.followedItems = [...state.followedItems, id];
+        state.followRules[id] = mergeFollowRules(
+          state.followRules[id],
+          values,
+        );
+      }
+
+      saveFilters(state);
+    },
+    ensureFollowRules: (
+      state,
+      action: PayloadAction<{ id: number; values: FollowValues }>,
+    ) => {
+      const { id, values } = action.payload;
+
+      if (!state.followedItems.includes(id)) return;
+
+      const existing = state.followRules[id] as
+        | Partial<FollowRules>
+        | undefined;
+      const isComplete =
+        existing !== undefined &&
+        followMetrics.every((metric) => existing[metric] !== undefined);
+
+      if (isComplete) return;
+
+      state.followRules[id] = mergeFollowRules(existing, values);
+      saveFilters(state);
+    },
+    setFollowRule: (
+      state,
+      action: PayloadAction<{
+        id: number;
+        metric: FollowMetric;
+        patch: Partial<FollowRule>;
+      }>,
+    ) => {
+      const { id, metric, patch } = action.payload;
+      const rules = state.followRules[id];
+
+      if (!rules) return;
+
+      let rule = rules[metric];
+
+      if (!rule) {
+        rule = { enabled: false, condition: "any", value: 0 };
+        rules[metric] = rule;
+      }
+
+      if (typeof patch.enabled === "boolean") {
+        rule.enabled = patch.enabled;
+      }
+
+      if (patch.condition !== undefined) {
+        rule.condition = patch.condition;
+      }
+
+      if (patch.value !== undefined) {
+        rule.value = roundFollowValue(metric, patch.value);
+      }
+
       saveFilters(state);
     },
     setOwnRecipe: (
@@ -297,6 +381,8 @@ export const {
   setMarketSort,
   setMarketView,
   setFollowedItem,
+  ensureFollowRules,
+  setFollowRule,
   switchMarketFollowed,
   setOwnRecipe,
   removeOwnRecipe,

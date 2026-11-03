@@ -3,7 +3,7 @@ import Badge from "../Badge";
 import MarketImageSection from "../MarketImageSection";
 import MarketItemImage from "../MarketItem/MarketItemImage";
 import styles from "./styles/MarketModalTop.module.scss";
-import { useAppDispatch } from "@src/store/store";
+import { useAppDispatch, useAppSelector } from "@src/store/store";
 import {
   closeMarketModal,
   MarketModalState,
@@ -15,16 +15,26 @@ import classNames from "classnames";
 import MarketModalTree from "./MarketModalTree";
 import { AnimatePresence } from "framer-motion";
 import MarketModalOwnButton from "./MarketModalOwnButton";
-import { switchNoRecipe } from "@src/store/slices/market.slice";
+import { getItemFollowValues } from "@src/store/follow";
+import {
+  selectMarketState,
+  setFollowedItem,
+  switchNoRecipe,
+} from "@src/store/slices/market.slice";
 import { useTranslation } from "react-i18next";
+import MarketFilterButton from "@src/components/MarketFilterButton";
+import MarketIcons from "@src/ui/icons/MarketFilterIcons";
 
 const buttons = ["craft", "own", "chart", "follow"];
 
 const MarketModalTop = () => {
   const { item, itemCost, isOwn, show, noRecipeMarked } = useMarketModal();
+  const { followedItems } = useAppSelector(selectMarketState);
   const { t } = useTranslation("marketPage");
 
   const dispatch = useAppDispatch();
+
+  const isFollowed = followedItems.includes(item.id);
 
   const buyIsBetter = itemCost > item.rawPrices.b;
   const selfProfit = Math.abs(
@@ -41,6 +51,16 @@ const MarketModalTop = () => {
 
   const onClickNoRecipe = () => {
     dispatch(switchNoRecipe(item.id));
+  };
+
+  const onClickFollow = () => {
+    dispatch(
+      setFollowedItem({
+        id: item.id,
+        values: getItemFollowValues(item),
+      }),
+    );
+    dispatch(setMarketModalShow("follow"));
   };
 
   const dontHasRecipe =
@@ -132,6 +152,17 @@ const MarketModalTop = () => {
         >
           <UnavaibleIcon />
         </button>
+
+        <MarketFilterButton
+          className={styles.follow_btn}
+          title={
+            isFollowed ? t("modal.follow.remove") : t("modal.follow.add")
+          }
+          onClick={onClickFollow}
+          isActive={isFollowed}
+        >
+          <MarketIcons.BellIcon />
+        </MarketFilterButton>
 
         <MarketModalTree />
       </MarketImageSection>

@@ -10,6 +10,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getVersion: () => ipcRenderer.invoke("get-app-version"),
   getIsMirror: () => ipcRenderer.invoke("get-is-mirror"),
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  showNotification: (payload: {
+    title: string;
+    body: string;
+    icon?: string;
+  }) => ipcRenderer.invoke("show-notification", payload),
   openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
   openUserData: () => ipcRenderer.invoke("open-user-data"),
   pickNotificationSound: () => ipcRenderer.invoke("pick-notification-sound"),

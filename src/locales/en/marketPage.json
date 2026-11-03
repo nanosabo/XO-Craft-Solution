@@ -77,6 +77,45 @@
       "optimal": "Optimal",
       "allcraft": "Craft all",
       "buyIng": "Buy all"
+    },
+    "follow": {
+      "title": "Item watch",
+      "subtitle": "Set alerts for price and lot count changes.",
+      "add": "Add to watchlist",
+      "remove": "Remove from watchlist",
+      "groups": {
+        "price": "Prices",
+        "lots": "Lots"
+      },
+      "metrics": {
+        "sell": "Sell price",
+        "buy": "Buy price",
+        "sellLots": "Sell lots count",
+        "buyLots": "Buy lots count"
+      },
+      "conditions": {
+        "any": "Any change",
+        "below": "Below",
+        "belowOrEqual": "Below or equal",
+        "above": "Above",
+        "aboveOrEqual": "Above or equal"
+      },
+      "hints": {
+        "any": "Notify on any change of the {{type}}.",
+        "below": "Notify when the {{type}} drops below {{value}}.",
+        "belowOrEqual": "Notify when the {{type}} drops to {{value}} or lower.",
+        "above": "Notify when the {{type}} rises above {{value}}.",
+        "aboveOrEqual": "Notify when the {{type}} rises to {{value}} or higher."
+      },
+      "ruleEnabled": "Notify for this metric",
+      "currentPrice": "Now",
+      "targetPrice": "Alert value",
+      "units": {
+        "currency": "coins",
+        "lots": "lots"
+      },
+      "disabledHint": "Add the item to your watchlist to set up alerts.",
+      "noPrice": "No data"
     }
   },
   "chart": {
