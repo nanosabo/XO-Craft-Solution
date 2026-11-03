@@ -104,6 +104,8 @@ interface WindowState {
   y?: number;
 }
 
+const RELEASE_REPO = "nanosabo/XO-Craft-Solution";
+
 const updateInfoPath = path.join(app.getPath("userData"), "update-info.json");
 
 interface StoredUpdateInfo {
@@ -249,6 +251,23 @@ ipcMain.handle("get-is-mirror", () => {
 
 ipcMain.handle("get-update-info", () => {
   return readUpdateInfo();
+});
+
+/**
+ * github.com does not send CORS headers on the Atom feed, so the renderer
+ * cannot request it directly. The main process has no such restriction.
+ */
+ipcMain.handle("get-release-feed", async () => {
+  try {
+    const { data } = await axios.get(
+      `https://github.com/${RELEASE_REPO}/releases.atom`,
+      { responseType: "text", timeout: 15000 },
+    );
+
+    return typeof data === "string" ? data : null;
+  } catch {
+    return null;
+  }
 });
 
 ipcMain.handle("check-for-updates", async () => {

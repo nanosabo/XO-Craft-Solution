@@ -31,6 +31,7 @@ interface Window {
       version: string;
       releaseNotes: string | null;
     } | null>;
+    getReleaseFeed(): Promise<string | null>;
     checkForUpdates(): Promise<{
       ok: boolean;
       current: string;

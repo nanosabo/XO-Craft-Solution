@@ -34,13 +34,14 @@ const fetchFromApi = async (version: string): Promise<ReleaseNotes | null> => {
 /**
  * github.com serves the same release notes as an Atom feed. Unlike the REST API
  * it has no anonymous rate limit, and it stays reachable wherever the app can
- * download its updates.
+ * download its updates. The feed is fetched by the main process because it is
+ * served without CORS headers.
  */
 const fetchFromAtom = async (version: string): Promise<ReleaseNotes | null> => {
   try {
-    const { data } = await axios.get(`https://github.com/${REPO}/releases.atom`, {
-      timeout: REQUEST_TIMEOUT,
-    });
+    const data = await window.electronAPI.getReleaseFeed();
+
+    if (!data) return null;
 
     const doc = new DOMParser().parseFromString(data, "application/xml");
     const entry = Array.from(doc.querySelectorAll("entry")).find((item) =>
