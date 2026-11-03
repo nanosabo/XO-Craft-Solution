@@ -205,6 +205,12 @@
     border-color 0.2s ease-in-out,
     background-color 0.2s ease-in-out;
 
+  // The global reset adds a top margin to every element following the icon,
+  // which would push the text block below the icon.
+  > div {
+    margin-top: 4px;
+  }
+
   h3 {
     color: $white;
     @include subtitle2;
