@@ -24,3 +24,4 @@ export { default as BellIcon } from "./BellIcon";
 export { default as MinusIcon } from "./MinusIcon";
 export { default as ExternalIcon } from "./ExternalIcon";
 export { default as RefreshIcon } from "./RefreshIcon";
+export { default as CraftIcon } from "./CraftIcon";

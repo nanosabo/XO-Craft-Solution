@@ -5,6 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import SettingsPage from "./pages/SettingsPage";
 import SolvedPage from "./pages/SolvedPage";
 import MarketPage from "./pages/MarketPage";
+import AboutPage from "./pages/AboutPage";
 
 const Router = () => {
   const location = useLocation();
@@ -17,6 +18,7 @@ const Router = () => {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/solved" element={<SolvedPage />} />
         <Route path="/market" element={<MarketPage />} />
+        <Route path="/about" element={<AboutPage />} />
       </Routes>
     </AnimatePresence>
   );

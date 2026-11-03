@@ -7,7 +7,7 @@ interface ScrollFade {
 
 /**
  * Tracks whether the scroll container has content hidden above or below.
- * Re-checks on scroll, resize and when the tab content is replaced.
+ * Re-checks on scroll, resize and when the content is replaced.
  */
 const useScrollFade = (ref: RefObject<HTMLElement>): ScrollFade => {
   const [fade, setFade] = useState<ScrollFade>({

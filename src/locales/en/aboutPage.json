@@ -1,0 +1,58 @@
+{
+  "title": "About app",
+  "subtitle": "A helper for building optimal crafts in Crossout.",
+  "hero": {
+    "badge": "Version {{version}}",
+    "title": "XO Craft Solution",
+    "description": "A desktop app for planning crafts with your inventory, analog parts and market prices in mind. Every calculation runs locally — no game connection required.",
+    "author": "Author: SABOTAGE",
+    "platforms": "Windows · Linux",
+    "languages": "Русский · English"
+  },
+  "features": {
+    "title": "Features",
+    "subtitle": "Everything you need to plan crafts and trading in one window.",
+    "craft": {
+      "title": "Craft solver",
+      "text": "Finds the optimal part combination by power score, weight and durability, taking your available inventory into account."
+    },
+    "inventory": {
+      "title": "Inventory aware",
+      "text": "Uses the parts you actually own and lets you adjust the remaining quantities before solving."
+    },
+    "analog": {
+      "title": "Analog search",
+      "text": "Suggests replacement parts within the configured stat tolerances while keeping the craft balanced."
+    },
+    "market": {
+      "title": "Market analytics",
+      "text": "Shows sell and buy prices, lots, spread, ROI and price history."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "text": "Watches selected parts and alerts you when prices or lot counts change."
+    },
+    "updates": {
+      "title": "Updates & languages",
+      "text": "Checks GitHub for new versions automatically and supports Russian and English."
+    }
+  },
+  "links": {
+    "title": "Project & community",
+    "subtitle": "Source code, feedback and parts data.",
+    "github": "GitHub",
+    "discord": "Discord",
+    "site": "Parts data"
+  },
+  "data": {
+    "title": "Data & privacy",
+    "subtitle": "The app runs locally and does not require a Crossout account.",
+    "local": "Settings, inventory and solution history are stored only on this computer.",
+    "market": "Market analytics uses publicly available price and lot data.",
+    "free": "The project is free and developed by the community."
+  },
+  "footer": {
+    "version": "XO Craft Solution · version {{version}}",
+    "madeBy": "Made by the Crossout community"
+  }
+}

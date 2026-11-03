@@ -7,7 +7,7 @@ import InventorySettings from "@src/containers/Settings/InventorySettings";
 import MarketSettings from "@src/containers/Settings/MarketSettings";
 import SettingsSidebar from "@src/containers/Settings/SettingsSidebar";
 import { SettingsTab } from "@src/containers/Settings/types";
-import useScrollFade from "@src/containers/Settings/useScrollFade";
+import useScrollFade from "@src/hooks/useScrollFade";
 import AnimatePageLayout from "@src/layouts/AnimatePageLayout";
 import styles from "@src/containers/Settings/styles/Settings.module.scss";
 
