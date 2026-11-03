@@ -56,9 +56,9 @@ jobs:
           if-no-files-found: error
           path: |
             release/*.exe
+            release/*.exe.blockmap
             release/*.AppImage
-            release/*.yml
-            release/*.blockmap
+            release/latest*.yml
 
   release:
     name: Publish release
@@ -69,12 +69,23 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: ${{ github.event.inputs.tag || github.ref_name }}
-          draft: true
-          prerelease: ${{ contains(github.event.inputs.tag || github.ref_name, '-') }}
-          generate_release_notes: true
-          files: artifacts/**/*
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          # A previous attempt may have left a draft behind.
+          if gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null | grep -q true; then
+            gh release delete "$TAG" --yes --cleanup-tag=false
+          fi
+
+          args=(--draft --title "$TAG" --generate-notes)
+          case "$TAG" in
+            *-*) args+=(--prerelease) ;;
+          esac
+
+          gh release create "$TAG" artifacts/* "${args[@]}"
