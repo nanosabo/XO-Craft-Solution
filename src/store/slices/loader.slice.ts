@@ -41,10 +41,13 @@ export const solveData = createAsyncThunk(
     const state = getState() as RootState;
     const inputs = state.solveInputs;
     const { parts, forbidden } = state.requiredParts;
+    const { inventory, inventoryEnabled } = state.settings;
     const result = await window.ipcRenderer.invoke("solve", {
       inputs,
       requiredParts: parts,
       forbidden: forbidden,
+      inventory,
+      inventoryEnabled,
     });
     localStorage.setItem("solution", JSON.stringify(result));
     await new Promise((resolve) => setTimeout(resolve, 1000));

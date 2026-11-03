@@ -7,6 +7,10 @@
     "update": {
       "title": "Update Available",
       "body": "The update will be downloaded automatically and installed after the app is closed"
+    },
+    "sound": {
+      "pick": "Choose a notification sound",
+      "filter": "Audio files"
     }
   },
   "ru": {
@@ -17,6 +21,10 @@
     "update": {
       "title": "Доступно обновление",
       "body": "Обновление будет автоматически загружено и установится после закрытия приложения"
+    },
+    "sound": {
+      "pick": "Выберите звук уведомления",
+      "filter": "Аудиофайлы"
     }
   }
 }

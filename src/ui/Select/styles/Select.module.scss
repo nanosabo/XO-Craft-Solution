@@ -23,8 +23,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+    min-width: 0;
     color: $default;
-    max-width: 100px;
+    max-width: 100%;
   }
 
   &:hover {

@@ -15,12 +15,15 @@ import {
   updateMarket,
 } from "@src/store/slices/market.slice";
 import i18n from "../../i18n";
+import useAutoUpdate from "@src/hooks/useAutoUpdate";
 
 const Header = () => {
   const location = useLocation();
   const isLoadingPage = location.pathname === "/loading";
 
   const dispatch = useAppDispatch();
+
+  useAutoUpdate();
 
   useEffect(() => {
     const listener = (

@@ -27,5 +27,24 @@ interface Window {
   electronAPI: {
     getVersion(): Promise<string>;
     getIsMirror(): Promise<boolean>;
+    checkForUpdates(): Promise<{
+      ok: boolean;
+      current: string;
+      latest: string | null;
+      message?: string;
+    }>;
+    openExternal(url: string): Promise<boolean>;
+    openUserData(): Promise<boolean>;
+    pickNotificationSound(): Promise<
+      | { ok: true; name: string }
+      | { ok: false; error: "too-large" | "unsupported" | "failed" }
+      | null
+    >;
+    getNotificationSound(): Promise<{
+      name: string;
+      mime: string;
+      dataUrl: string;
+    } | null>;
+    removeNotificationSound(): Promise<boolean>;
   };
 }

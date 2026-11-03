@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   Menu,
   nativeImage,
@@ -9,6 +10,7 @@ import {
   Notification,
   screen,
 } from "electron";
+import type { OpenDialogOptions } from "electron";
 import fs from "fs";
 import path from "node:path";
 import { spawn } from "child_process";
@@ -209,17 +211,6 @@ ipcMain.on("openDiscordExternal", () => {
   shell.openExternal("https://discord.gg/cwtHShAfZx");
 });
 
-app.on("ready", () => {
-  autoUpdater
-    .checkForUpdatesAndNotify({
-      title: locales[lang].update.title,
-      body: locales[lang].update.body,
-    })
-    .catch((err) => {
-      console.error("Update check failed:", err);
-    });
-});
-
 ipcMain.handle("get-app-version", () => {
   return app.getVersion();
 });
@@ -228,10 +219,166 @@ ipcMain.handle("get-is-mirror", () => {
   return isMirror;
 });
 
+ipcMain.handle("check-for-updates", async () => {
+  try {
+    const result = await autoUpdater.checkForUpdatesAndNotify({
+      title: locales[lang].update.title,
+      body: locales[lang].update.body,
+    });
+
+    return {
+      ok: true,
+      current: app.getVersion(),
+      latest: result?.updateInfo.version ?? null,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      current: app.getVersion(),
+      message: error instanceof Error ? error.message : String(error),
+    };
+  }
+});
+
+ipcMain.handle("open-external", async (_, url: string) => {
+  if (!/^https?:\/\//i.test(url)) return false;
+
+  await shell.openExternal(url);
+  return true;
+});
+
+ipcMain.handle("open-user-data", async () => {
+  await shell.openPath(app.getPath("userData"));
+  return true;
+});
+
+/* ---------------- custom notification sound ---------------- */
+
+const SOUNDS_DIR = path.join(app.getPath("userData"), "sounds");
+const CUSTOM_SOUND_PREFIX = "custom-notification";
+const MAX_SOUND_BYTES = 10 * 1024 * 1024;
+
+const AUDIO_MIME: Record<string, string> = {
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+  ".oga": "audio/ogg",
+  ".m4a": "audio/mp4",
+  ".aac": "audio/aac",
+  ".flac": "audio/flac",
+  ".opus": "audio/opus",
+  ".weba": "audio/webm",
+  ".webm": "audio/webm",
+};
+
+const findCustomSound = (): string | null => {
+  try {
+    if (!fs.existsSync(SOUNDS_DIR)) return null;
+
+    const file = fs
+      .readdirSync(SOUNDS_DIR)
+      .find((name) => name.startsWith(`${CUSTOM_SOUND_PREFIX}.`));
+
+    return file ? path.join(SOUNDS_DIR, file) : null;
+  } catch (error) {
+    console.error("Failed to read the notification sounds folder:", error);
+    return null;
+  }
+};
+
+const clearCustomSounds = () => {
+  try {
+    if (!fs.existsSync(SOUNDS_DIR)) return;
+
+    for (const name of fs.readdirSync(SOUNDS_DIR)) {
+      if (name.startsWith(`${CUSTOM_SOUND_PREFIX}.`)) {
+        fs.rmSync(path.join(SOUNDS_DIR, name), { force: true });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to remove the notification sound:", error);
+  }
+};
+
+ipcMain.handle("pick-notification-sound", async () => {
+  const options: OpenDialogOptions = {
+    title: locales[lang].sound.pick,
+    properties: ["openFile"],
+    filters: [
+      {
+        name: locales[lang].sound.filter,
+        extensions: Object.keys(AUDIO_MIME).map((extension) =>
+          extension.slice(1),
+        ),
+      },
+    ],
+  };
+
+  const result = win
+    ? await dialog.showOpenDialog(win, options)
+    : await dialog.showOpenDialog(options);
+
+  if (result.canceled || result.filePaths.length === 0) return null;
+
+  const source = result.filePaths[0];
+  const extension = path.extname(source).toLowerCase();
+
+  if (!AUDIO_MIME[extension]) {
+    return { ok: false, error: "unsupported" };
+  }
+
+  try {
+    const stats = await fs.promises.stat(source);
+
+    if (stats.size > MAX_SOUND_BYTES) {
+      return { ok: false, error: "too-large" };
+    }
+
+    await fs.promises.mkdir(SOUNDS_DIR, { recursive: true });
+    clearCustomSounds();
+    await fs.promises.copyFile(
+      source,
+      path.join(SOUNDS_DIR, `${CUSTOM_SOUND_PREFIX}${extension}`),
+    );
+
+    return { ok: true, name: path.basename(source) };
+  } catch (error) {
+    console.error("Failed to save the notification sound:", error);
+    return { ok: false, error: "failed" };
+  }
+});
+
+ipcMain.handle("get-notification-sound", async () => {
+  const file = findCustomSound();
+  if (!file) return null;
+
+  try {
+    const extension = path.extname(file).toLowerCase();
+    const mime = AUDIO_MIME[extension] ?? "application/octet-stream";
+    const data = await fs.promises.readFile(file);
+
+    return {
+      name: path.basename(file),
+      mime,
+      dataUrl: `data:${mime};base64,${data.toString("base64")}`,
+    };
+  } catch (error) {
+    console.error("Failed to read the notification sound:", error);
+    return null;
+  }
+});
+
+ipcMain.handle("remove-notification-sound", () => {
+  clearCustomSounds();
+  return true;
+});
+
 interface DataToSolve {
   inputs: solveInputsState;
   requiredParts: requiredPart[];
   forbidden: requiredPart[];
+  inventory?: Record<string, number>;
+  inventoryEnabled?: boolean;
 }
 
 interface SolveResultPart {
@@ -392,14 +539,21 @@ ipcMain.handle("fetchMarketChartData", async (_, id: number) => {
 
 ipcMain.handle(
   "solve",
-  async (_, { inputs, requiredParts, forbidden }: DataToSolve) => {
+  async (
+    _,
+    {
+      inputs,
+      requiredParts,
+      forbidden,
+      inventory = {},
+      inventoryEnabled = false,
+    }: DataToSolve,
+  ) => {
     if (!fs.existsSync(exePath)) {
       throw new Error(
         `Solver not found at "${exePath}". Build it with "yarn solver:build".`,
       );
     }
-
-    const proc = spawn(exePath);
 
     const forbiddenNames = forbidden.map((part) => part.eng_name);
     const parts = actualParts.filter(
@@ -443,9 +597,23 @@ ipcMain.handle(
     const partsPrepared = parts
       .map((p) => {
         const required = requiredParts.find((rp) => rp.id === p.id);
+        const requiredCount = required?.count ?? 0;
+        let maxCount = p.maxCount - requiredCount;
+
+        // The warehouse is optional. When it is enabled, a part that is
+        // explicitly present in the warehouse can only be used up to the
+        // amount the user owns (minus the amount already reserved as required).
+        if (
+          inventoryEnabled &&
+          Object.prototype.hasOwnProperty.call(inventory, p.id)
+        ) {
+          const owned = Math.max(0, (inventory[p.id] ?? 0) - requiredCount);
+          maxCount = Math.min(maxCount, owned);
+        }
+
         return {
           ...p,
-          maxCount: required ? p.maxCount - required.count : p.maxCount,
+          maxCount,
           durability: p.build_hp !== p.durability ? p.build_hp : p.durability,
         };
       })
@@ -461,7 +629,44 @@ ipcMain.handle(
       parts: partsPrepared,
     };
 
+    /* ---------------- empty pool ---------------- */
+
+    // The solver cannot handle an empty parts list, which happens when the
+    // warehouse or the HP filter excludes every part. In that case the result
+    // consists of the required parts only.
+    if (partsPrepared.length === 0) {
+      let totalDurability = requiredStats.durability;
+
+      if (inputs.durabilityCabin) totalDurability *= 1.1;
+      if (inputs.coDriver) totalDurability *= 1.05;
+      totalDurability += inputs.durability;
+
+      const requiredSolution = requiredParts
+        .map((rp) => {
+          const part = partsById.get(rp.id);
+          if (!part) return null;
+
+          return {
+            id: rp.id,
+            name: part.name,
+            eng_name: part.eng_name,
+            count: rp.count,
+          };
+        })
+        .filter((part): part is SolveResultPart => part !== null);
+
+      return {
+        solution: requiredSolution,
+        totalDurability: Math.round(totalDurability),
+        totalWeight: inputs.weight + requiredStats.weight,
+        totalPower: inputs.powerScores + requiredStats.power,
+        totalParts: inputs.parts + requiredStats.parts,
+      };
+    }
+
     /* ---------------- run solver ---------------- */
+
+    const proc = spawn(exePath);
 
     const result: SolveResult = await new Promise((resolve, reject) => {
       proc.on("error", reject);
