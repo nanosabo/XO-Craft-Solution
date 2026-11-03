@@ -1,0 +1,62 @@
+name: Repair release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to repair (e.g. v2.0.2-beta.4)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    name: Rename assets to match manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repair
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p manifests
+          gh release download "$TAG" --pattern 'latest*.yml' --dir manifests
+
+          # electron-updater requests exactly the names written in the manifests.
+          desired=()
+          while IFS= read -r name; do
+            [ -n "$name" ] || continue
+            desired+=("$name" "$name.blockmap")
+          done < <(
+            grep -hE '^  - url: |^path: ' manifests/latest*.yml |
+              sed -E 's/^  - url: //; s/^path: //' |
+              sort -u
+          )
+
+          # GitHub turns spaces into dots in uploaded asset names, so compare
+          # names with both dots and dashes treated as separators.
+          normalize() { printf '%s' "$1" | sed -E 's/[.-]/_/g'; }
+
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
+            --jq '.assets[] | [.id, .name] | @tsv' |
+          while IFS=$'\t' read -r id name; do
+            for want in "${desired[@]}"; do
+              if [ "$name" != "$want" ] &&
+                 [ "$(normalize "$name")" = "$(normalize "$want")" ]; then
+                echo "Renaming: $name -> $want"
+                gh api -X PATCH \
+                  "repos/$GITHUB_REPOSITORY/releases/assets/$id" \
+                  -f name="$want" >/dev/null
+                break
+              fi
+            done
+          done
+
+          echo "Assets after repair:"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
+            --jq '.assets[].name'

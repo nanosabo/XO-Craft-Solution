@@ -103,6 +103,27 @@ jobs:
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id" >>"$summary" 2>&1
           fi
 
+          # electron-builder writes space-free names into latest*.yml, but GitHub
+          # replaces spaces in uploaded file names with dots. Rename the files
+          # here so the uploaded assets match the names electron-updater requests.
+          for file in artifacts/*; do
+            [ -f "$file" ] || continue
+            base=$(basename "$file")
+            safe=${base// /-}
+            if [ "$base" != "$safe" ]; then
+              mv -- "$file" "$(dirname "$file")/$safe"
+            fi
+          done
+
+          # Fail before uploading if a manifest points at a missing file.
+          for name in $(grep -hE '^  - url: |^path: ' artifacts/latest*.yml |
+              sed -E 's/^  - url: //; s/^path: //' | sort -u); do
+            if [ ! -f "artifacts/$name" ]; then
+              echo "Manifest references missing artifact: $name" >> "$summary"
+              exit 1
+            fi
+          done
+
           args=(--draft --title "$TAG" --generate-notes --target "$GITHUB_SHA")
           case "$TAG" in
             *-*) args+=(--prerelease) ;;
