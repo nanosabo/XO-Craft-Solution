@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("ipcRenderer", withPrototype(ipcRenderer));
 contextBridge.exposeInMainWorld("electronAPI", {
   getVersion: () => ipcRenderer.invoke("get-app-version"),
   getIsMirror: () => ipcRenderer.invoke("get-is-mirror"),
+  getUpdateInfo: () => ipcRenderer.invoke("get-update-info"),
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   showNotification: (payload: {
     title: string;

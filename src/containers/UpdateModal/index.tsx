@@ -12,10 +12,13 @@ import rehypeRaw from "rehype-raw";
 import "github-markdown-css/github-markdown-dark.css";
 import { ChevronIcon } from "@src/ui/icons";
 
+const RETRY_DELAYS = [5000, 15000];
+
 const UpdateModal = () => {
   const [open, setOpen] = useState(false);
   const [version, setVersion] = useState("2.0");
   const [body, setBody] = useState("");
+  const [isHtml, setIsHtml] = useState(false);
 
   useEffect(() => {
     window.electronAPI.getVersion().then(setVersion);
@@ -26,9 +29,37 @@ const UpdateModal = () => {
   }, []);
 
   useEffect(() => {
-    if (open) {
-      fetchRelease().then((data) => setBody(data.body));
-    }
+    if (!open) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    // Right after an update the network may not be ready yet, so give the
+    // release notes a couple of extra attempts before giving up.
+    const load = (attempt: number) => {
+      fetchRelease().then((notes) => {
+        if (cancelled) return;
+
+        if (notes) {
+          setBody(notes.body);
+          setIsHtml(notes.html);
+          return;
+        }
+
+        const delay = RETRY_DELAYS[attempt];
+
+        if (delay != null) {
+          timer = setTimeout(() => load(attempt + 1), delay);
+        }
+      });
+    };
+
+    load(0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [open]);
 
   const onClose = () => {
@@ -54,12 +85,16 @@ const UpdateModal = () => {
             </button>
 
             <div className="markdown-body">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-              >
-                {body}
-              </ReactMarkdown>
+              {isHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: body }} />
+              ) : (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                >
+                  {body}
+                </ReactMarkdown>
+              )}
             </div>
           </div>
         </motion.div>

@@ -27,6 +27,10 @@ interface Window {
   electronAPI: {
     getVersion(): Promise<string>;
     getIsMirror(): Promise<boolean>;
+    getUpdateInfo(): Promise<{
+      version: string;
+      releaseNotes: string | null;
+    } | null>;
     checkForUpdates(): Promise<{
       ok: boolean;
       current: string;

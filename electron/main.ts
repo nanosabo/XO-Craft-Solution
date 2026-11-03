@@ -104,6 +104,34 @@ interface WindowState {
   y?: number;
 }
 
+const updateInfoPath = path.join(app.getPath("userData"), "update-info.json");
+
+interface StoredUpdateInfo {
+  version: string;
+  releaseNotes: string | null;
+}
+
+/**
+ * The release notes are known while checking for an update, i.e. before the app
+ * is restarted. Persisting them lets the patchnote window work without a second
+ * request to GitHub after the update.
+ */
+const saveUpdateInfo = (info: StoredUpdateInfo) => {
+  try {
+    fs.writeFileSync(updateInfoPath, JSON.stringify(info), "utf8");
+  } catch {
+    /* The cache is only an optimization for the release-notes window. */
+  }
+};
+
+const readUpdateInfo = (): StoredUpdateInfo | null => {
+  try {
+    return JSON.parse(fs.readFileSync(updateInfoPath, "utf8"));
+  } catch {
+    return null;
+  }
+};
+
 const WIDTH = 1160;
 const HEIGHT = 650;
 
@@ -219,6 +247,10 @@ ipcMain.handle("get-is-mirror", () => {
   return isMirror;
 });
 
+ipcMain.handle("get-update-info", () => {
+  return readUpdateInfo();
+});
+
 ipcMain.handle("check-for-updates", async () => {
   try {
     const result = await autoUpdater.checkForUpdatesAndNotify({
@@ -226,10 +258,26 @@ ipcMain.handle("check-for-updates", async () => {
       body: locales[lang].update.body,
     });
 
+    const updateInfo = result?.updateInfo;
+
+    if (updateInfo?.version) {
+      const notes = updateInfo.releaseNotes;
+
+      saveUpdateInfo({
+        version: updateInfo.version,
+        releaseNotes: Array.isArray(notes)
+          ? notes
+              .map((note) => note.note ?? "")
+              .filter(Boolean)
+              .join("\n\n")
+          : notes ?? null,
+      });
+    }
+
     return {
       ok: true,
       current: app.getVersion(),
-      latest: result?.updateInfo.version ?? null,
+      latest: updateInfo?.version ?? null,
     };
   } catch (error) {
     return {
