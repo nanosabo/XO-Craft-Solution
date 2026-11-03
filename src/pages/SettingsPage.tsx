@@ -1,23 +1,33 @@
+import classNames from "classnames";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import AnalogSettings from "@src/containers/Settings/AnalogSettings";
 import GeneralSettings from "@src/containers/Settings/GeneralSettings";
 import InventorySettings from "@src/containers/Settings/InventorySettings";
 import MarketSettings from "@src/containers/Settings/MarketSettings";
 import SettingsSidebar from "@src/containers/Settings/SettingsSidebar";
 import { SettingsTab } from "@src/containers/Settings/types";
+import useScrollFade from "@src/containers/Settings/useScrollFade";
 import AnimatePageLayout from "@src/layouts/AnimatePageLayout";
 import styles from "@src/containers/Settings/styles/Settings.module.scss";
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
+  const contentRef = useRef<HTMLDivElement>(null);
+  const fade = useScrollFade(contentRef);
 
   return (
     <AnimatePageLayout fill>
       <div className={styles.layout}>
         <SettingsSidebar activeTab={activeTab} onChange={setActiveTab} />
 
-        <div className={styles.content}>
+        <div
+          ref={contentRef}
+          className={classNames(styles.content, {
+            [styles.fadeTop]: fade.top,
+            [styles.fadeBottom]: fade.bottom,
+          })}
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={activeTab}
