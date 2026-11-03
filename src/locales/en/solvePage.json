@@ -33,5 +33,23 @@
   },
   "return": {
     "title": "Return this part"
+  },
+  "restore": {
+    "title": "Return the original part"
+  },
+  "similar": {
+    "action": "Similar",
+    "title": "Similar parts",
+    "subtitle": "Pick an analog — the part count in the solution stays the same.",
+    "current": "Current part",
+    "matches": "Matching analogs: {{count}}",
+    "sameCategory": "Only parts from the same category are matched.",
+    "noMatches": "No analogs fit the configured tolerances",
+    "notFound": "Could not find the part in the catalog",
+    "loading": "Loading parts...",
+    "error": "Could not load the parts list",
+    "replace": "Replace",
+    "close": "Close",
+    "tolerances": "Tolerances: power ±{{power}} · mass ±{{weight}} kg · durability −{{durability}} pts"
   }
 }

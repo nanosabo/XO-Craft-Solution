@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 
 export enum LoaderStateStatus {
@@ -10,11 +10,20 @@ export enum LoaderStateStatus {
 
 const storage = localStorage.getItem("solution");
 
+export interface solvedPartOrigin {
+  id: string;
+  name: string;
+  eng_name: string;
+  count: number;
+}
+
 export interface solvedPart {
   id: string;
   name: string;
   eng_name: string;
   count: number;
+  /** Parts replaced by this one, kept so the originals can be restored. */
+  origins?: solvedPartOrigin[];
 }
 
 export interface solvedResult {
@@ -70,6 +79,11 @@ export const LoaderSlice = createSlice({
     setLoaderErrorStatus(state) {
       state.status = LoaderStateStatus.ERROR;
     },
+
+    setSolvedResult(state, action: PayloadAction<solvedResult>) {
+      state.solvedResult = action.payload;
+      localStorage.setItem("solution", JSON.stringify(action.payload));
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -95,6 +109,7 @@ export const {
   setLoaderErrorStatus,
   setLoaderInititalStatus,
   setLoaderSolvingStatus,
+  setSolvedResult,
 } = LoaderSlice.actions;
 
 export const selectLoaderState = (state: RootState) => state.loader;

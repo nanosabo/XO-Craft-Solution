@@ -29,10 +29,11 @@
     scale: 0.9;
   }
 
-  &:hover {
+  &:hover,
+  &:focus-within {
     cursor: pointer;
 
-    .exclude {
+    .actions {
       bottom: 12px;
     }
   }
@@ -55,22 +56,62 @@
     bottom: 8px;
   }
 
-  .exclude {
+  .actions {
     position: absolute;
     left: 12px;
-    bottom: -32px;
+    bottom: -40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    transition: bottom 0.2s ease-in-out;
+  }
+
+  .action {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 32px;
     height: 32px;
     border-radius: 4px;
-    background-color: #c21010;
     color: $white;
 
     transition:
-      bottom 0.2s ease-in-out,
+      transform 0.2s ease-in-out,
       background-color 0.2s ease-in-out;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .similar {
+    background-color: rgba($primary, 0.9);
+
+    &:hover {
+      background-color: $primary;
+    }
+  }
+
+  .restore {
+    background-color: #0ac59a;
+
+    &:hover {
+      background-color: darken(#0ac59a, 10);
+    }
+  }
+
+  .exclude {
+    background-color: #c21010;
 
     &:hover {
       background-color: darken(#c21010, 10);
