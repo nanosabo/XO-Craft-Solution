@@ -76,14 +76,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          summary="$GITHUB_STEP_SUMMARY"
 
-          # A previous attempt may have left a draft behind. Drafts are not
-          # returned by "gh release view", so look them up in the release list.
-          if gh release list --limit 100 --json tagName,isDraft \
-              --jq '.[] | select(.isDraft) | .tagName' \
-              | grep -qx "$TAG"; then
-            gh release delete "$TAG" --yes --cleanup-tag=false
+          {
+            echo "## Release $TAG"
+            echo "### Files"
+            echo '```'
+            ls -la artifacts
+            echo '```'
+            echo "### Releases before"
+            echo '```'
+            gh release list --limit 20 2>&1
+            echo '```'
+          } >> "$summary"
+
+          # A previous attempt may have left a draft behind.
+          release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select(.draft and .tag_name == \"$TAG\") | .id" 2>>"$summary")
+          echo "Leftover draft id: ${release_id:-none}" >> "$summary"
+
+          if [ -n "$release_id" ]; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id" >>"$summary" 2>&1
           fi
 
           args=(--draft --title "$TAG" --generate-notes)
@@ -97,12 +111,8 @@ jobs:
               echo '```'
               echo "$output"
               echo '```'
-              echo "### Files"
-              echo '```'
-              ls -la artifacts
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
+            } >> "$summary"
             exit 1
           fi
 
-          echo "$output"
+          echo "$output" >> "$summary"
