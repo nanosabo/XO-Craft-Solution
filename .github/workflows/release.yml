@@ -74,9 +74,12 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          set -uo pipefail
+          # The runner starts bash with -e, so disable it explicitly: every
+          # command below reports its own error instead of aborting the step.
+          set -u +e
           summary="$GITHUB_STEP_SUMMARY"
 
           {
@@ -87,7 +90,7 @@ jobs:
             echo '```'
             echo "### Releases before"
             echo '```'
-            gh release list --limit 20 2>&1
+            gh release list --limit 20 2>&1 || true
             echo '```'
           } >> "$summary"
 
@@ -100,7 +103,7 @@ jobs:
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id" >>"$summary" 2>&1
           fi
 
-          args=(--draft --title "$TAG" --generate-notes)
+          args=(--draft --title "$TAG" --generate-notes --target "$GITHUB_SHA")
           case "$TAG" in
             *-*) args+=(--prerelease) ;;
           esac
