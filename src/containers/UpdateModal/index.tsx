@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import styles from "./styles/UpdateModal.module.scss";
 import { useEffect, useState } from "react";
+import { logWarning } from "@src/helpers/errorLog";
 import {
   fetchRelease,
   saveCurrentVersion,
@@ -21,11 +22,16 @@ const UpdateModal = () => {
   const [isHtml, setIsHtml] = useState(false);
 
   useEffect(() => {
-    window.electronAPI.getVersion().then(setVersion);
+    window.electronAPI
+      .getVersion()
+      .then(setVersion)
+      .catch((error) => logWarning("version", error));
   }, []);
 
   useEffect(() => {
-    showVersion().then(setOpen);
+    showVersion()
+      .then(setOpen)
+      .catch((error) => logWarning("update", error));
   }, []);
 
   useEffect(() => {
@@ -37,21 +43,23 @@ const UpdateModal = () => {
     // Right after an update the network may not be ready yet, so give the
     // release notes a couple of extra attempts before giving up.
     const load = (attempt: number) => {
-      fetchRelease().then((notes) => {
-        if (cancelled) return;
+      fetchRelease()
+        .then((notes) => {
+          if (cancelled) return;
 
-        if (notes) {
-          setBody(notes.body);
-          setIsHtml(notes.html);
-          return;
-        }
+          if (notes) {
+            setBody(notes.body);
+            setIsHtml(notes.html);
+            return;
+          }
 
-        const delay = RETRY_DELAYS[attempt];
+          const delay = RETRY_DELAYS[attempt];
 
-        if (delay != null) {
-          timer = setTimeout(() => load(attempt + 1), delay);
-        }
-      });
+          if (delay != null) {
+            timer = setTimeout(() => load(attempt + 1), delay);
+          }
+        })
+        .catch((error) => logWarning("update-notes", error));
     };
 
     load(0);
@@ -63,7 +71,12 @@ const UpdateModal = () => {
   }, [open]);
 
   const onClose = () => {
-    saveCurrentVersion().then(() => setOpen(false));
+    saveCurrentVersion()
+      .then(() => setOpen(false))
+      .catch((error) => {
+        logWarning("update", error);
+        setOpen(false);
+      });
   };
 
   return (

@@ -1,4 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { AppError, logError } from "@src/helpers/errorLog";
+import { getLastAppRoute } from "@src/helpers/lastRoute";
 import { RootState } from "../store";
 
 export enum LoaderStateStatus {
@@ -37,30 +39,42 @@ export interface solvedResult {
 export interface LoaderState {
   status: LoaderStateStatus;
   solvedResult: solvedResult | null;
+  error: AppError | null;
+  errorReturnTo: string | null;
 }
 
 const initialState: LoaderState = {
   status: LoaderStateStatus.INITIAL,
   solvedResult: storage ? (JSON.parse(storage) as solvedResult) : null,
+  error: null,
+  errorReturnTo: null,
 };
 
 export const solveData = createAsyncThunk(
   "loader/solve",
-  async (_, { getState }) => {
-    const state = getState() as RootState;
-    const inputs = state.solveInputs;
-    const { parts, forbidden } = state.requiredParts;
-    const { inventory, inventoryEnabled } = state.settings;
-    const result = await window.ipcRenderer.invoke("solve", {
-      inputs,
-      requiredParts: parts,
-      forbidden: forbidden,
-      inventory,
-      inventoryEnabled,
-    });
-    localStorage.setItem("solution", JSON.stringify(result));
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return result;
+  async (_, { getState, dispatch }) => {
+    try {
+      const state = getState() as RootState;
+      const inputs = state.solveInputs;
+      const { parts, forbidden } = state.requiredParts;
+      const { inventory, inventoryEnabled } = state.settings;
+      const result = await window.ipcRenderer.invoke("solve", {
+        inputs,
+        requiredParts: parts,
+        forbidden: forbidden,
+        inventory,
+        inventoryEnabled,
+      });
+      localStorage.setItem("solution", JSON.stringify(result));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return result;
+    } catch (error) {
+      const appError = logError("solve", error);
+      dispatch(
+        setLoaderError({ error: appError, returnTo: getLastAppRoute() }),
+      );
+      throw error;
+    }
   }
 );
 
@@ -70,14 +84,35 @@ export const LoaderSlice = createSlice({
   reducers: {
     setLoaderInititalStatus(state) {
       state.status = LoaderStateStatus.INITIAL;
+      state.error = null;
+      state.errorReturnTo = null;
     },
 
     setLoaderSolvingStatus(state) {
       state.status = LoaderStateStatus.SOLVING;
+      state.error = null;
+      state.errorReturnTo = null;
     },
 
-    setLoaderErrorStatus(state) {
+    setLoaderError(
+      state,
+      action: PayloadAction<{
+        error: AppError;
+        returnTo?: string | null;
+      }>,
+    ) {
       state.status = LoaderStateStatus.ERROR;
+      state.error = action.payload.error;
+      state.errorReturnTo = action.payload.returnTo ?? null;
+    },
+
+    clearLoaderError(state) {
+      state.error = null;
+      state.errorReturnTo = null;
+
+      if (state.status === LoaderStateStatus.ERROR) {
+        state.status = LoaderStateStatus.INITIAL;
+      }
     },
 
     setSolvedResult(state, action: PayloadAction<solvedResult>) {
@@ -90,6 +125,8 @@ export const LoaderSlice = createSlice({
       .addCase(solveData.pending, (state) => {
         state.status = LoaderStateStatus.SOLVING;
         state.solvedResult = null;
+        state.error = null;
+        state.errorReturnTo = null;
       })
       .addCase(
         solveData.fulfilled,
@@ -98,15 +135,26 @@ export const LoaderSlice = createSlice({
           state.solvedResult = action.payload;
         }
       )
-      .addCase(solveData.rejected, (state) => {
+      .addCase(solveData.rejected, (state, action) => {
         state.status = LoaderStateStatus.ERROR;
         state.solvedResult = null;
+
+        // The thunk normally stores the real error before rejecting. Keep a
+        // fallback for failures that happen outside its try/catch block.
+        if (!state.error) {
+          state.error = {
+            scope: "solve",
+            message: action.error.message ?? "Unknown error",
+            timestamp: new Date().toISOString(),
+          };
+        }
       });
   },
 });
 
 export const {
-  setLoaderErrorStatus,
+  clearLoaderError,
+  setLoaderError,
   setLoaderInititalStatus,
   setLoaderSolvingStatus,
   setSolvedResult,

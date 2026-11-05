@@ -9,6 +9,7 @@ import { AnimatePresence } from "framer-motion";
 import { useAppSelector } from "@src/store/store";
 import { selectRequiredPartsState } from "@src/store/slices/requiredParts.slice";
 import PartsFilterButtons from "@src/components/PartsFilterButtons";
+import { logWarning } from "@src/helpers/errorLog";
 
 export interface SearchedPart {
   id: string;
@@ -36,7 +37,8 @@ const RequiredParts = () => {
                     !forbidden.find((p) => p.id === part.id)
                 );
                 setSearched(filteredResult);
-              });
+              })
+              .catch((error) => logWarning("parts-search", error));
       }, 500),
     [parts, forbidden]
   );

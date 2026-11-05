@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
   Menu,
@@ -17,14 +18,26 @@ import { spawn } from "child_process";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
+import { isUsingMirror } from "./api";
 import { IData, OwnRecipe } from "@src/store/slices/market.slice";
 import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
 import { getOneItem } from "./oneItemCalc";
 import { fetchUpdate } from "./fetchUpdate";
 import { buildChartData, fetchChartData } from "./fetchChartData";
+import {
+  getLogPath,
+  getRecentLogs,
+  installIpcErrorLogging,
+  installMainLogging,
+  setErrorNotifier,
+  writeLog,
+} from "./logger";
 import { autoUpdater } from "electron-updater";
 import locales from "./locales.json";
 import axios from "axios";
+
+installMainLogging();
+installIpcErrorLogging();
 
 app.setAppUserModelId("xo.craft.solution");
 
@@ -74,6 +87,13 @@ app.on("second-instance", () => {
 });
 
 let win: BrowserWindow | null;
+
+setErrorNotifier((payload) => {
+  if (win && !win.isDestroyed()) {
+    win.webContents.send("app-error", payload);
+  }
+});
+
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 
@@ -174,6 +194,21 @@ function createWindow() {
     },
   });
 
+  win.webContents.on("render-process-gone", (_event, details) => {
+    writeLog("error", "renderer", "Renderer process gone", details);
+  });
+
+  win.webContents.on(
+    "did-fail-load",
+    (_event, errorCode, errorDescription, validatedURL) => {
+      writeLog("error", "renderer", "Failed to load renderer", {
+        errorCode,
+        errorDescription,
+        validatedURL,
+      });
+    },
+  );
+
   win.webContents.on("before-input-event", (event, input) => {
     const isF11 = input.key === "F11";
     const isReload =
@@ -243,6 +278,48 @@ ipcMain.on("openDiscordExternal", () => {
 ipcMain.handle("get-app-version", () => {
   return app.getVersion();
 });
+
+ipcMain.handle("get-error-logs", () => {
+  return getRecentLogs();
+});
+
+ipcMain.handle("get-log-path", () => {
+  return getLogPath();
+});
+
+ipcMain.handle("open-logs-folder", async () => {
+  const file = getLogPath();
+
+  if (!file) return false;
+
+  const error = await shell.openPath(path.dirname(file));
+  return !error;
+});
+
+ipcMain.handle("copy-text", (_, text: string) => {
+  clipboard.writeText(String(text ?? ""));
+  return true;
+});
+
+ipcMain.on(
+  "log:write",
+  (
+    _,
+    entry: {
+      level?: "info" | "warn" | "error";
+      scope?: string;
+      message?: string;
+      details?: unknown;
+    },
+  ) => {
+    writeLog(
+      entry?.level === "info" || entry?.level === "warn" ? entry.level : "error",
+      entry?.scope || "renderer",
+      entry?.message || "Unknown renderer error",
+      entry?.details,
+    );
+  },
+);
 
 ipcMain.handle("get-is-mirror", () => {
   return isMirror;
@@ -589,6 +666,7 @@ ipcMain.handle(
       no_rec,
     }: { own_rec: Record<string, OwnRecipe>; no_rec: number[] },
   ) => {
+    writeLog("info", "market", "Market request started");
     own_recipes = own_rec;
     no_recipes = no_rec;
 
@@ -613,6 +691,11 @@ ipcMain.handle(
     }
 
     interval = setInterval(onUpdate, isMirror ? 1000 * 60 * 5 : 1000 * 30);
+
+    writeLog("info", "market", "Market request finished", {
+      items: analytics.length,
+      mirror: isMirror,
+    });
 
     return { ...rest, items: analytics };
   },
@@ -879,6 +962,15 @@ ipcMain.handle("search-required-parts", async (_, value) => {
 let tray;
 
 app.whenReady().then(async () => {
+  writeLog("info", "app", "Application started", {
+    version: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    electron: process.versions.electron,
+    isDev: IS_DEV,
+    mirror: isUsingMirror(),
+  });
+
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon);

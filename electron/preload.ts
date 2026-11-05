@@ -22,6 +22,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
   pickNotificationSound: () => ipcRenderer.invoke("pick-notification-sound"),
   getNotificationSound: () => ipcRenderer.invoke("get-notification-sound"),
   removeNotificationSound: () => ipcRenderer.invoke("remove-notification-sound"),
+  logError: (entry: {
+    level?: "info" | "warn" | "error";
+    scope?: string;
+    message?: string;
+    details?: unknown;
+  }) => ipcRenderer.send("log:write", entry),
+  getErrorLogs: () => ipcRenderer.invoke("get-error-logs"),
+  getLogPath: () => ipcRenderer.invoke("get-log-path"),
+  openLogsFolder: () => ipcRenderer.invoke("open-logs-folder"),
+  copyText: (text: string) => ipcRenderer.invoke("copy-text", text),
 });
 
 // `exposeInMainWorld` can't detect attributes and methods of `prototype`, manually patching it.

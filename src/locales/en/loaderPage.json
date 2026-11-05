@@ -13,6 +13,17 @@
   },
   "error": {
     "title": "An error has occurred",
-    "subtitle": "Check your Internet connection and restart the application"
+    "subtitle": "Send the logs so we can find the cause faster",
+    "reportHint": "The logs are already saved. Copy them and send them to GitHub or Discord — it will help fix the problem.",
+    "github": "Send to GitHub",
+    "discord": "Write on Discord",
+    "copyLogs": "Copy logs",
+    "openLogs": "Open logs folder",
+    "copied": "Logs copied to the clipboard",
+    "copyFailed": "Could not copy the logs",
+    "back": "Back to the app",
+    "retry": "Retry loading",
+    "githubTitle": "Error in XO Craft Solution",
+    "githubBody": "### What happened\n\nDescribe what you did before the error.\n\n### Error\n\n`{{scope}}`: {{message}}\n\n### Logs\n\nThe app logs have been copied to the clipboard. Paste them here (Ctrl+V)."
   }
 }

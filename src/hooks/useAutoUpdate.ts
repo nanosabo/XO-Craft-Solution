@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { logWarning } from "@src/helpers/errorLog";
 import { selectSettingsState } from "@src/store/slices/settings.slice";
 import { useAppSelector } from "@src/store/store";
 
@@ -15,8 +16,9 @@ const useAutoUpdate = () => {
     if (!autoUpdate || wasChecked.current) return;
 
     wasChecked.current = true;
-    window.electronAPI.checkForUpdates().catch(() => {
+    window.electronAPI.checkForUpdates().catch((error) => {
       /* The updater can be unavailable in dev builds or offline. */
+      logWarning("update-auto", error);
     });
   }, [autoUpdate]);
 };

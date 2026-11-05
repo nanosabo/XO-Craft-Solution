@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import i18n from "@src/i18n";
+import { logWarning } from "@src/helpers/errorLog";
 import {
   getCachedItemNotificationIcon,
   getItemNotificationIcon,
@@ -111,7 +112,9 @@ const useMarketNotifications = () => {
     if (!notifications.priceDropEnabled || followedItems.length === 0) return;
 
     for (const id of followedItems) {
-      void getItemNotificationIcon(id);
+      void getItemNotificationIcon(id).catch((error) =>
+        logWarning("notification-icon", error),
+      );
     }
   }, [followedItems, notifications.priceDropEnabled]);
 
@@ -202,17 +205,21 @@ const useMarketNotifications = () => {
           : { price: rounded, previous };
 
         if (icon === null) {
-          void getItemNotificationIcon(trigger.item.id);
+          void getItemNotificationIcon(trigger.item.id).catch((error) =>
+            logWarning("notification-icon", error),
+          );
         }
 
-        void window.electronAPI.showNotification({
-          title: i18n.t(keys.title),
-          body: i18n.t(keys.body, {
-            name: trigger.item.name,
-            ...value,
-          }),
-          icon: icon ?? undefined,
-        });
+        void window.electronAPI
+          .showNotification({
+            title: i18n.t(keys.title),
+            body: i18n.t(keys.body, {
+              name: trigger.item.name,
+              ...value,
+            }),
+            icon: icon ?? undefined,
+          })
+          .catch((error) => logWarning("notification", error));
       }
     };
 

@@ -1,3 +1,4 @@
+import { logWarning } from "@src/helpers/errorLog";
 import { NotificationSignal } from "@src/store/slices/settings.slice";
 
 interface Note {
@@ -35,7 +36,9 @@ const getAudioContext = () => {
   }
 
   if (audioContext.state === "suspended") {
-    void audioContext.resume();
+    void audioContext
+      .resume()
+      .catch((error) => logWarning("notification-sound", error));
   }
 
   return audioContext;

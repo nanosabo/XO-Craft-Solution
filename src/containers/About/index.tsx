@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import classNames from "classnames";
 import PageTitle from "@src/components/PageTitle";
+import { logWarning } from "@src/helpers/errorLog";
 import useAppVersion from "@src/containers/Settings/useAppVersion";
 import useScrollFade from "@src/hooks/useScrollFade";
 import {
@@ -128,7 +129,11 @@ const About = () => {
                     key={key}
                     type="button"
                     className={styles.linkButton}
-                    onClick={() => void window.electronAPI.openExternal(url)}
+                    onClick={() =>
+                      void window.electronAPI
+                        .openExternal(url)
+                        .catch((error) => logWarning("open-external", error))
+                    }
                   >
                     {t(`links.${key}`)}
                     <ExternalIcon />

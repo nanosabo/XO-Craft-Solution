@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { logWarning } from "@src/helpers/errorLog";
 import { invalidateCustomSound } from "@src/helpers/notificationSound";
 import { resetSettings } from "@src/store/slices/settings.slice";
 import { useAppDispatch } from "@src/store/store";
@@ -35,8 +36,9 @@ const DataSection = () => {
 
     try {
       await window.electronAPI.removeNotificationSound();
-    } catch {
+    } catch (error) {
       /* Settings must still reset if the sound file cannot be removed. */
+      logWarning("settings-data", error);
     }
 
     invalidateCustomSound();
@@ -65,7 +67,11 @@ const DataSection = () => {
         <button
           type="button"
           className={styles.button}
-          onClick={() => void window.electronAPI.openUserData()}
+          onClick={() =>
+            void window.electronAPI
+              .openUserData()
+              .catch((error) => logWarning("settings-data", error))
+          }
         >
           {t("general.data.openFolder")}
         </button>

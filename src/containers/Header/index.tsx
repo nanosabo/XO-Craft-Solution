@@ -1,12 +1,12 @@
 import AppLogo from "@src/components/AppLogo";
 import Navigation from "@src/components/Navigation";
-import WindowActions from "../WindowActions";
 import { useLocation } from "react-router-dom";
 import styles from "./styles/Header.module.scss";
 import HeaderButtons from "@src/components/HeaderButtons";
 import { AnimatePresence, motion } from "framer-motion";
 import { headerAnimation } from "./animation";
 import { useAppDispatch } from "@src/store/store";
+import { logWarning } from "@src/helpers/errorLog";
 import { useEffect } from "react";
 import {
   fetchData,
@@ -36,7 +36,7 @@ const Header = () => {
     };
 
     const langListener = () => {
-      dispatch(fetchData(null));
+      void dispatch(fetchData(null)).catch(() => undefined);
     };
 
     const mirrorListener = (
@@ -48,7 +48,8 @@ const Header = () => {
 
     window.electronAPI
       .getIsMirror()
-      .then((isMirr) => dispatch(setIsMirror(isMirr)));
+      .then((isMirr) => dispatch(setIsMirror(isMirr)))
+      .catch((error) => logWarning("mirror", error));
 
     i18n.on("languageChanged", langListener);
     window.ipcRenderer.on("update", listener);
@@ -77,8 +78,6 @@ const Header = () => {
           </motion.span>
         )}
       </AnimatePresence>
-
-      <WindowActions />
     </header>
   );
 };

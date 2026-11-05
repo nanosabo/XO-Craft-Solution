@@ -1,7 +1,10 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { logError } from "@src/helpers/errorLog";
+import { getLastAppRoute } from "@src/helpers/lastRoute";
 import { RootState } from "../store";
 import { NavigateFunction } from "react-router-dom";
 import { setAppLoadedStatus } from "./app.slice";
+import { setLoaderError } from "./loader.slice";
 import { IIngredientInfo } from "@electron/oneItemCalc";
 import {
   FollowMetric,
@@ -186,22 +189,30 @@ const initialState: MarketState = {
 export const fetchData = createAsyncThunk(
   "market/fetch",
   async (navigate: NavigateFunction | null, { dispatch }) => {
-    const own_recipes_json = localStorage.getItem("own");
-    const own_recipes = own_recipes_json ? JSON.parse(own_recipes_json) : {};
+    try {
+      const own_recipes_json = localStorage.getItem("own");
+      const own_recipes = own_recipes_json ? JSON.parse(own_recipes_json) : {};
 
-    const no_recipes_json = localStorage.getItem("norec");
-    const no_recipes = no_recipes_json ? JSON.parse(no_recipes_json) : [];
+      const no_recipes_json = localStorage.getItem("norec");
+      const no_recipes = no_recipes_json ? JSON.parse(no_recipes_json) : [];
 
-    const data: FetchedData = await window.ipcRenderer.invoke("market", {
-      own_rec: own_recipes,
-      no_rec: no_recipes,
-    });
+      const data: FetchedData = await window.ipcRenderer.invoke("market", {
+        own_rec: own_recipes,
+        no_rec: no_recipes,
+      });
 
-    dispatch(setAppLoadedStatus());
-    if (navigate) {
-      navigate("/");
+      dispatch(setAppLoadedStatus());
+      if (navigate) {
+        navigate("/");
+      }
+      return data;
+    } catch (error) {
+      const appError = logError("market", error);
+      dispatch(
+        setLoaderError({ error: appError, returnTo: getLastAppRoute() }),
+      );
+      throw error;
     }
-    return data;
   },
 );
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { logWarning } from "@src/helpers/errorLog";
 import {
   invalidateCustomSound,
   playNotificationSignal,
@@ -41,7 +42,8 @@ const useCustomSound = (
       invalidateCustomSound();
       update({ signal: "custom", customSoundName: result.name });
       playNotificationSignal("custom", result.name);
-    } catch {
+    } catch (error) {
+      logWarning("settings-sound", error);
       setSoundError(t("market.customSoundError"));
     } finally {
       setIsPickingSound(false);
@@ -58,7 +60,8 @@ const useCustomSound = (
           notifications.signal === "custom" ? "coins" : notifications.signal,
       });
       setSoundError(null);
-    } catch {
+    } catch (error) {
+      logWarning("settings-sound", error);
       setSoundError(t("market.customSoundError"));
     }
   };

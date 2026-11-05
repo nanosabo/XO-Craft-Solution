@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
+import { logWarning } from "@src/helpers/errorLog";
 import { ExternalIcon } from "@src/ui/icons";
 import SettingsSection from "../components/SettingsSection";
 import styles from "../styles/Settings.module.scss";
@@ -42,7 +43,11 @@ const AboutSection: FC<Props> = ({ version }) => {
             key={key}
             type="button"
             className={styles.linkButton}
-            onClick={() => void window.electronAPI.openExternal(url)}
+            onClick={() =>
+              void window.electronAPI
+                .openExternal(url)
+                .catch((error) => logWarning("open-external", error))
+            }
           >
             {t(`general.about.${key}`)}
             <ExternalIcon />

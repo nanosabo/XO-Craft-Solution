@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { logWarning } from "@src/helpers/errorLog";
 
 const AppLogo = () => {
   const [ver, setVer] = useState("2.0");
 
   useEffect(() => {
-    window.electronAPI.getVersion().then(setVer);
+    window.electronAPI
+      .getVersion()
+      .then(setVer)
+      .catch((error) => logWarning("version", error));
   }, []);
 
   return (

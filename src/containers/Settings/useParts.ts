@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logWarning } from "@src/helpers/errorLog";
 import { Part } from "./types";
 
 let partsCache: Part[] | null = null;
@@ -35,7 +36,9 @@ const useParts = () => {
         setParts(loadedParts);
         setError(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        logWarning("settings-parts", error);
+
         if (!isMounted) return;
         setError(true);
       })

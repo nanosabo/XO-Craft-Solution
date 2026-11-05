@@ -1,0 +1,117 @@
+@import "@styles/theme";
+
+.error_screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(720px, 100%);
+  padding: 8px 16px 20px;
+}
+
+.logo {
+  svg {
+    width: 128px;
+    height: 124px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+}
+
+.hint {
+  @include caption;
+  max-width: 520px;
+  color: $default;
+  text-align: center;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-height: 92px;
+  padding: 10px 12px;
+  overflow: auto;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 8px;
+  background: $secondary;
+  color: $default;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.scope {
+  @include caption;
+  color: $red;
+  font-weight: 600;
+}
+
+.error_text {
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: $input;
+  color: $white;
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background-color 0.2s ease-in-out,
+    opacity 0.2s ease-in-out;
+
+  &:hover {
+    background: lighten($input, 8%);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+.primary {
+  background: $primary;
+
+  &:hover {
+    background: darken($primary, 10%);
+  }
+}
+
+.back {
+  min-width: 220px;
+  margin-top: 2px;
+  background: $secondary;
+  border: 1px solid rgba($white, 0.12);
+
+  &:hover {
+    background: $input;
+  }
+}
+
+.status {
+  @include caption;
+  color: $default;
+}
+
+.status_error {
+  color: $red;
+}

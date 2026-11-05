@@ -6,10 +6,13 @@ import {
   Middleware,
   PayloadAction,
 } from "@reduxjs/toolkit";
+import { logError } from "@src/helpers/errorLog";
+import { getLastAppRoute } from "@src/helpers/lastRoute";
 import { RootState } from "../store";
 import { IIngredientInfo, ISolveResult } from "@electron/oneItemCalc";
 import { CalcParams } from "@electron/main";
 import { ChartData } from "@electron/fetchChartData";
+import { setLoaderError } from "./loader.slice";
 import {
   OwnRecipe,
   OwnRecipeIng,
@@ -65,23 +68,43 @@ const initialState: MarketModalState = {
 
 export const calcMarketItem = createAsyncThunk(
   "marketModal/getItem",
-  async (dto: CalcParams) => {
-    const data: ISolveResult = await window.ipcRenderer.invoke(
-      "marketCraft",
-      dto,
-    );
-    return data;
+  async (dto: CalcParams, { dispatch }) => {
+    try {
+      const data: ISolveResult = await window.ipcRenderer.invoke(
+        "marketCraft",
+        dto,
+      );
+      return data;
+    } catch (error) {
+      const appError = logError("market-craft", error, {
+        itemId: dto.itemId,
+        type: dto.type,
+        mode: dto.mode,
+      });
+      dispatch(
+        setLoaderError({ error: appError, returnTo: getLastAppRoute() }),
+      );
+      throw error;
+    }
   },
 );
 
 export const fetchMarketChartData = createAsyncThunk(
   "marketModal/fetchMarketChartData",
-  async (item: number) => {
-    const data: ChartData = await window.ipcRenderer.invoke(
-      "fetchMarketChartData",
-      item,
-    );
-    return data;
+  async (item: number, { dispatch }) => {
+    try {
+      const data: ChartData = await window.ipcRenderer.invoke(
+        "fetchMarketChartData",
+        item,
+      );
+      return data;
+    } catch (error) {
+      const appError = logError("market-chart", error, { item });
+      dispatch(
+        setLoaderError({ error: appError, returnTo: getLastAppRoute() }),
+      );
+      throw error;
+    }
   },
 );
 
@@ -282,7 +305,7 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
 
     const isNoRecipeChanged = action.type === "market/switchNoRecipe";
 
-    dispatch(
+    const request = dispatch(
       calcMarketItem({
         itemId: store.getState().marketModal.item,
         type: store.getState().marketModal.type,
@@ -298,6 +321,8 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
           : undefined,
       }) as unknown as AnyAction,
     );
+
+    void Promise.resolve(request).catch(() => undefined);
   }
 
   if (
@@ -307,11 +332,13 @@ export const marketMiddleware: Middleware = (store) => (next) => (action) => {
   ) {
     const dispatch = store.dispatch;
 
-    dispatch(
+    const request = dispatch(
       fetchMarketChartData(
         store.getState().marketModal.item,
       ) as unknown as AnyAction,
     );
+
+    void Promise.resolve(request).catch(() => undefined);
   }
 
   return result;

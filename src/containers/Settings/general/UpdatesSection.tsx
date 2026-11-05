@@ -1,5 +1,6 @@
 import { FC, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { logWarning } from "@src/helpers/errorLog";
 import { RefreshIcon } from "@src/ui/icons";
 import SettingRow from "../components/SettingRow";
 import SettingsSection from "../components/SettingsSection";
@@ -26,6 +27,10 @@ const UpdatesSection: FC<Props> = ({ version, autoUpdate, onAutoUpdate }) => {
       const result = await window.electronAPI.checkForUpdates();
 
       if (!result.ok) {
+        logWarning("update", result.message ?? "Update check failed", {
+          current: result.current,
+          latest: result.latest,
+        });
         setUpdateStatus("error");
         return;
       }
@@ -37,7 +42,8 @@ const UpdatesSection: FC<Props> = ({ version, autoUpdate, onAutoUpdate }) => {
         setLatestVersion(null);
         setUpdateStatus("upToDate");
       }
-    } catch {
+    } catch (error) {
+      logWarning("update", error);
       setUpdateStatus("error");
     }
   };

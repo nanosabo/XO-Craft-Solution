@@ -56,5 +56,15 @@ interface Window {
       dataUrl: string;
     } | null>;
     removeNotificationSound(): Promise<boolean>;
+    logError(entry: {
+      level?: "info" | "warn" | "error";
+      scope?: string;
+      message?: string;
+      details?: unknown;
+    }): void;
+    getErrorLogs(): Promise<string>;
+    getLogPath(): Promise<string | null>;
+    openLogsFolder(): Promise<boolean>;
+    copyText(text: string): Promise<boolean>;
   };
 }
