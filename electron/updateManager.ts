@@ -86,6 +86,7 @@ let state: UpdateState = {
   progress: null,
   mode: null,
   error: null,
+  errorKind: null,
   automatic: false,
   checkedAt: null,
 };
@@ -125,6 +126,66 @@ const notifyWhenHidden = () => {
   options?.notify(locales[lang].update.title, locales[lang].update.body);
 };
 
+const applyUpdateAvailable = (info: UpdateInfo) => {
+  const releaseNotes = releaseNotesFrom(info);
+
+  writeLog("info", "update", "Update available", {
+    current: app.getVersion(),
+    latest: info.version,
+  });
+  saveUpdateInfo({ version: info.version, releaseNotes });
+
+  setState({
+    stage: "available",
+    latestVersion: info.version,
+    releaseNotes,
+    releaseDate: info.releaseDate ?? null,
+    progress: null,
+    mode: null,
+    error: null,
+    errorKind: null,
+    checkedAt: Date.now(),
+  });
+};
+
+const applyUpdateNotAvailable = () => {
+  setState({
+    stage: "up-to-date",
+    latestVersion: null,
+    releaseNotes: null,
+    releaseDate: null,
+    progress: null,
+    mode: null,
+    error: null,
+    errorKind: null,
+    checkedAt: Date.now(),
+  });
+};
+
+const CHECK_TIMEOUT_MS = 20_000;
+
+/**
+ * electron-updater has no request timeout of its own, so a stalled network
+ * request would leave the UI in the "checking" state forever.
+ */
+const withTimeout = <T>(promise: Promise<T>, timeout: number): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Update check timed out"));
+    }, timeout);
+
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+
 export const setupUpdater = (nextOptions: UpdaterOptions) => {
   options = nextOptions;
 
@@ -146,44 +207,15 @@ export const setupUpdater = (nextOptions: UpdaterOptions) => {
     setState({
       stage: "checking",
       error: null,
+      errorKind: null,
       progress: null,
       checkedAt: Date.now(),
     });
   });
 
-  autoUpdater.on("update-available", (info) => {
-    const releaseNotes = releaseNotesFrom(info);
+  autoUpdater.on("update-available", applyUpdateAvailable);
 
-    writeLog("info", "update", "Update available", {
-      current: app.getVersion(),
-      latest: info.version,
-    });
-    saveUpdateInfo({ version: info.version, releaseNotes });
-
-    setState({
-      stage: "available",
-      latestVersion: info.version,
-      releaseNotes,
-      releaseDate: info.releaseDate ?? null,
-      progress: null,
-      mode: null,
-      error: null,
-      checkedAt: Date.now(),
-    });
-  });
-
-  autoUpdater.on("update-not-available", () => {
-    setState({
-      stage: "up-to-date",
-      latestVersion: null,
-      releaseNotes: null,
-      releaseDate: null,
-      progress: null,
-      mode: null,
-      error: null,
-      checkedAt: Date.now(),
-    });
-  });
+  autoUpdater.on("update-not-available", applyUpdateNotAvailable);
 
   autoUpdater.on("download-progress", (info: ProgressInfo) => {
     const progress: UpdateProgress = {
@@ -193,7 +225,12 @@ export const setupUpdater = (nextOptions: UpdaterOptions) => {
       bytesPerSecond: info.bytesPerSecond,
     };
 
-    setState({ stage: "downloading", progress, error: null });
+    setState({
+      stage: "downloading",
+      progress,
+      error: null,
+      errorKind: null,
+    });
   });
 
   autoUpdater.on("update-downloaded", (info) => {
@@ -206,6 +243,7 @@ export const setupUpdater = (nextOptions: UpdaterOptions) => {
       latestVersion: info.version,
       progress: null,
       error: null,
+      errorKind: null,
       checkedAt: Date.now(),
     });
 
@@ -217,12 +255,22 @@ export const setupUpdater = (nextOptions: UpdaterOptions) => {
       version: info.version,
     });
 
-    setState({ stage: "available", progress: null });
+    setState({
+      stage: "available",
+      progress: null,
+      errorKind: null,
+    });
   });
 
   autoUpdater.on("error", (error) => {
     logUpdateError("Updater error", error);
-    setState({ stage: "error", error: errorMessage(error), progress: null });
+    setState({
+      stage: "error",
+      error: errorMessage(error),
+      errorKind:
+        state.stage === "downloading" || state.mode ? "download" : "check",
+      progress: null,
+    });
   });
 };
 
@@ -245,13 +293,56 @@ export const checkForUpdates = async (
     automatic,
     stage: "checking",
     error: null,
+    errorKind: null,
     progress: null,
     checkedAt: Date.now(),
   });
 
   try {
-    const result = await autoUpdater.checkForUpdates();
-    const info = result?.updateInfo;
+    const result = await withTimeout(
+      autoUpdater.checkForUpdates(),
+      CHECK_TIMEOUT_MS,
+    );
+
+    // The updater returns null when it is disabled for this build (for example
+    // an unpacked dev build). No events are emitted in that case, so the state
+    // would otherwise stay on "checking" forever.
+    if (!result) {
+      const message = "Updater is not available in this build";
+      writeLog("warn", "update", "Update check skipped", {
+        packaged: app.isPackaged,
+      });
+      setState({
+        stage: "error",
+        latestVersion: null,
+        releaseNotes: null,
+        releaseDate: null,
+        progress: null,
+        mode: null,
+        error: message,
+        errorKind: "unavailable",
+        checkedAt: Date.now(),
+      });
+
+      return {
+        ok: false,
+        current: app.getVersion(),
+        latest: null,
+        message,
+      };
+    }
+
+    const info = result.updateInfo;
+
+    // Usually the updater emits the corresponding event itself. Apply the
+    // result as a fallback so the UI cannot get stuck if an event is missed.
+    if (state.stage === "checking") {
+      if (result.isUpdateAvailable) {
+        applyUpdateAvailable(info);
+      } else {
+        applyUpdateNotAvailable();
+      }
+    }
 
     return {
       ok: true,
@@ -261,7 +352,12 @@ export const checkForUpdates = async (
   } catch (error) {
     const message = errorMessage(error);
     logUpdateError("Update check failed", error);
-    setState({ stage: "error", error: message, progress: null });
+    setState({
+      stage: "error",
+      error: message,
+      errorKind: "check",
+      progress: null,
+    });
 
     return {
       ok: false,
@@ -310,7 +406,12 @@ export const startDownload = async (
   } catch (error) {
     const message = errorMessage(error);
     logUpdateError("Update download failed", error);
-    setState({ stage: "error", error: message, progress: null });
+    setState({
+      stage: "error",
+      error: message,
+      errorKind: "download",
+      progress: null,
+    });
 
     return { ok: false, message };
   } finally {

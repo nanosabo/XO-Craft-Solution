@@ -39,7 +39,9 @@
       "restart": "Restart and install",
       "retry": "Retry",
       "error": "Could not check for updates",
-      "downloadError": "Could not download the update"
+      "downloadError": "Could not download the update",
+      "unavailable": "Updates are not available in this build",
+      "unavailableHint": "Update checks only work in the installed version of the app."
     },
     "data": {
       "title": "Data & cache",

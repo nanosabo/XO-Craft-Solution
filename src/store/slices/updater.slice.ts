@@ -12,6 +12,8 @@ export type UpdateStage =
 
 export type UpdateMode = "now" | "later";
 
+export type UpdateErrorKind = "check" | "download" | "unavailable";
+
 export interface UpdateProgress {
   percent: number;
   transferred: number;
@@ -28,6 +30,7 @@ export interface UpdateState {
   progress: UpdateProgress | null;
   mode: UpdateMode | null;
   error: string | null;
+  errorKind: UpdateErrorKind | null;
   /** True when the check was started automatically on startup. */
   automatic: boolean;
   checkedAt: number | null;
@@ -42,6 +45,7 @@ const initialState: UpdateState = {
   progress: null,
   mode: null,
   error: null,
+  errorKind: null,
   automatic: false,
   checkedAt: null,
 };

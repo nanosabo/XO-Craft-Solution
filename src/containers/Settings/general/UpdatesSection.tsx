@@ -61,9 +61,16 @@ const UpdatesSection: FC<Props> = ({ version, autoUpdate, onAutoUpdate }) => {
     Math.max(0, Math.round(update.progress?.percent ?? 0)),
   );
 
-  const errorIsDownload = Boolean(update.latestVersion || update.mode);
+  const isUnavailable =
+    update.stage === "error" && update.errorKind === "unavailable";
+  const errorIsDownload =
+    update.errorKind === "download" ||
+    (!update.errorKind && Boolean(update.latestVersion || update.mode));
   const hideAutomaticCheckError =
-    update.stage === "error" && update.automatic && !errorIsDownload;
+    update.stage === "error" &&
+    update.automatic &&
+    !errorIsDownload &&
+    !isUnavailable;
 
   const showStatus =
     update.stage !== "idle" &&
@@ -85,6 +92,9 @@ const UpdatesSection: FC<Props> = ({ version, autoUpdate, onAutoUpdate }) => {
       update.mode === "later"
         ? t("general.updates.downloadedLater")
         : t("general.updates.downloadedNow", { version: latestVersion });
+  } else if (isUnavailable) {
+    statusTitle = t("general.updates.unavailable");
+    statusHint = t("general.updates.unavailableHint");
   } else if (update.stage === "error") {
     statusTitle = errorIsDownload
       ? t("general.updates.downloadError")
@@ -203,7 +213,7 @@ const UpdatesSection: FC<Props> = ({ version, autoUpdate, onAutoUpdate }) => {
             </div>
           )}
 
-          {update.stage === "error" && (
+          {update.stage === "error" && !isUnavailable && (
             <div className={styles.updateActions}>
               <button
                 type="button"
