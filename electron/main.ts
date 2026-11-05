@@ -6,6 +6,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  net,
   shell,
   Tray,
   Notification,
@@ -109,8 +110,91 @@ interface Part {
   build_hp: number;
 }
 
-let actualParts: Part[] = [];
 let lang: "ru" | "en" = "ru";
+
+const PARTS_URL = "https://nanosabo.github.io/xocs-imgs/actual_parts.json";
+const partsCachePath = path.join(app.getPath("userData"), "actual_parts.json");
+
+const isPartList = (value: unknown): value is Part[] =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every(
+    (part) =>
+      part &&
+      typeof part === "object" &&
+      typeof (part as Part).id === "string" &&
+      typeof (part as Part).name === "string",
+  );
+
+const readPartsCache = (): Part[] | null => {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(partsCachePath, "utf8"));
+    return isPartList(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const writePartsCache = (parts: Part[]) => {
+  try {
+    fs.writeFileSync(partsCachePath, JSON.stringify(parts), "utf8");
+  } catch {
+    /* the cache is best-effort */
+  }
+};
+
+const loadParts = async (): Promise<Part[]> => {
+  if (!net.isOnline()) {
+    const cached = readPartsCache();
+
+    if (cached) {
+      writeLog("warn", "parts", "Using cached parts while offline");
+      return cached;
+    }
+
+    writeLog("error", "parts", "Failed to load parts", "No internet connection");
+    return [];
+  }
+
+  try {
+    const response = await axios.get(PARTS_URL, { timeout: 15000 });
+
+    if (!isPartList(response.data)) {
+      throw new Error("Сервер вернул пустой список деталей");
+    }
+
+    writePartsCache(response.data);
+    return response.data;
+  } catch (error) {
+    const cached = readPartsCache();
+
+    if (cached) {
+      writeLog("warn", "parts", "Using cached parts after a network error", error);
+      return cached;
+    }
+
+    writeLog("error", "parts", "Failed to load parts", error);
+    return [];
+  }
+};
+
+let partsRequest: Promise<Part[]> | null = null;
+
+/** Loads the parts once; safe to call before the window is ready. */
+const ensureParts = (): Promise<Part[]> => {
+  if (!partsRequest) {
+    partsRequest = loadParts().then((parts) => {
+      // Allow a retry after a failed download (e.g. the user reconnects).
+      if (parts.length === 0) {
+        partsRequest = null;
+      }
+
+      return parts;
+    });
+  }
+
+  return partsRequest;
+};
 
 export const getLanguage = () => {
   return lang;
@@ -756,8 +840,16 @@ ipcMain.handle(
       );
     }
 
+    const loadedParts = await ensureParts();
+
+    if (loadedParts.length === 0) {
+      throw new Error(
+        "Не удалось загрузить список деталей. Проверьте подключение к интернету.",
+      );
+    }
+
     const forbiddenNames = forbidden.map((part) => part.eng_name);
-    const parts = actualParts.filter(
+    const parts = loadedParts.filter(
       (p) => !forbiddenNames.includes(p.eng_name),
     );
 
@@ -948,11 +1040,13 @@ ipcMain.handle(
 );
 
 ipcMain.handle("getParts", async () => {
-  return actualParts;
+  return ensureParts();
 });
 
 ipcMain.handle("search-required-parts", async (_, value) => {
-  return actualParts.filter(
+  const parts = await ensureParts();
+
+  return parts.filter(
     (part) =>
       part.name.toLowerCase().includes(value.toLowerCase()) ||
       part.eng_name.toLowerCase().includes(value.toLowerCase()),
@@ -977,7 +1071,12 @@ app.whenReady().then(async () => {
   tray.setToolTip(`XO Craft Solution v${app.getVersion()}`);
 
   tray.on("click", () => {
-    win?.show();
+    if (!win || win.isDestroyed()) {
+      createWindow();
+      return;
+    }
+
+    win.show();
   });
 
   const contextMenu = Menu.buildFromTemplate([
@@ -996,9 +1095,8 @@ app.whenReady().then(async () => {
   ]);
   tray.setContextMenu(contextMenu);
 
-  actualParts = (
-    await axios.get("https://nanosabo.github.io/xocs-imgs/actual_parts.json")
-  ).data;
-
+  // Never block the window on network access: without a connection the app
+  // must still open and show the error/report screen.
+  void ensureParts();
   createWindow();
 });

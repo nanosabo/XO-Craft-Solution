@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import axios from "axios";
-import { app } from "electron";
+import { app, net } from "electron";
 import type { IData, ICategory, IRarity } from "@src/store/slices/market.slice";
 import { getFallbackActionId } from "./actionIds";
 import api, { isUsingMirror } from "./api";
@@ -171,14 +171,18 @@ const fetchFromSite = async (): Promise<MarketResponse | null> => {
  * A cheap request that tells us which host actually works. It also warms the
  * base URL cache used by the shared axios instance.
  */
-const probeNetwork = async () => {
+const probeNetwork = async (): Promise<boolean> => {
+  if (!net.isOnline()) return false;
+
   try {
     await api.get("/robots.txt", {
       timeout: PROBE_TIMEOUT,
       headers: { "User-Agent": USER_AGENT, Accept: "*/*" },
     });
+    return true;
   } catch {
     /* both hosts are unavailable; the caller will try the fallbacks */
+    return false;
   }
 };
 
@@ -195,12 +199,17 @@ const fetchFreshUpdate = async () => {
 };
 
 const buildFromCatalog = async (): Promise<MarketResponse> => {
+  const online = net.isOnline();
   let catalog: MarketCatalog | null = null;
 
-  try {
-    catalog = await fetchCatalogFromNetwork();
-    saveCatalogCache(catalog);
-  } catch {
+  if (online) {
+    try {
+      catalog = await fetchCatalogFromNetwork();
+      saveCatalogCache(catalog);
+    } catch {
+      catalog = readCatalogCache();
+    }
+  } else {
     catalog = readCatalogCache();
   }
 
@@ -210,7 +219,15 @@ const buildFromCatalog = async (): Promise<MarketResponse> => {
     );
   }
 
-  const update = await fetchFreshUpdate();
+  let update: Awaited<ReturnType<typeof fetchFreshUpdate>>;
+
+  if (online) {
+    try {
+      update = await fetchFreshUpdate();
+    } catch {
+      /* keep the cached catalogue when only the price update is unavailable */
+    }
+  }
 
   return {
     initialData: {
@@ -223,10 +240,11 @@ const buildFromCatalog = async (): Promise<MarketResponse> => {
 };
 
 export const fetchItems = async (): Promise<MarketResponse> => {
-  await probeNetwork();
+  const online = await probeNetwork();
 
   // The mirror cannot render the market page, so do not waste 15 seconds on it.
-  if (!isUsingMirror()) {
+  // When the probe fails, skip the slow page request as well.
+  if (online && !isUsingMirror()) {
     try {
       const data = await fetchFromSite();
 
