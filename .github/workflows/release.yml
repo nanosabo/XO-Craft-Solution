@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to release (e.g. v2.0.2-beta.3)"
+        description: "Tag to release (e.g. v2.0.2)"
         required: true
 
 permissions:
@@ -125,8 +125,12 @@ jobs:
           done
 
           args=(--draft --title "$TAG" --generate-notes --target "$GITHUB_SHA")
+          is_prerelease=false
           case "$TAG" in
-            *-*) args+=(--prerelease) ;;
+            *-*)
+              args+=(--prerelease)
+              is_prerelease=true
+              ;;
           esac
 
           if ! output=$(gh release create "$TAG" artifacts/* "${args[@]}" 2>&1); then
@@ -140,3 +144,23 @@ jobs:
           fi
 
           echo "$output" >> "$summary"
+
+          # Publish only after every asset is uploaded, so electron-updater
+          # never sees a release with missing files. Stable releases also
+          # become the repository's "latest" release.
+          publish_args=(--draft=false)
+          if [ "$is_prerelease" = false ]; then
+            publish_args+=(--latest)
+          fi
+
+          if ! publish_output=$(gh release edit "$TAG" "${publish_args[@]}" 2>&1); then
+            {
+              echo "### Publishing failed"
+              echo '```'
+              echo "$publish_output"
+              echo '```'
+            } >> "$summary"
+            exit 1
+          fi
+
+          echo "$publish_output" >> "$summary"

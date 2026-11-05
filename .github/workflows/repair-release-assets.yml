@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to repair (e.g. v2.0.2-beta.4)"
+        description: "Release tag to repair (e.g. v2.0.2)"
         required: true
 
 permissions:
