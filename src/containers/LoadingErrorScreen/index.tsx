@@ -135,7 +135,7 @@ const LoadingErrorScreen = ({ error, returnTo, onBack }: Props) => {
   };
 
   return (
-    <LoadingLayout scrollable>
+    <LoadingLayout scrollable noAnimation>
       <div className={styles.error_screen}>
         <div className={styles.logo}>
           <LoadingLogoSection

@@ -54,6 +54,22 @@ const getLogFilePath = (): string | null => {
 
 export const getLogPath = getLogFilePath;
 
+/** Removes logs from previous runs so the file only covers the current one. */
+const resetLogFile = () => {
+  const file = getLogFilePath();
+  if (!file) return;
+
+  memory.length = 0;
+
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.rmSync(file, { force: true });
+    fs.rmSync(file.replace(/\.log$/, ".old.log"), { force: true });
+  } catch {
+    /* logging must never break the app */
+  }
+};
+
 const appendToFile = (line: string) => {
   const file = getLogFilePath();
   if (!file) return;
@@ -183,6 +199,8 @@ const formatConsoleArgs = (args: unknown[]): string =>
 export const installMainLogging = () => {
   if (loggingInstalled) return;
   loggingInstalled = true;
+
+  resetLogFile();
 
   const originalError = console.error.bind(console);
   const originalWarn = console.warn.bind(console);
