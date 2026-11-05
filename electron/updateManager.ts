@@ -126,6 +126,42 @@ const notifyWhenHidden = () => {
   options?.notify(locales[lang].update.title, locales[lang].update.body);
 };
 
+type MockScenario =
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "up-to-date"
+  | "error"
+  | "unavailable";
+
+/**
+ * Lets the updater UI be previewed in an unpacked build, where
+ * electron-updater is disabled. Enabled with the XO_UPDATE_MOCK environment
+ * variable, for example `XO_UPDATE_MOCK=1 yarn dev`.
+ */
+const mockScenario = ((): MockScenario | null => {
+  if (app.isPackaged) return null;
+
+  const raw = process.env.XO_UPDATE_MOCK?.trim().toLowerCase();
+
+  if (!raw || raw === "0" || raw === "false" || raw === "off") return null;
+
+  const scenarios: MockScenario[] = [
+    "available",
+    "downloading",
+    "downloaded",
+    "up-to-date",
+    "error",
+    "unavailable",
+  ];
+
+  if (raw === "1" || raw === "true" || raw === "on") return "available";
+
+  return scenarios.includes(raw as MockScenario)
+    ? (raw as MockScenario)
+    : "available";
+})();
+
 const applyUpdateAvailable = (info: UpdateInfo) => {
   const releaseNotes = releaseNotesFrom(info);
 
@@ -133,7 +169,9 @@ const applyUpdateAvailable = (info: UpdateInfo) => {
     current: app.getVersion(),
     latest: info.version,
   });
-  saveUpdateInfo({ version: info.version, releaseNotes });
+
+  // Mock versions must not overwrite the notes of a real downloaded update.
+  if (!mockScenario) saveUpdateInfo({ version: info.version, releaseNotes });
 
   setState({
     stage: "available",
@@ -163,6 +201,147 @@ const applyUpdateNotAvailable = () => {
 };
 
 const CHECK_TIMEOUT_MS = 20_000;
+
+const MOCK_VERSION = "9.9.9";
+const MOCK_TOTAL_BYTES = 86_000_000;
+const MOCK_DOWNLOAD_STEPS = 24;
+const MOCK_DOWNLOAD_TICK_MS = 250;
+
+let mockDownloadTimer: ReturnType<typeof setInterval> | null = null;
+
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const mockUpdateInfo = (): UpdateInfo => ({
+  version: MOCK_VERSION,
+  files: [],
+  path: "",
+  sha512: "",
+  releaseDate: new Date().toISOString(),
+  releaseNotes: "Demo update used to preview the updater UI in development.",
+});
+
+const startMockDownload = (mode: UpdateMode) => {
+  if (mockDownloadTimer) clearInterval(mockDownloadTimer);
+
+  setState({
+    mode,
+    stage: "downloading",
+    progress: {
+      percent: 0,
+      transferred: 0,
+      total: MOCK_TOTAL_BYTES,
+      bytesPerSecond: 0,
+    },
+    error: null,
+    errorKind: null,
+  });
+
+  const startedAt = Date.now();
+  let step = 0;
+
+  mockDownloadTimer = setInterval(() => {
+    step += 1;
+
+    if (step >= MOCK_DOWNLOAD_STEPS) {
+      if (mockDownloadTimer) clearInterval(mockDownloadTimer);
+      mockDownloadTimer = null;
+
+      writeLog("info", "update", "Mock update downloaded", {
+        version: MOCK_VERSION,
+        mode,
+      });
+
+      setState({
+        stage: "downloaded",
+        latestVersion: MOCK_VERSION,
+        progress: null,
+        error: null,
+        errorKind: null,
+        checkedAt: Date.now(),
+      });
+      notifyWhenHidden();
+      return;
+    }
+
+    const percent = (step / MOCK_DOWNLOAD_STEPS) * 100;
+    const transferred = Math.round((percent / 100) * MOCK_TOTAL_BYTES);
+    const elapsedSeconds = Math.max(1, Date.now() - startedAt) / 1000;
+
+    setState({
+      stage: "downloading",
+      progress: {
+        percent,
+        transferred,
+        total: MOCK_TOTAL_BYTES,
+        bytesPerSecond: Math.round(transferred / elapsedSeconds),
+      },
+      error: null,
+      errorKind: null,
+    });
+  }, MOCK_DOWNLOAD_TICK_MS);
+};
+
+const mockCheckForUpdates = async (
+  automatic: boolean,
+): Promise<UpdateCheckResult> => {
+  setState({
+    automatic,
+    stage: "checking",
+    error: null,
+    errorKind: null,
+    progress: null,
+    checkedAt: Date.now(),
+  });
+
+  await delay(700);
+
+  if (mockScenario === "up-to-date") {
+    applyUpdateNotAvailable();
+    return { ok: true, current: app.getVersion(), latest: null };
+  }
+
+  if (mockScenario === "error" || mockScenario === "unavailable") {
+    const message =
+      mockScenario === "unavailable"
+        ? "Updater is not available in this build"
+        : "Mock update check failed";
+
+    writeLog("warn", "update", "Mock update check failed", {
+      scenario: mockScenario,
+    });
+    setState({
+      stage: "error",
+      latestVersion: null,
+      releaseNotes: null,
+      releaseDate: null,
+      progress: null,
+      mode: null,
+      error: message,
+      errorKind: mockScenario === "unavailable" ? "unavailable" : "check",
+      checkedAt: Date.now(),
+    });
+
+    return { ok: false, current: app.getVersion(), latest: null, message };
+  }
+
+  applyUpdateAvailable(mockUpdateInfo());
+
+  if (mockScenario === "downloaded") {
+    setState({
+      stage: "downloaded",
+      latestVersion: MOCK_VERSION,
+      progress: null,
+      error: null,
+      errorKind: null,
+      checkedAt: Date.now(),
+    });
+  } else if (mockScenario === "downloading") {
+    startMockDownload("now");
+  }
+
+  return { ok: true, current: app.getVersion(), latest: MOCK_VERSION };
+};
 
 /**
  * electron-updater has no request timeout of its own, so a stalled network
@@ -202,6 +381,12 @@ export const setupUpdater = (nextOptions: UpdaterOptions) => {
   writeLog("info", "update", "Updater initialized", {
     version: app.getVersion(),
   });
+
+  if (mockScenario) {
+    writeLog("info", "update", "Update mock enabled", {
+      scenario: mockScenario,
+    });
+  }
 
   autoUpdater.on("checking-for-update", () => {
     setState({
@@ -289,6 +474,8 @@ export const checkForUpdates = async (
     };
   }
 
+  if (mockScenario) return mockCheckForUpdates(automatic);
+
   setState({
     automatic,
     stage: "checking",
@@ -374,6 +561,27 @@ export const startDownload = async (
   writeLog("info", "update", "Update download requested", { mode });
   setState({ mode });
 
+  if (mockScenario) {
+    if (state.stage === "downloaded" || state.stage === "downloading") {
+      return { ok: true };
+    }
+
+    if (state.stage !== "available") {
+      const check = await mockCheckForUpdates(false);
+
+      if (!check.ok) {
+        return { ok: false, message: check.message };
+      }
+
+      if (getUpdateState().stage !== "available") {
+        return { ok: true };
+      }
+    }
+
+    startMockDownload(mode);
+    return { ok: true };
+  }
+
   if (state.stage === "downloaded" || state.stage === "downloading") {
     return { ok: true };
   }
@@ -425,6 +633,16 @@ export const installUpdate = (): boolean => {
   writeLog("info", "update", "Installing update", {
     version: state.latestVersion,
   });
+
+  // quitAndInstall cannot install an unpacked build, so the mock only reports
+  // success and keeps the app running for further UI checks.
+  if (mockScenario) {
+    writeLog("info", "update", "Mock update install requested", {
+      version: MOCK_VERSION,
+    });
+    return true;
+  }
+
   setState({ mode: "now" });
 
   // Let the renderer receive the final state before the window is closed.
