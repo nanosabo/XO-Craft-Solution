@@ -6,9 +6,13 @@ export interface IUpdate {
   updated: boolean;
   data: { marketData: Record<string, IData> };
   lastUpdateTimestamp: number;
+  serverTime?: number;
 }
 
-export const fetchUpdate = async (lastupdate: number) => {
+export const fetchUpdate = async (
+  lastupdate: number,
+  knownActionId?: string,
+) => {
   try {
     const lang = getLanguage();
     const url = `${lang === "en" ? "en" : ""}/market/`;
@@ -23,6 +27,7 @@ export const fetchUpdate = async (lastupdate: number) => {
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "*/*",
       },
+      knownActionId,
     );
 
     const resultLine = response

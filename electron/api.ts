@@ -19,8 +19,14 @@ const getBaseUrl = () => {
 };
 
 const api = axios.create({
-  timeout: 5000,
+  // The site's dynamic pages can be slow (the fallback mirror needs ~40s),
+  // so individual requests override this when they know they need more time.
+  timeout: 15000,
 });
+
+/** True when the last successful request went through the fallback mirror. */
+export const isUsingMirror = () =>
+  cachedBaseUrl === BASE_URLS[1] && Date.now() < cacheExpiresAt;
 
 /**
  * A 4xx response usually means the request itself is wrong (e.g. 409 "Server
@@ -47,6 +53,9 @@ api.interceptors.response.use(
     if (currentBase) {
       cachedBaseUrl = currentBase;
       cacheExpiresAt = Date.now() + CACHE_TTL;
+
+      // Keep the renderer in sync when the primary host recovers.
+      setIsMirror(currentBase === BASE_URLS[1]);
     }
     return response;
   },

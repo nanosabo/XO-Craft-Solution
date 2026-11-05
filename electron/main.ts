@@ -522,6 +522,8 @@ let no_recipes: number[] = [];
 let isMirror: boolean = false;
 
 export const setIsMirror = (isMirr: boolean) => {
+  if (isMirror === isMirr) return;
+
   isMirror = isMirr;
   win?.webContents.send("setMirror", isMirr);
 };
@@ -533,7 +535,13 @@ export const getOwnRecipe = (id: number): OwnRecipe | undefined => {
 export const getNoRecipeMarked = (id: number) => no_recipes.includes(id);
 
 const onUpdate = async () => {
-  const response = await fetchUpdate(lastUpdate);
+  // checkUpdateStatus has a fast path for stale timestamps: it returns the
+  // cached full price table instead of recomputing a diff. The mirror is slow,
+  // so always ask from ten minutes in the past there.
+  const requestTimestamp =
+    isMirror && lastUpdate ? lastUpdate - 10 * 60 * 1000 : lastUpdate;
+
+  const response = await fetchUpdate(requestTimestamp);
   if (!response || !response.updated) return;
 
   const { data, lastUpdateTimestamp } = response;
@@ -585,9 +593,15 @@ ipcMain.handle(
     own_recipes = own_rec;
     no_recipes = no_rec;
 
+    const data = await fetchItems();
+
+    if (!data?.initialData?.items?.length) {
+      throw new Error("Не удалось получить данные рынка");
+    }
+
     const {
       initialData: { items, marketData, ...rest },
-    } = await fetchItems();
+    } = data;
     const analytics = getEnhancedAnalytics(items, marketData);
 
     lastUpdate = rest.lastUpdateTimestamp;

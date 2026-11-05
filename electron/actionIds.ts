@@ -23,6 +23,14 @@ const FALLBACK_ACTION_IDS: Record<string, string> = {
   getItemsPriceHistory: "408474870e141dca918d8ac4e0bcf487654c081bf0",
 };
 
+/**
+ * Returns the last known action id without touching the network. Useful when a
+ * caller cannot wait for chunk discovery (e.g. the first market load on a slow
+ * mirror). A 409 response still triggers a fresh discovery.
+ */
+export const getFallbackActionId = (name: string): string | undefined =>
+  FALLBACK_ACTION_IDS[name];
+
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 const FAILURE_RETRY_DELAY = 60 * 1000;
 const MAX_CHUNKS = 60;
@@ -245,6 +253,7 @@ export const postServerAction = async (
   url: string,
   data: unknown,
   headers: Record<string, string>,
+  knownActionId?: string,
 ): Promise<string> => {
   const send = async (actionId: string): Promise<string> => {
     const response = await axios.post(url, data, {
@@ -256,7 +265,7 @@ export const postServerAction = async (
       : String(response.data);
   };
 
-  const actionId = await getServerActionId(name);
+  const actionId = knownActionId ?? (await getServerActionId(name));
 
   if (!actionId) {
     throw new Error(`Unknown server action: ${name}`);
