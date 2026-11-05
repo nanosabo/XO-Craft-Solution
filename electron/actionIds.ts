@@ -219,6 +219,22 @@ const resolve = async (): Promise<Record<string, string>> => {
 };
 
 /**
+ * Returns a recently discovered action id without touching the network. This
+ * lets callers use the fast path on networks where the market page (needed for
+ * discovery) is unavailable, while still picking up a fresh id discovered by a
+ * previous run.
+ */
+export const getCachedActionId = (name: string): string | undefined => {
+  loadDiskCache();
+
+  if (ids && Date.now() < nextAttemptAt) {
+    return ids[name];
+  }
+
+  return undefined;
+};
+
+/**
  * Returns the current server action id for `name`.
  * Results are cached in memory and on disk for 24h; pass `force` to refresh
  * immediately (used after the server responds with 409 "Server Action
@@ -265,7 +281,8 @@ export const postServerAction = async (
       : String(response.data);
   };
 
-  const actionId = knownActionId ?? (await getServerActionId(name));
+  const actionId =
+    getCachedActionId(name) ?? knownActionId ?? (await getServerActionId(name));
 
   if (!actionId) {
     throw new Error(`Unknown server action: ${name}`);

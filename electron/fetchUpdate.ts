@@ -1,5 +1,5 @@
 import { IData } from "@src/store/slices/market.slice";
-import { postServerAction } from "./actionIds";
+import { getFallbackActionId, postServerAction } from "./actionIds";
 import { getLanguage } from "./main";
 
 export interface IUpdate {
@@ -27,7 +27,7 @@ export const fetchUpdate = async (
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "*/*",
       },
-      knownActionId,
+      knownActionId ?? getFallbackActionId("checkUpdateStatus"),
     );
 
     const resultLine = response

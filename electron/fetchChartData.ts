@@ -1,5 +1,5 @@
-import { IData } from "@src/store/slices/market.slice";
-import { postServerAction } from "./actionIds";
+import type { IData } from "@src/store/slices/market.slice";
+import { getFallbackActionId, postServerAction } from "./actionIds";
 import { getLanguage } from "./main";
 
 export type TimeRange = "1h" | "6h" | "12h" | "1d" | "1w" | "1m" | "2m" | "6m";
@@ -23,7 +23,25 @@ const TIME_RANGE_SECONDS: Record<TimeRange, number> = {
   "6m": 180 * 24 * 60 * 60,
 };
 
-export const fetchChartData = async (id: number) => {
+const USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+/**
+ * Asking for six months of hourly points is very expensive for the site: on
+ * the fallback mirror such a response takes ~40s and arrives truncated, so the
+ * chart stays empty. Four-hour points are cheap and complete, while a separate
+ * one-week hourly request keeps the default (most recent) view detailed.
+ */
+const HISTORY_DAYS = 180;
+const HISTORY_AGGREGATION_MINUTES = 240;
+const RECENT_DAYS = 7;
+const RECENT_AGGREGATION_MINUTES = 60;
+
+const requestHistory = async (
+  id: number,
+  days: number,
+  aggregationMinutes: number,
+): Promise<IData[] | null> => {
   try {
     const lang = getLanguage();
     const url = `${lang === "en" ? "en" : ""}/market/`;
@@ -31,13 +49,13 @@ export const fetchChartData = async (id: number) => {
     const response = await postServerAction(
       "getItemsPriceHistory",
       url,
-      [{ itemIds: [id], days: 180, aggregationMinutes: 60 }],
+      [{ itemIds: [id], days, aggregationMinutes }],
       {
         Cookie: "NEXT_LOCALE=" + lang,
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": USER_AGENT,
         Accept: "*/*",
       },
+      getFallbackActionId("getItemsPriceHistory"),
     );
 
     const resultLine = response
@@ -45,7 +63,7 @@ export const fetchChartData = async (id: number) => {
       .filter(Boolean)
       .find((line) => line.startsWith("1:"));
 
-    if (!resultLine) return;
+    if (!resultLine) return null;
 
     const raw = resultLine.slice(2).trim();
 
@@ -54,9 +72,49 @@ export const fetchChartData = async (id: number) => {
     const cleanJson: Record<string, IData[]> = JSON.parse(raw);
 
     return cleanJson[String(id)] ?? [];
-  } catch (error) {
-    /* empty */
+  } catch {
+    return null;
   }
+};
+
+/**
+ * Uses the hourly points for the recent week and the four-hour points for the
+ * older history, so the chart opens quickly and still covers six months.
+ */
+const mergeHistory = (
+  history: IData[] | null,
+  recent: IData[] | null,
+): IData[] => {
+  if (!history) return recent ?? [];
+  if (!recent?.length) return history;
+
+  const recentStart = recent.reduce(
+    (min, point) => Math.min(min, point.t),
+    Number.POSITIVE_INFINITY,
+  );
+
+  const merged = new Map<number, IData>();
+
+  for (const point of history) {
+    if (point.t < recentStart) merged.set(point.t, point);
+  }
+
+  for (const point of recent) {
+    merged.set(point.t, point);
+  }
+
+  return Array.from(merged.values()).sort((a, b) => a.t - b.t);
+};
+
+export const fetchChartData = async (id: number) => {
+  const [history, recent] = await Promise.all([
+    requestHistory(id, HISTORY_DAYS, HISTORY_AGGREGATION_MINUTES),
+    requestHistory(id, RECENT_DAYS, RECENT_AGGREGATION_MINUTES),
+  ]);
+
+  if (history === null && recent === null) return undefined;
+
+  return mergeHistory(history, recent);
 };
 
 export function buildChartData(

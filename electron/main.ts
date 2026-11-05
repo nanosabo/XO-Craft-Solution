@@ -21,7 +21,6 @@ import { IData, OwnRecipe } from "@src/store/slices/market.slice";
 import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
 import { getOneItem } from "./oneItemCalc";
 import { fetchUpdate } from "./fetchUpdate";
-import { getServerActionId } from "./actionIds";
 import { buildChartData, fetchChartData } from "./fetchChartData";
 import { autoUpdater } from "electron-updater";
 import locales from "./locales.json";
@@ -910,8 +909,4 @@ app.whenReady().then(async () => {
   ).data;
 
   createWindow();
-
-  // Warm up the server action id cache in the background so the first market
-  // update does not have to wait for chunk discovery.
-  void getServerActionId("checkUpdateStatus");
 });
