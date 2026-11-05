@@ -16,7 +16,7 @@ const useAutoUpdate = () => {
     if (!autoUpdate || wasChecked.current) return;
 
     wasChecked.current = true;
-    window.electronAPI.checkForUpdates().catch((error) => {
+    window.electronAPI.checkForUpdates(true).catch((error) => {
       /* The updater can be unavailable in dev builds or offline. */
       logWarning("update-auto", error);
     });

@@ -2,6 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { contextBridge, ipcRenderer } from "electron";
+import type {
+  UpdateMode,
+  UpdateState,
+} from "@src/store/slices/updater.slice";
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld("ipcRenderer", withPrototype(ipcRenderer));
@@ -11,7 +15,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getIsMirror: () => ipcRenderer.invoke("get-is-mirror"),
   getUpdateInfo: () => ipcRenderer.invoke("get-update-info"),
   getReleaseFeed: () => ipcRenderer.invoke("get-release-feed"),
-  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  checkForUpdates: (automatic?: boolean) =>
+    ipcRenderer.invoke("check-for-updates", { automatic: Boolean(automatic) }),
+  getUpdateState: () => ipcRenderer.invoke("get-update-state"),
+  downloadUpdate: (mode: UpdateMode) =>
+    ipcRenderer.invoke("download-update", mode),
+  installUpdate: () => ipcRenderer.invoke("install-update"),
+  onUpdateState: (listener: (state: UpdateState) => void) => {
+    const wrapped = (_: Electron.IpcRendererEvent, state: UpdateState) => {
+      listener(state);
+    };
+
+    ipcRenderer.on("update-state", wrapped);
+
+    return () => ipcRenderer.removeListener("update-state", wrapped);
+  },
   showNotification: (payload: {
     title: string;
     body: string;

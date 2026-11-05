@@ -33,7 +33,15 @@ import {
   setErrorNotifier,
   writeLog,
 } from "./logger";
-import { autoUpdater } from "electron-updater";
+import {
+  checkForUpdates,
+  getUpdateState,
+  installUpdate,
+  readUpdateInfo,
+  setupUpdater,
+  startDownload,
+} from "./updateManager";
+import type { UpdateMode } from "@src/store/slices/updater.slice";
 import locales from "./locales.json";
 import axios from "axios";
 
@@ -41,8 +49,6 @@ installMainLogging();
 installIpcErrorLogging();
 
 app.setAppUserModelId("xo.craft.solution");
-
-autoUpdater.allowPrerelease = true;
 
 const IS_DEV = !app.isPackaged;
 
@@ -208,34 +214,6 @@ interface WindowState {
 }
 
 const RELEASE_REPO = "nanosabo/XO-Craft-Solution";
-
-const updateInfoPath = path.join(app.getPath("userData"), "update-info.json");
-
-interface StoredUpdateInfo {
-  version: string;
-  releaseNotes: string | null;
-}
-
-/**
- * The release notes are known while checking for an update, i.e. before the app
- * is restarted. Persisting them lets the patchnote window work without a second
- * request to GitHub after the update.
- */
-const saveUpdateInfo = (info: StoredUpdateInfo) => {
-  try {
-    fs.writeFileSync(updateInfoPath, JSON.stringify(info), "utf8");
-  } catch {
-    /* The cache is only an optimization for the release-notes window. */
-  }
-};
-
-const readUpdateInfo = (): StoredUpdateInfo | null => {
-  try {
-    return JSON.parse(fs.readFileSync(updateInfoPath, "utf8"));
-  } catch {
-    return null;
-  }
-};
 
 const WIDTH = 1160;
 const HEIGHT = 650;
@@ -430,41 +408,23 @@ ipcMain.handle("get-release-feed", async () => {
   }
 });
 
-ipcMain.handle("check-for-updates", async () => {
-  try {
-    const result = await autoUpdater.checkForUpdatesAndNotify({
-      title: locales[lang].update.title,
-      body: locales[lang].update.body,
-    });
+ipcMain.handle(
+  "check-for-updates",
+  (_, payload?: { automatic?: boolean }) => {
+    return checkForUpdates(Boolean(payload?.automatic));
+  },
+);
 
-    const updateInfo = result?.updateInfo;
+ipcMain.handle("get-update-state", () => {
+  return getUpdateState();
+});
 
-    if (updateInfo?.version) {
-      const notes = updateInfo.releaseNotes;
+ipcMain.handle("download-update", (_, mode: UpdateMode) => {
+  return startDownload(mode === "later" ? "later" : "now");
+});
 
-      saveUpdateInfo({
-        version: updateInfo.version,
-        releaseNotes: Array.isArray(notes)
-          ? notes
-              .map((note) => note.note ?? "")
-              .filter(Boolean)
-              .join("\n\n")
-          : notes ?? null,
-      });
-    }
-
-    return {
-      ok: true,
-      current: app.getVersion(),
-      latest: updateInfo?.version ?? null,
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      current: app.getVersion(),
-      message: error instanceof Error ? error.message : String(error),
-    };
-  }
+ipcMain.handle("install-update", () => {
+  return installUpdate();
 });
 
 ipcMain.handle(
@@ -1063,6 +1023,20 @@ app.whenReady().then(async () => {
     electron: process.versions.electron,
     isDev: IS_DEV,
     mirror: isUsingMirror(),
+  });
+
+  setupUpdater({
+    getWindow: () => win,
+    getLanguage: () => lang,
+    notify: (title, body) => {
+      if (!Notification.isSupported()) return;
+
+      new Notification({
+        title,
+        body,
+        icon: nativeImage.createFromPath(iconPath),
+      }).show();
+    },
   });
 
   const icon = nativeImage.createFromPath(iconPath);

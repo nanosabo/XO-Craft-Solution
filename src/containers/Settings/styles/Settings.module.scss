@@ -430,6 +430,97 @@
   @include caption;
 }
 
+.updateCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba($bg, 0.45);
+  border: 1px solid rgba($primary, 0.24);
+  border-radius: 10px;
+}
+
+.updateCardError {
+  border-color: rgba($red, 0.3);
+}
+
+.updateCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.updateCardTitle {
+  @include body;
+  color: $white;
+}
+
+.updateCardHint {
+  display: block;
+  margin-top: 3px;
+  color: $default;
+  @include caption;
+  line-height: 1.4;
+}
+
+.updateVersion {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba($primary, 0.16);
+  color: $primary;
+  @include caption;
+  font-weight: 600;
+}
+
+.updateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.updateProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.updateProgressTrack {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba($white, 0.08);
+}
+
+.updateProgressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, $primary, #4ea1ff);
+  transition: width 0.2s ease-in-out;
+}
+
+.updateProgressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: $default;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.primaryButton {
+  border-color: $primary;
+  background: $primary;
+  color: $white;
+
+  &:hover:not(:disabled) {
+    border-color: darken($primary, 8%);
+    background: darken($primary, 8%);
+  }
+}
+
 .muted {
   margin-top: 10px;
   color: $default;

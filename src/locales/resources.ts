@@ -19,6 +19,9 @@ import settingsPageEn from "./en/settingsPage.json";
 import aboutPageRu from "./ru/aboutPage.json";
 import aboutPageEn from "./en/aboutPage.json";
 
+import updaterRu from "./ru/updater.json";
+import updaterEn from "./en/updater.json";
+
 export const resources = {
   en: {
     loaderPage: loaderPageEn,
@@ -28,6 +31,7 @@ export const resources = {
     marketPage: marketPageEn,
     settingsPage: settingsPageEn,
     aboutPage: aboutPageEn,
+    updater: updaterEn,
   },
   ru: {
     loaderPage: loaderPageRu,
@@ -37,5 +41,6 @@ export const resources = {
     marketPage: marketPageRu,
     settingsPage: settingsPageRu,
     aboutPage: aboutPageRu,
+    updater: updaterRu,
   },
 };

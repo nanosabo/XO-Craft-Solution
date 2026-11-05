@@ -5,8 +5,8 @@
       "body": "The app is still running in the system tray"
     },
     "update": {
-      "title": "Update Available",
-      "body": "The update will be downloaded automatically and installed after the app is closed"
+      "title": "Update ready",
+      "body": "The update has been downloaded and will be installed after the app is closed"
     },
     "sound": {
       "pick": "Choose a notification sound",
@@ -19,8 +19,8 @@
       "body": "Приложение все еще работает и находится в значках"
     },
     "update": {
-      "title": "Доступно обновление",
-      "body": "Обновление будет автоматически загружено и установится после закрытия приложения"
+      "title": "Обновление готово",
+      "body": "Обновление загружено и установится после закрытия приложения"
     },
     "sound": {
       "pick": "Выберите звук уведомления",

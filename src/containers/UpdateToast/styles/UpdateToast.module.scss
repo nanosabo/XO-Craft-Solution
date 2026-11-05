@@ -1,0 +1,249 @@
+@import "@styles/theme";
+
+.toast {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 372px;
+  padding: 16px;
+  background:
+    radial-gradient(
+      120% 100% at 0% 0%,
+      rgba($primary, 0.16) 0%,
+      transparent 55%
+    ),
+    rgba(22, 25, 27, 0.94);
+  border: 1px solid rgba($primary, 0.28);
+  border-radius: 16px;
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba($white, 0.04);
+  backdrop-filter: blur(14px);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid rgba($primary, 0.25);
+  border-radius: 10px;
+  background: rgba($primary, 0.16);
+  color: $primary;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.eyebrow {
+  display: block;
+  color: $primary;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heading h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 3px;
+  color: $white;
+  @include subtitle2;
+  font-weight: 600;
+}
+
+.version {
+  padding: 2px 7px;
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 999px;
+  background: rgba($primary, 0.16);
+  color: $primary;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  color: $default;
+  transition:
+    color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover:not(:disabled) {
+    color: $white;
+    background: rgba($white, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.text {
+  color: $default;
+  @include caption;
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid rgba($white, 0.12);
+  border-radius: 9px;
+  background: rgba($input, 0.6);
+  color: $white;
+  @include caption;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    opacity 0.2s ease-in-out;
+
+  &:hover:not(:disabled) {
+    border-color: rgba($primary, 0.6);
+    background: rgba($primary, 0.14);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.primary {
+  border-color: $primary;
+  background: $primary;
+
+  &:hover:not(:disabled) {
+    border-color: darken($primary, 8%);
+    background: darken($primary, 8%);
+  }
+}
+
+.progressBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressTrack {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba($white, 0.08);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, $primary, #4ea1ff);
+  transition: width 0.2s ease-in-out;
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: $default;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+  padding: 9px 14px;
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 999px;
+  background: rgba(22, 25, 27, 0.94);
+  color: $white;
+  @include caption;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: $primary;
+  }
+
+  span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    border-color: rgba($primary, 0.6);
+    background: rgba($primary, 0.14);
+  }
+}
+
+.pillPercent {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba($primary, 0.18);
+  color: $primary;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,6 +1,8 @@
 import ErrorBoundary from "@src/components/ErrorBoundary";
 import GlobalErrorHandler from "@src/components/GlobalErrorHandler";
+import UpdaterBridge from "@src/components/UpdaterBridge";
 import Header from "@src/containers/Header";
+import UpdateToast from "@src/containers/UpdateToast";
 import WindowActions from "@src/containers/WindowActions";
 import { store } from "@src/store/store";
 import { FC, PropsWithChildren } from "react";
@@ -18,6 +20,8 @@ const RootLayout: FC<PropsWithChildren> = ({ children }) => {
           <Header />
           <main>{children}</main>
         </ErrorBoundary>
+        <UpdaterBridge />
+        <UpdateToast />
       </HashRouter>
     </Provider>
   );

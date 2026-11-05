@@ -25,8 +25,21 @@
       "check": "Check for updates",
       "checking": "Checking...",
       "upToDate": "You have the latest version",
-      "available": "Version {{version}} is available. The download will start automatically.",
-      "error": "Could not check for updates"
+      "available": "Version {{version}} is available.",
+      "availableHint": "Download it now or install it on the next launch.",
+      "downloadNow": "Update now",
+      "downloadLater": "Update on next launch",
+      "downloading": "Downloading update...",
+      "downloadingHint": "The download continues in the background — you can keep using the app.",
+      "downloadingProgress": "{{percent}}% · {{transferred}} of {{total}}",
+      "downloadingSpeed": "{{speed}}/s",
+      "downloaded": "Update downloaded",
+      "downloadedNow": "Restart the app to install version {{version}}.",
+      "downloadedLater": "The update will be installed automatically on the next launch.",
+      "restart": "Restart and install",
+      "retry": "Retry",
+      "error": "Could not check for updates",
+      "downloadError": "Could not download the update"
     },
     "data": {
       "title": "Data & cache",

@@ -1,0 +1,37 @@
+{
+  "eyebrow": "Update",
+  "available": {
+    "title": "A new version is available",
+    "hint": "You have {{current}}. Download {{version}} and install it now or on the next launch."
+  },
+  "downloading": {
+    "title": "Downloading update",
+    "hint": "The download continues in the background — you can keep using the app.",
+    "progress": "{{percent}}% · {{transferred}} of {{total}}",
+    "speed": "{{speed}}/s"
+  },
+  "downloaded": {
+    "title": "Update ready",
+    "now": "Restart the app to install the new version.",
+    "later": "The update will be installed automatically on the next launch."
+  },
+  "error": {
+    "title": "Update failed",
+    "download": "Could not complete the update. Please try again."
+  },
+  "actions": {
+    "updateNow": "Update now",
+    "nextLaunch": "Update on next launch",
+    "restart": "Restart and install",
+    "retry": "Retry",
+    "hide": "Collapse notification",
+    "close": "Close"
+  },
+  "collapsed": {
+    "available": "Update available {{version}}",
+    "downloading": "Downloading update {{percent}}%",
+    "downloaded": "Update ready to install",
+    "error": "Update error",
+    "open": "Open the update notification"
+  }
+}

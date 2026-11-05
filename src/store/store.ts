@@ -9,6 +9,7 @@ import marketModalReducer, {
   marketMiddleware,
 } from "./slices/marketModal.slice";
 import settingsReducer from "./slices/settings.slice";
+import updaterReducer from "./slices/updater.slice";
 import logger from "redux-logger";
 
 export const store = configureStore({
@@ -20,6 +21,7 @@ export const store = configureStore({
     market: marketReducer,
     marketModal: marketModalReducer,
     settings: settingsReducer,
+    updater: updaterReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat([

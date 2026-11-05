@@ -32,12 +32,24 @@ interface Window {
       releaseNotes: string | null;
     } | null>;
     getReleaseFeed(): Promise<string | null>;
-    checkForUpdates(): Promise<{
+    checkForUpdates(automatic?: boolean): Promise<{
       ok: boolean;
       current: string;
       latest: string | null;
       message?: string;
     }>;
+    getUpdateState(): Promise<
+      import("@src/store/slices/updater.slice").UpdateState
+    >;
+    downloadUpdate(
+      mode: import("@src/store/slices/updater.slice").UpdateMode,
+    ): Promise<{ ok: boolean; message?: string }>;
+    installUpdate(): Promise<boolean>;
+    onUpdateState(
+      listener: (
+        state: import("@src/store/slices/updater.slice").UpdateState,
+      ) => void,
+    ): () => void;
     showNotification(payload: {
       title: string;
       body: string;
