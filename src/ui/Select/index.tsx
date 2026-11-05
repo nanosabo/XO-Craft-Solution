@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, memo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  memo,
+} from "react";
+import { createPortal } from "react-dom";
 import styles from "./styles/Select.module.scss";
 import { ArrowIcon } from "../icons";
 import classNames from "classnames";
@@ -22,6 +29,16 @@ const MAX_MENU_HEIGHT = 300;
 const MIN_MENU_HEIGHT = 120;
 const MENU_GAP = 6;
 const VIEWPORT_MARGIN = 12;
+const MENU_WIDTH_RATIO = 1.6;
+
+interface MenuPosition {
+  left: number;
+  width: number;
+  maxHeight: number;
+  up: boolean;
+  top?: number;
+  bottom?: number;
+}
 
 const CustomSelect: React.FC<CustomSelectProps> = memo(
   ({
@@ -32,13 +49,13 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
     menuPlacement = "down",
   }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [openUp, setOpenUp] = useState(false);
-    const [menuMaxHeight, setMenuMaxHeight] = useState<number>();
+    const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
     const [selected, setSelected] = useState<SelectOption>(() => {
       return options.find((opt) => opt.value === defaultValue) || options[0];
     });
 
     const containerRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       setSelected(
@@ -48,12 +65,104 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
 
     useEffect(() => {
       const handleOutsideClick = (e: MouseEvent) => {
-        if (!containerRef.current?.contains(e.target as Node)) setIsOpen(false);
+        const target = e.target as Node;
+
+        if (
+          !containerRef.current?.contains(target) &&
+          !menuRef.current?.contains(target)
+        ) {
+          setIsOpen(false);
+        }
       };
       document.addEventListener("mousedown", handleOutsideClick);
       return () =>
         document.removeEventListener("mousedown", handleOutsideClick);
     }, []);
+
+    /**
+     * The menu is rendered in a portal with fixed positioning. Otherwise the
+     * blurred cards around the select create stacking contexts and paint over
+     * the open menu.
+     */
+    const getMenuPosition = useCallback((): MenuPosition | null => {
+      const container = containerRef.current;
+      if (!container) return null;
+
+      const rect = container.getBoundingClientRect();
+      const width = Math.min(
+        rect.width * MENU_WIDTH_RATIO,
+        window.innerWidth - VIEWPORT_MARGIN * 2,
+      );
+      const left = Math.min(
+        Math.max(
+          rect.left + rect.width / 2 - width / 2,
+          VIEWPORT_MARGIN,
+        ),
+        window.innerWidth - width - VIEWPORT_MARGIN,
+      );
+
+      const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN;
+      const spaceAbove = rect.top - VIEWPORT_MARGIN;
+
+      const shouldOpenUp =
+        menuPlacement === "up" ||
+        (menuPlacement === "auto" &&
+          spaceBelow < MAX_MENU_HEIGHT &&
+          spaceAbove > spaceBelow);
+
+      if (!shouldOpenUp && menuPlacement === "down") {
+        return {
+          left,
+          width,
+          maxHeight: MAX_MENU_HEIGHT,
+          up: false,
+          top: rect.bottom + MENU_GAP,
+        };
+      }
+
+      const available = shouldOpenUp ? spaceAbove : spaceBelow;
+      const maxHeight = Math.max(
+        MIN_MENU_HEIGHT,
+        Math.min(MAX_MENU_HEIGHT, available - MENU_GAP),
+      );
+
+      return shouldOpenUp
+        ? {
+            left,
+            width,
+            maxHeight,
+            up: true,
+            bottom: window.innerHeight - rect.top + MENU_GAP,
+          }
+        : {
+            left,
+            width,
+            maxHeight,
+            up: false,
+            top: rect.bottom + MENU_GAP,
+          };
+    }, [menuPlacement]);
+
+    useEffect(() => {
+      if (!isOpen) return;
+
+      const updatePosition = () => setMenuPosition(getMenuPosition());
+
+      updatePosition();
+
+      const handleScroll = (event: Event) => {
+        if (menuRef.current?.contains(event.target as Node)) return;
+        updatePosition();
+      };
+
+      window.addEventListener("resize", updatePosition);
+      document.addEventListener("scroll", handleScroll, true);
+
+      return () => {
+        window.removeEventListener("resize", updatePosition);
+        document.removeEventListener("scroll", handleScroll, true);
+      };
+    }, [isOpen, getMenuPosition]);
 
     const handleSelect = (option: SelectOption) => {
       setSelected(option);
@@ -67,29 +176,7 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
         return;
       }
 
-      if (menuPlacement !== "down" && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN;
-        const spaceAbove = rect.top - VIEWPORT_MARGIN;
-        const shouldOpenUp =
-          menuPlacement === "up" ||
-          (spaceBelow < MAX_MENU_HEIGHT && spaceAbove > spaceBelow);
-
-        setOpenUp(shouldOpenUp);
-        setMenuMaxHeight(
-          Math.max(
-            MIN_MENU_HEIGHT,
-            Math.min(
-              MAX_MENU_HEIGHT,
-              (shouldOpenUp ? spaceAbove : spaceBelow) - MENU_GAP,
-            ),
-          ),
-        );
-      } else {
-        setOpenUp(false);
-        setMenuMaxHeight(undefined);
-      }
-
+      setMenuPosition(getMenuPosition());
       setIsOpen(true);
     };
 
@@ -113,41 +200,47 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
           <span className={classNames(styles.arrow, { [styles.up]: isOpen })} />
         </div>
 
-        {isOpen && (
-          <div
-            className={classNames(styles.menu, {
-              [styles.menuUp]: openUp,
-            })}
-            style={
-              menuMaxHeight !== undefined
-                ? { maxHeight: menuMaxHeight }
-                : undefined
-            }
-          >
-            {options.map((option) => (
-              <div
-                key={option.value}
-                className={classNames(styles.option, {
-                  [styles.isSelected]: selected.value === option.value,
-                })}
-                onClick={() => handleSelect(option)}
-                title={option.label}
-              >
-                {option.label}
+        {isOpen &&
+          menuPosition &&
+          createPortal(
+            <div
+              ref={menuRef}
+              className={classNames(styles.menu, styles.menuPortal, {
+                [styles.menuUp]: menuPosition.up,
+              })}
+              style={{
+                left: menuPosition.left,
+                width: menuPosition.width,
+                maxHeight: menuPosition.maxHeight,
+                top: menuPosition.up ? "auto" : menuPosition.top,
+                bottom: menuPosition.up ? menuPosition.bottom : "auto",
+              }}
+            >
+              {options.map((option) => (
+                <div
+                  key={option.value}
+                  className={classNames(styles.option, {
+                    [styles.isSelected]: selected.value === option.value,
+                  })}
+                  onClick={() => handleSelect(option)}
+                  title={option.label}
+                >
+                  {option.label}
 
-                {selected.value === option.value && order && (
-                  <span
-                    className={classNames(styles.sort, {
-                      [styles.desc]: order === "desc",
-                    })}
-                  >
-                    {<ArrowIcon />}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+                  {selected.value === option.value && order && (
+                    <span
+                      className={classNames(styles.sort, {
+                        [styles.desc]: order === "desc",
+                      })}
+                    >
+                      {<ArrowIcon />}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>,
+            document.body,
+          )}
       </div>
     );
   },

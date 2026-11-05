@@ -72,6 +72,17 @@
   bottom: calc(100% + 6px);
 }
 
+// The menu is portaled to the body so blurred/overflowing containers cannot
+// clip it or paint over it. Position and size come from the component.
+.menuPortal {
+  position: fixed;
+  top: auto;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  z-index: 1000;
+}
+
 .option {
   display: flex;
   align-items: center;
