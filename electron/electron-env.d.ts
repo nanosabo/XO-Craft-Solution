@@ -125,6 +125,13 @@ interface Window {
       customPath?: string | null,
     ): Promise<import("@src/types/crossout").CrossoutDetectedLog | null>;
     crossoutPickLogsFolder(): Promise<string | null>;
+    clanGetState(): Promise<import("@src/types/clan").ClanState>;
+    clanSync(input: import("@src/types/clan").ClanSyncInput): Promise<
+      import("@src/types/clan").ClanState
+    >;
+    onClanState(
+      listener: (state: import("@src/types/clan").ClanState) => void,
+    ): () => void;
     notifyAppLogListening(): void;
     onAppOpenLog(
       listener: (link: import("@src/helpers/appLogLink").AppLogLink) => void,

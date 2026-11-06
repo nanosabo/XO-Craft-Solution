@@ -1,0 +1,25 @@
+@import "@styles/theme";
+
+.switch {
+  display: flex;
+  flex-shrink: 0;
+  padding: 3px;
+  background: rgba($white, 0.04);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 10px;
+}
+
+.option {
+  height: 32px;
+  padding: 0 14px;
+  color: $default;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  @include caption;
+
+  &.active {
+    color: $white;
+    background: rgba($primary, 0.9);
+  }
+}

@@ -7,6 +7,7 @@ import type {
   UpdateState,
 } from "@src/store/slices/updater.slice";
 import type { AppLogLink } from "@src/helpers/appLogLink";
+import type { ClanState, ClanSyncInput } from "@src/types/clan";
 import type {
   CrossoutDetectedLog,
   CrossoutFetchBattlesParams,
@@ -117,6 +118,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ) as Promise<CrossoutDetectedLog | null>,
   crossoutPickLogsFolder: () =>
     ipcRenderer.invoke("crossout-pick-logs-folder") as Promise<string | null>,
+  clanGetState: () => ipcRenderer.invoke("clan-get-state") as Promise<ClanState>,
+  clanSync: (input: ClanSyncInput) =>
+    ipcRenderer.invoke("clan-sync", input) as Promise<ClanState>,
+  onClanState: (listener: (state: ClanState) => void) => {
+    const wrapped = (_: Electron.IpcRendererEvent, state: ClanState) => {
+      listener(state);
+    };
+
+    ipcRenderer.on("clan-state", wrapped);
+
+    return () => ipcRenderer.removeListener("clan-state", wrapped);
+  },
   notifyAppLogListening: () => ipcRenderer.send("app-log-listening"),
   onAppOpenLog: (listener: (link: AppLogLink) => void) => {
     const wrapped = (_: Electron.IpcRendererEvent, link: AppLogLink) => {

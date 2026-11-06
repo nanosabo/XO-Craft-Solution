@@ -70,6 +70,14 @@ import {
   saveCrossoutStatsCache,
 } from "./crossoutStatsCache";
 import { closeCrossoutBrowser } from "./crossoutBrowser";
+import {
+  configureClanSync,
+  getClanState,
+  startClanSync,
+  stopClanSync,
+  syncClan,
+} from "./clanSync";
+import type { ClanSyncInput } from "@src/types/clan";
 import { findLatestCombatLog } from "./crossoutLogFind";
 import {
   type AppLogLink,
@@ -160,6 +168,7 @@ app.on("open-url", (event, url) => {
 });
 
 app.on("before-quit", () => {
+  stopClanSync();
   closeCrossoutBrowser();
 });
 
@@ -590,6 +599,12 @@ ipcMain.handle(
     return fetchCrossoutBattles(params, lang);
   },
 );
+
+ipcMain.handle("clan-get-state", () => getClanState());
+
+ipcMain.handle("clan-sync", (_, input: ClanSyncInput) => {
+  return syncClan(String(input?.profile ?? ""), String(input?.code ?? ""));
+});
 
 ipcMain.handle(
   "crossout-upload-log",
@@ -1428,6 +1443,15 @@ app.whenReady().then(async () => {
 
   // Never block the window on network access: without a connection the app
   // must still open and show the error/report screen.
+  configureClanSync({
+    getLanguage: () => lang,
+    onState: (state) => {
+      if (!win || win.isDestroyed()) return;
+
+      win.webContents.send("clan-state", state);
+    },
+  });
+  void startClanSync();
   void ensureParts();
   createWindow();
 });

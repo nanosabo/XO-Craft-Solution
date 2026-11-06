@@ -1,6 +1,10 @@
 {
   "title": "Battle stats",
   "subtitle": "Upload combat.log or open a ready crossout-info link",
+  "view": {
+    "logs": "Logs",
+    "clan": "Clan"
+  },
   "apiKey": {
     "title": "crossout-info API key",
     "description": "The key is stored in the app data folder and never committed to the source code.",
@@ -265,5 +269,33 @@
     "file-read": "Could not read the log file.",
     "empty-log-id": "The service did not return a log id.",
     "invalid-log-id": "Invalid log id."
+  },
+  "clan": {
+    "title": "Clan history",
+    "subtitle": "The same clan code folds clanmates' battles into one archive. Your battles come from your crossout-info key, and everyone else's arrive from their apps.",
+    "profile": "crossout-info profile",
+    "profilePlaceholder": "https://crossout-info.com/pers/…",
+    "code": "Clan code",
+    "codePlaceholder": "A shared phrase only your clan knows",
+    "save": "Sync",
+    "syncing": "Syncing…",
+    "needCode": "Enter the clan code",
+    "needProfile": "Add a profile link",
+    "badProfile": "Use a profile link that contains /pers/…",
+    "noKey": "Your API key is missing: other battles can arrive, but yours will not be sent",
+    "profileFailed": "Could not read the clanmate list",
+    "battlesFailed": "Could not fetch your battles from crossout-info",
+    "offline": "No relay connection",
+    "online": "Connected",
+    "stepProfile": "Reading the clanmate list…",
+    "stepBattles": "Fetching your battles for the last 7 days…",
+    "stepPublish": "Sending the archive to clanmates…",
+    "archive": "Battles in the archive",
+    "shared": "Shared battles",
+    "matesCount": "Clanmates",
+    "empty": "Nothing here yet. After a sync, the clan battle history will show up.",
+    "player": "Player",
+    "mixed": "Mixed result",
+    "more": "Show more"
   }
 }

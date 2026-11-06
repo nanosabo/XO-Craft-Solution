@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import BattlesView, { type BattlesViewName } from "@src/components/BattlesView";
 import { parseAppLogLink } from "@src/helpers/appLogLink";
 import { logWarning } from "@src/helpers/errorLog";
 import formatBytes from "@src/helpers/formatBytes";
@@ -130,7 +131,12 @@ type LogsError = {
   fallbackKey?: "upload.error" | "upload.wrongFile";
 };
 
-const Logs = () => {
+interface Props {
+  view: BattlesViewName;
+  onView: (view: BattlesViewName) => void;
+}
+
+const Logs = ({ view, onView }: Props) => {
   const { t, i18n } = useTranslation("logsPage");
   const navigate = useNavigate();
   const logsPath = useAppSelector(selectSettingsState).crossoutLogsPath;
@@ -431,7 +437,10 @@ const Logs = () => {
       })}
     >
       <div className={styles.heading}>
-        <h1>{t("title")}</h1>
+        <div className={styles.headingTitle}>
+          <h1>{t("title")}</h1>
+          <BattlesView view={view} onView={onView} />
+        </div>
         <p>{t("subtitle")}</p>
       </div>
 
