@@ -370,3 +370,135 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.logTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.logTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  color: $default;
+  background: rgba($white, 0.03);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 8px;
+  @include body;
+
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
+
+  &:hover {
+    color: $white;
+    border-color: rgba($primary, 0.6);
+  }
+}
+
+.logTabActive {
+  color: $white;
+  background: rgba($primary, 0.16);
+  border-color: $primary;
+}
+
+.logTabCount {
+  padding: 1px 7px;
+  color: $white;
+  background: rgba($white, 0.08);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.logTableWrap {
+  margin-top: 14px;
+  overflow-x: auto;
+  border: 1px solid rgba($white, 0.06);
+  border-radius: 10px;
+}
+
+.logTable {
+  width: 100%;
+  border-collapse: collapse;
+  @include caption;
+
+  td {
+    padding: 8px 10px;
+    color: rgba($white, 0.85);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  tr + tr td {
+    border-top: 1px solid rgba($white, 0.04);
+  }
+}
+
+.logCell {
+  transition: background-color 0.15s ease-in-out;
+
+  &:hover {
+    background-color: rgba($white, 0.03);
+  }
+}
+
+.logHeadRow td {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: $default;
+  font-weight: 500;
+  background: rgba($secondary, 0.98);
+}
+
+.logCellCenter {
+  text-align: center;
+}
+
+.logCellRight {
+  text-align: right;
+}
+
+.logCellLeft {
+  text-align: left;
+}
+
+.teamRed {
+  background: rgba(255, 90, 90, 0.05);
+}
+
+.teamGreen {
+  background: rgba(10, 197, 154, 0.05);
+}
+
+.destroyed {
+  color: rgba($white, 0.4) !important;
+  text-decoration: line-through;
+}
+
+.logWeaponCell {
+  color: rgba($white, 0.7) !important;
+  font-style: italic;
+}
+
+.logBattleRow td {
+  padding: 0;
+}
+
+.logBattleCell {
+  padding: 10px !important;
+  color: $white !important;
+  text-align: center;
+  background: rgba(255, 193, 7, 0.1);
+  border-top: 1px solid rgba($white, 0.08) !important;
+  border-bottom: 1px solid rgba($white, 0.08) !important;
+
+  span + span {
+    margin-left: 16px;
+  }
+}

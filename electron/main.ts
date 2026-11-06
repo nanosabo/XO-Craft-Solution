@@ -50,9 +50,12 @@ import {
   clearCrossoutApiKey,
   fetchCrossoutBattles,
   getCrossoutApiKey,
+  loadCrossoutLog,
+  loadCrossoutLogTable,
   saveCrossoutApiKey,
   uploadCrossoutLog,
 } from "./crossoutInfo";
+import { closeCrossoutBrowser } from "./crossoutBrowser";
 import locales from "./locales.json";
 import axios from "axios";
 
@@ -102,6 +105,10 @@ app.on("second-instance", () => {
     win.show();
     win.focus();
   }
+});
+
+app.on("before-quit", () => {
+  closeCrossoutBrowser();
 });
 
 let win: BrowserWindow | null;
@@ -397,6 +404,17 @@ ipcMain.handle(
   "crossout-upload-log",
   (_, params: CrossoutUploadLogParams) => {
     return uploadCrossoutLog(params);
+  },
+);
+
+ipcMain.handle("crossout-load-log", (_, logId: string) => {
+  return loadCrossoutLog(String(logId ?? ""));
+});
+
+ipcMain.handle(
+  "crossout-load-log-table",
+  (_, logId: string, type: string) => {
+    return loadCrossoutLogTable(String(logId ?? ""), String(type ?? ""));
   },
 );
 

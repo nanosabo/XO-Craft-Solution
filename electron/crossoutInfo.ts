@@ -10,29 +10,40 @@ import {
   type CrossoutBattlesResult,
   type CrossoutErrorCode,
   type CrossoutFetchBattlesParams,
+  type CrossoutLogCell,
+  type CrossoutLogRow,
+  type CrossoutLogSummaryResult,
+  type CrossoutLogTableResult,
   type CrossoutUploadLogParams,
   type CrossoutUploadLogResult,
 } from "../src/types/crossout";
+import {
+  extractCrossoutPage,
+  loadCrossoutPage,
+} from "./crossoutBrowser";
 
 const BASE_URLS = [
   "https://crossout-info.com",
   "https://en.crossout-info.com",
 ];
 const API_VERSION = "api_ver1";
-const REQUEST_TIMEOUT = 30_000;
 const UPLOAD_TIMEOUT = 120_000;
 const MAX_RANGE_DAYS = 7;
 const MAX_LOG_BYTES = 64 * 1024 * 1024;
 const CONFIG_PATH = path.join(app.getPath("userData"), "crossout-info.json");
 const USER_AGENT = `XO-Craft-Solution/${app.getVersion()}`;
+const DEFAULT_API_KEY = "7b60878e44dcb651176061e2c0a67ea4";
+const LOG_ID_PATTERN = /^[A-Za-z0-9_-]{4,64}$/;
+const LOG_TYPE_PATTERN = /^[a-z0-9_-]{1,32}$/;
 
 interface CrossoutInfoConfig {
   apiKey?: string;
 }
 
 /**
- * The key is intentionally not committed. In development it can be placed in
- * .env.local, and in a packaged build it is read from the user data folder.
+ * The key is public and can be overridden without editing the source: in
+ * development through .env.local, at runtime through CROSSOUT_INFO_API_KEY,
+ * or from userData/crossout-info.json.
  */
 const readDevEnv = (): Record<string, string> => {
   if (app.isPackaged) return {};
@@ -81,7 +92,7 @@ export const getCrossoutApiKey = (): string | null => {
 
   const configKey = readConfig().apiKey?.trim();
 
-  return configKey || null;
+  return configKey || DEFAULT_API_KEY;
 };
 
 /**
@@ -170,6 +181,24 @@ const uploadFailure = (
   errorCode: code,
 });
 
+const logSummaryFailure = (
+  code: CrossoutErrorCode,
+  message: string,
+): CrossoutLogSummaryResult => ({
+  ok: false,
+  error: message,
+  errorCode: code,
+});
+
+const logTableFailure = (
+  code: CrossoutErrorCode,
+  message: string,
+): CrossoutLogTableResult => ({
+  ok: false,
+  error: message,
+  errorCode: code,
+});
+
 const normalizeBattle = (value: unknown): CrossoutBattle | null => {
   if (!value || typeof value !== "object") return null;
 
@@ -238,7 +267,20 @@ interface CrossoutFailure {
   message: string;
 }
 
+class CrossoutServiceError extends Error {
+  readonly code: CrossoutErrorCode;
+
+  constructor(code: CrossoutErrorCode, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
 const describeError = (error: unknown): CrossoutFailure => {
+  if (error instanceof CrossoutServiceError) {
+    return { code: error.code, message: error.message };
+  }
+
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 403) {
       return {
@@ -266,6 +308,9 @@ const describeError = (error: unknown): CrossoutFailure => {
     message: error instanceof Error ? error.message : String(error),
   };
 };
+
+const isForbiddenText = (text: string): boolean =>
+  text.trim().toLowerCase() === "forbidden";
 
 /**
  * crossout-info is occasionally unreachable from some regions. The English
@@ -332,19 +377,40 @@ export const fetchCrossoutBattles = async (
 
   for (const baseUrl of BASE_URLS) {
     try {
-      const response = await axios.get<unknown>(`${baseUrl}/${path}`, {
-        timeout: REQUEST_TIMEOUT,
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-        },
-      });
+      const page = await loadCrossoutPage(`${baseUrl}/${path}`);
+      const text = page.text.trim();
 
-      return normalizeResponse(response.data);
+      if (isForbiddenText(text)) {
+        lastError = new CrossoutServiceError(
+          "forbidden",
+          "Сервис отклонил запрос (403). Проверьте API-ключ и доступ к crossout-info.com.",
+        );
+        continue;
+      }
+
+      if (!text.startsWith("{") && !text.startsWith("[")) {
+        lastError = new CrossoutServiceError(
+          "unexpected-response",
+          "Сервис вернул неожиданный ответ.",
+        );
+        continue;
+      }
+
+      let data: unknown;
+
+      try {
+        data = JSON.parse(text);
+      } catch {
+        lastError = new CrossoutServiceError(
+          "unexpected-response",
+          "Сервис вернул неожиданный ответ.",
+        );
+        continue;
+      }
+
+      return normalizeResponse(data);
     } catch (error) {
       lastError = error;
-
-      if (!shouldTryNextHost(error)) break;
     }
   }
 
@@ -435,6 +501,13 @@ export const uploadCrossoutLog = async (
         );
       }
 
+      if (!LOG_ID_PATTERN.test(logId)) {
+        return uploadFailure(
+          "server",
+          `Сервис вернул неожиданный ответ: ${logId.slice(0, 200)}`,
+        );
+      }
+
       return { ok: true, logId, logUrl: `${baseUrl}/log/${logId}` };
     } catch (error) {
       lastError = error;
@@ -446,4 +519,295 @@ export const uploadCrossoutLog = async (
   const failure = describeError(lastError);
 
   return uploadFailure(failure.code, failure.message);
+};
+
+interface RawLogType {
+  key?: unknown;
+  label?: unknown;
+  count?: unknown;
+}
+
+interface RawLogSummary {
+  forbidden?: unknown;
+  title?: unknown;
+  nickname?: unknown;
+  types?: unknown;
+}
+
+interface RawLogCell {
+  text?: unknown;
+  colSpan?: unknown;
+  rowSpan?: unknown;
+  cls?: unknown;
+  weapon?: unknown;
+  destroyed?: unknown;
+}
+
+interface RawLogBattle {
+  index?: unknown;
+  map?: unknown;
+  duration?: unknown;
+}
+
+interface RawLogRow {
+  cells?: unknown;
+  map?: unknown;
+  cls?: unknown;
+  battle?: unknown;
+}
+
+interface RawLogTable {
+  forbidden?: unknown;
+  date?: unknown;
+  rows?: unknown;
+}
+
+const LOG_SUMMARY_SCRIPT = `(() => {
+  const bodyText = document.body ? document.body.innerText.trim() : "";
+  if (bodyText === "Forbidden") return { forbidden: true };
+
+  const anchors = Array.from(document.querySelectorAll('a.button[href*="/log/"]'));
+  const types = anchors.map((anchor) => {
+    const href = anchor.getAttribute("href") || "";
+    const parts = href.split("/").filter(Boolean);
+    const key = parts[parts.length - 1] || "";
+    const countNode = anchor.querySelector(".bold.black");
+    const labelNode = anchor.querySelector(".bold.roboto.s18");
+    return {
+      key,
+      label: labelNode ? labelNode.textContent.trim() : "",
+      count: countNode ? parseInt(countNode.textContent.trim(), 10) || 0 : 0
+    };
+  }).filter((type) => type.key && type.key !== "log");
+
+  const title = document.title || "";
+  const match = title.match(/игрока\\s+(.+)$/i) || title.match(/player\\s+(.+)$/i);
+
+  return {
+    forbidden: false,
+    title,
+    nickname: match ? match[1].trim() : "",
+    types
+  };
+})()`;
+
+const LOG_TABLE_SCRIPT = `(() => {
+  const bodyText = document.body ? document.body.innerText.trim() : "";
+  if (bodyText === "Forbidden") return { forbidden: true };
+
+  const table = document.querySelector("table.maps");
+  if (!table) return { forbidden: false, date: "", rows: [] };
+
+  const rows = Array.from(table.rows).map((row) => {
+    const cells = Array.from(row.cells).map((cell) => {
+      const img = cell.querySelector("img");
+      return {
+        text: (cell.innerText || "").replace(/\\s+/g, " ").trim(),
+        colSpan: cell.colSpan || 1,
+        rowSpan: cell.rowSpan || 1,
+        cls: cell.className || "",
+        weapon: img ? (img.getAttribute("title") || img.getAttribute("alt") || "") : "",
+        destroyed: Boolean(cell.querySelector(".trought"))
+      };
+    });
+
+    const headerCell = cells.length === 1 && cells[0].colSpan > 1 ? cells[0] : null;
+    const headerText = headerCell ? headerCell.text : "";
+    const battleMatch = headerText.match(/(?:Бой|Battle)\\s*#(\\d+)\\s*\\|\\s*(?:Карта|Map):\\s*(.+?)\\s*\\|\\s*(?:Время боя|Battle time):\\s*(.+)$/i);
+
+    return {
+      cells,
+      map: row.getAttribute("data-maps") || "",
+      cls: row.className || "",
+      battle: battleMatch
+        ? {
+            index: parseInt(battleMatch[1], 10) || 0,
+            map: battleMatch[2].trim(),
+            duration: battleMatch[3].trim()
+          }
+        : null
+    };
+  }).filter((row) => row.cells.length > 0).slice(0, 3000);
+
+  const dateNode = document.querySelector(".grays.bold400.roboto");
+  const dateMatch = dateNode ? (dateNode.textContent || "").match(/\\d{2}\\.\\d{2}\\.\\d{4}/) : null;
+
+  return {
+    forbidden: false,
+    date: dateMatch ? dateMatch[0] : "",
+    rows
+  };
+})()`;
+
+const normalizeLogCell = (value: unknown): CrossoutLogCell | null => {
+  if (!value || typeof value !== "object") return null;
+
+  const raw = value as RawLogCell;
+
+  return {
+    text: asString(raw.text),
+    colSpan: Math.max(1, asNumber(raw.colSpan)),
+    rowSpan: Math.max(1, asNumber(raw.rowSpan)),
+    cls: asString(raw.cls),
+    weapon: asString(raw.weapon),
+    destroyed: Boolean(raw.destroyed),
+  };
+};
+
+const normalizeLogRow = (value: unknown): CrossoutLogRow | null => {
+  if (!value || typeof value !== "object") return null;
+
+  const raw = value as RawLogRow;
+  const rawCells = Array.isArray(raw.cells) ? raw.cells : [];
+  const cells = rawCells
+    .map(normalizeLogCell)
+    .filter((cell): cell is CrossoutLogCell => cell !== null);
+
+  if (cells.length === 0) return null;
+
+  const rawBattle =
+    raw.battle && typeof raw.battle === "object"
+      ? (raw.battle as RawLogBattle)
+      : null;
+
+  return {
+    cells,
+    map: asString(raw.map),
+    cls: asString(raw.cls),
+    battle: rawBattle
+      ? {
+          index: asNumber(rawBattle.index),
+          map: asString(rawBattle.map),
+          duration: asString(rawBattle.duration),
+        }
+      : null,
+  };
+};
+
+export const loadCrossoutLog = async (
+  logId: string,
+): Promise<CrossoutLogSummaryResult> => {
+  const id = logId.trim();
+
+  if (!LOG_ID_PATTERN.test(id)) {
+    return logSummaryFailure(
+      "invalid-log-id",
+      "Некорректный идентификатор лога.",
+    );
+  }
+
+  let lastError: unknown = null;
+
+  for (const baseUrl of BASE_URLS) {
+    try {
+      const page = await extractCrossoutPage<RawLogSummary>(
+        `${baseUrl}/log/${id}`,
+        LOG_SUMMARY_SCRIPT,
+      );
+
+      if (page.value?.forbidden) {
+        lastError = new CrossoutServiceError(
+          "forbidden",
+          "Сервис отклонил запрос (403).",
+        );
+        continue;
+      }
+
+      if (!page.value || typeof page.value !== "object") {
+        lastError = new CrossoutServiceError(
+          "unexpected-response",
+          "Сервис вернул неожиданный ответ.",
+        );
+        continue;
+      }
+
+      const rawTypes = Array.isArray(page.value.types)
+        ? (page.value.types as RawLogType[])
+        : [];
+      const types = rawTypes
+        .map((type) => ({
+          key: asString(type.key).trim(),
+          label: asString(type.label).trim(),
+          count: asNumber(type.count),
+        }))
+        .filter((type) => type.key.length > 0 && type.count > 0);
+
+      return {
+        ok: true,
+        summary: {
+          logId: id,
+          nickname: asString(page.value.nickname),
+          title: asString(page.value.title),
+          types,
+        },
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const failure = describeError(lastError);
+
+  return logSummaryFailure(failure.code, failure.message);
+};
+
+export const loadCrossoutLogTable = async (
+  logId: string,
+  type: string,
+): Promise<CrossoutLogTableResult> => {
+  const id = logId.trim();
+  const slug = type.trim().toLowerCase();
+
+  if (!LOG_ID_PATTERN.test(id) || !LOG_TYPE_PATTERN.test(slug)) {
+    return logTableFailure("invalid-log-id", "Некорректный идентификатор лога.");
+  }
+
+  let lastError: unknown = null;
+
+  for (const baseUrl of BASE_URLS) {
+    try {
+      const page = await extractCrossoutPage<RawLogTable>(
+        `${baseUrl}/log/${id}/${slug}`,
+        LOG_TABLE_SCRIPT,
+      );
+
+      if (page.value?.forbidden) {
+        lastError = new CrossoutServiceError(
+          "forbidden",
+          "Сервис отклонил запрос (403).",
+        );
+        continue;
+      }
+
+      if (!page.value || typeof page.value !== "object") {
+        lastError = new CrossoutServiceError(
+          "unexpected-response",
+          "Сервис вернул неожиданный ответ.",
+        );
+        continue;
+      }
+
+      const rawRows = Array.isArray(page.value.rows)
+        ? (page.value.rows as RawLogRow[])
+        : [];
+      const rows = rawRows
+        .map(normalizeLogRow)
+        .filter((row): row is CrossoutLogRow => row !== null);
+
+      return {
+        ok: true,
+        table: {
+          type: slug,
+          date: asString(page.value.date),
+          rows,
+        },
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const failure = describeError(lastError);
+
+  return logTableFailure(failure.code, failure.message);
 };

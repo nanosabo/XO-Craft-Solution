@@ -144,7 +144,8 @@ export type CrossoutErrorCode =
   | "not-a-file"
   | "file-too-large"
   | "file-read"
-  | "empty-log-id";
+  | "empty-log-id"
+  | "invalid-log-id";
 
 export interface CrossoutBattlesResult {
   battles: CrossoutBattle[];
@@ -161,4 +162,57 @@ export interface CrossoutUploadLogParams {
 
 export type CrossoutUploadLogResult =
   | { ok: true; logId: string; logUrl?: string }
+  | { ok: false; error: string; errorCode: CrossoutErrorCode };
+
+export interface CrossoutLogTypeOption {
+  /** Site slug, for example `pvp` or `pve`. */
+  key: string;
+  /** Label returned by the site, used as a fallback. */
+  label: string;
+  count: number;
+}
+
+export interface CrossoutLogSummary {
+  logId: string;
+  nickname: string;
+  title: string;
+  types: CrossoutLogTypeOption[];
+}
+
+export interface CrossoutLogCell {
+  text: string;
+  colSpan: number;
+  rowSpan: number;
+  cls: string;
+  /** Weapon name taken from the weapon icon title. */
+  weapon: string;
+  destroyed: boolean;
+}
+
+export interface CrossoutLogBattleHeader {
+  index: number;
+  map: string;
+  duration: string;
+}
+
+export interface CrossoutLogRow {
+  cells: CrossoutLogCell[];
+  map: string;
+  cls: string;
+  battle: CrossoutLogBattleHeader | null;
+}
+
+export interface CrossoutLogTable {
+  type: string;
+  /** Upload date shown on the site, in DD.MM.YYYY format. */
+  date: string;
+  rows: CrossoutLogRow[];
+}
+
+export type CrossoutLogSummaryResult =
+  | { ok: true; summary: CrossoutLogSummary }
+  | { ok: false; error: string; errorCode: CrossoutErrorCode };
+
+export type CrossoutLogTableResult =
+  | { ok: true; table: CrossoutLogTable }
   | { ok: false; error: string; errorCode: CrossoutErrorCode };

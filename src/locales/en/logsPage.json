@@ -25,6 +25,37 @@
     "openLog": "Open the log on crossout-info",
     "error": "Could not upload the log"
   },
+  "log": {
+    "title": "Log results",
+    "subtitle": "Log {{logId}} · player {{nickname}}",
+    "loading": "Processing the log on crossout-info...",
+    "tableLoading": "Loading the table...",
+    "tableEmpty": "No records for this battle type",
+    "empty": "No battles found in the log",
+    "error": "Could not load the log results"
+  },
+  "logTable": {
+    "team1": "Team 1",
+    "team2": "Team 2",
+    "weapon": "Weapon",
+    "damage": "Damage",
+    "frag": "Kill",
+    "round": "Round",
+    "battle": "Battle",
+    "map": "Map",
+    "time": "Battle time"
+  },
+  "logTypes": {
+    "kv": "Clan battles",
+    "prt": "Confrontation",
+    "pvp": "Missions",
+    "arcada": "Arcade",
+    "arcade": "Arcade",
+    "pve": "Raids",
+    "brawl": "Brawls",
+    "unknown": "Unknown",
+    "no": "Unknown"
+  },
   "stats": {
     "title": "Battle stats",
     "subtitle": "The range must not exceed 7 days",
@@ -91,6 +122,7 @@
     "not-a-file": "The selected path is not a file.",
     "file-too-large": "The log file is too large.",
     "file-read": "Could not read the log file.",
-    "empty-log-id": "The service did not return a log id."
+    "empty-log-id": "The service did not return a log id.",
+    "invalid-log-id": "Invalid log id."
   }
 }

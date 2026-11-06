@@ -87,6 +87,13 @@ interface Window {
     crossoutUploadLog(
       params: import("@src/types/crossout").CrossoutUploadLogParams,
     ): Promise<import("@src/types/crossout").CrossoutUploadLogResult>;
+    crossoutLoadLog(
+      logId: string,
+    ): Promise<import("@src/types/crossout").CrossoutLogSummaryResult>;
+    crossoutLoadLogTable(
+      logId: string,
+      type: string,
+    ): Promise<import("@src/types/crossout").CrossoutLogTableResult>;
     crossoutPickLog(): Promise<string | null>;
   };
 }

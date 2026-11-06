@@ -62,6 +62,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("crossout-fetch-battles", params),
   crossoutUploadLog: (params: CrossoutUploadLogParams) =>
     ipcRenderer.invoke("crossout-upload-log", params),
+  crossoutLoadLog: (logId: string) =>
+    ipcRenderer.invoke("crossout-load-log", logId),
+  crossoutLoadLogTable: (logId: string, type: string) =>
+    ipcRenderer.invoke("crossout-load-log-table", logId, type),
   crossoutPickLog: () => ipcRenderer.invoke("crossout-pick-log"),
 });
 
