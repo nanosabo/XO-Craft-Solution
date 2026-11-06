@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { logWarning } from "@src/helpers/errorLog";
 import useScrollFade from "@src/hooks/useScrollFade";
 import {
@@ -9,14 +10,12 @@ import {
   type CrossoutBattle,
   type CrossoutBattleType,
   type CrossoutErrorCode,
-  type CrossoutLogSummary,
-  type CrossoutLogTable,
+  type CrossoutLogHistoryEntry,
 } from "@src/types/crossout";
 import Input from "@src/ui/Input";
 import Select from "@src/ui/Select";
 import styles from "./styles/Logs.module.scss";
 
-const SITE_URL = "https://crossout-info.com";
 const MAX_RANGE_DAYS = 7;
 
 const pad = (value: number) => String(value).padStart(2, "0");
@@ -79,6 +78,7 @@ type LogsError = {
 
 const Logs = () => {
   const { t, i18n } = useTranslation("logsPage");
+  const navigate = useNavigate();
   const isRu = Boolean(i18n.language?.startsWith("ru"));
   const numberLocale = isRu ? "ru-RU" : "en-US";
   const contentRef = useRef<HTMLDivElement>(null);
@@ -96,16 +96,11 @@ const Logs = () => {
   const [nickname, setNickname] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<LogsError | null>(null);
-  const [logLink, setLogLink] = useState<string | null>(null);
 
-  const [logId, setLogId] = useState<string | null>(null);
-  const [logSummary, setLogSummary] = useState<CrossoutLogSummary | null>(null);
-  const [logLoading, setLogLoading] = useState(false);
-  const [logError, setLogError] = useState<LogsError | null>(null);
-  const [logType, setLogType] = useState<string | null>(null);
-  const [logTable, setLogTable] = useState<CrossoutLogTable | null>(null);
-  const [logTableLoading, setLogTableLoading] = useState(false);
-  const [logTableError, setLogTableError] = useState<LogsError | null>(null);
+  const [history, setHistory] = useState<CrossoutLogHistoryEntry[] | null>(
+    null,
+  );
+  const [historyError, setHistoryError] = useState(false);
 
   const [battleType, setBattleType] = useState<CrossoutBattleType>("PVP");
   const [from, setFrom] = useState(DEFAULT_FROM);
@@ -133,6 +128,29 @@ const Logs = () => {
         logWarning("crossout-key", error);
         setHasKey(false);
         setShowKeyForm(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    window.electronAPI
+      .crossoutHistoryList()
+      .then((entries) => {
+        if (cancelled) return;
+
+        setHistory(entries);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+
+        logWarning("crossout-history", error);
+        setHistoryError(true);
+        setHistory([]);
       });
 
     return () => {
@@ -197,22 +215,6 @@ const Logs = () => {
       : `${minutes}:${pad(rest)}`;
   };
 
-  const formatBattleDuration = (value: string) => {
-    const minutes = /(\d+)\s*м\.?\s*(\d+)\s*с\.?/i.exec(value);
-
-    if (minutes) {
-      return formatDuration(Number(minutes[1]) * 60 + Number(minutes[2]));
-    }
-
-    const clock = /^(\d+):(\d{1,2})$/.exec(value.trim());
-
-    if (clock) {
-      return formatDuration(Number(clock[1]) * 60 + Number(clock[2]));
-    }
-
-    return value;
-  };
-
   const formatDate = (unix: number) =>
     new Date(unix * 1000).toLocaleString(numberLocale, {
       day: "2-digit",
@@ -255,56 +257,6 @@ const Logs = () => {
     return fallback || slug.toUpperCase();
   };
 
-  const logCellLabel = (text: string) => {
-    const normalized = text.trim().toLowerCase();
-    const labels: Record<string, string> = {
-      "команда 1": t("logTable.team1"),
-      "команда 2": t("logTable.team2"),
-      "team 1": t("logTable.team1"),
-      "team 2": t("logTable.team2"),
-      вооружение: t("logTable.weapon"),
-      weapon: t("logTable.weapon"),
-      урон: t("logTable.damage"),
-      damage: t("logTable.damage"),
-      фраг: t("logTable.frag"),
-      frag: t("logTable.frag"),
-      раунд: t("logTable.round"),
-      round: t("logTable.round"),
-    };
-
-    return labels[normalized] ?? text;
-  };
-
-  const logStatsLabel = (text: string) => {
-    const normalized = text.trim().toLowerCase();
-    const labels: Record<string, string> = {
-      "игрок / вооружение": t("logStats.player"),
-      "player / weapon": t("logStats.player"),
-      "player / armament": t("logStats.player"),
-      рейтинг: t("logStats.rating"),
-      rating: t("logStats.rating"),
-      винрейт: t("logStats.winrate"),
-      winrate: t("logStats.winrate"),
-      "win rate": t("logStats.winrate"),
-      урон: t("logStats.damage"),
-      damage: t("logStats.damage"),
-      отстрел: t("logStats.parts"),
-      parts: t("logStats.parts"),
-      получено: t("logStats.received"),
-      received: t("logStats.received"),
-      фраг: t("logStats.frags"),
-      frag: t("logStats.frags"),
-      frags: t("logStats.frags"),
-      kills: t("logStats.frags"),
-      умер: t("logStats.deaths"),
-      deaths: t("logStats.deaths"),
-      очки: t("logStats.score"),
-      score: t("logStats.score"),
-    };
-
-    return labels[normalized] ?? text;
-  };
-
   const errorText = (error: LogsError) => {
     if (
       error.code &&
@@ -345,64 +297,14 @@ const Logs = () => {
     }
   };
 
-  const loadLogType = async (id: string, slug: string) => {
-    setLogType(slug);
-    setLogTable(null);
-    setLogTableError(null);
-    setLogTableLoading(true);
-
+  const removeHistory = async (id: string) => {
     try {
-      const result = await window.electronAPI.crossoutLoadLogTable(id, slug);
+      const entries = await window.electronAPI.crossoutHistoryRemove(id);
 
-      if (result.ok) {
-        setLogTable(result.table);
-      } else {
-        setLogTableError({
-          code: result.errorCode,
-          message: result.error,
-          fallbackKey: "log.error",
-        });
-      }
+      setHistory(entries);
     } catch (error) {
-      logWarning("crossout-log", error);
-      setLogTableError({ fallbackKey: "log.error" });
-    } finally {
-      setLogTableLoading(false);
-    }
-  };
-
-  const loadLog = async (id: string) => {
-    setLogId(id);
-    setLogSummary(null);
-    setLogError(null);
-    setLogType(null);
-    setLogTable(null);
-    setLogTableError(null);
-    setLogLoading(true);
-
-    try {
-      const result = await window.electronAPI.crossoutLoadLog(id);
-
-      if (result.ok) {
-        setLogSummary(result.summary);
-
-        const firstType = result.summary.types[0];
-
-        if (firstType) {
-          void loadLogType(id, firstType.key);
-        }
-      } else {
-        setLogError({
-          code: result.errorCode,
-          message: result.error,
-          fallbackKey: "log.error",
-        });
-      }
-    } catch (error) {
-      logWarning("crossout-log", error);
-      setLogError({ fallbackKey: "log.error" });
-    } finally {
-      setLogLoading(false);
+      logWarning("crossout-history", error);
+      setHistoryError(true);
     }
   };
 
@@ -414,13 +316,6 @@ const Logs = () => {
 
       setFilePath(selected);
       setUploadError(null);
-      setLogLink(null);
-      setLogId(null);
-      setLogSummary(null);
-      setLogError(null);
-      setLogType(null);
-      setLogTable(null);
-      setLogTableError(null);
     } catch (error) {
       logWarning("crossout-upload", error);
     }
@@ -431,13 +326,6 @@ const Logs = () => {
 
     setUploading(true);
     setUploadError(null);
-    setLogLink(null);
-    setLogId(null);
-    setLogSummary(null);
-    setLogError(null);
-    setLogType(null);
-    setLogTable(null);
-    setLogTableError(null);
 
     try {
       const result = await window.electronAPI.crossoutUploadLog({
@@ -446,8 +334,7 @@ const Logs = () => {
       });
 
       if (result.ok) {
-        setLogLink(result.logUrl ?? `${SITE_URL}/log/${result.logId}`);
-        void loadLog(result.logId);
+        navigate(`/logs/${result.logId}`);
       } else {
         setUploadError({
           code: result.errorCode,
@@ -625,230 +512,66 @@ const Logs = () => {
         {uploadError && (
           <p className={styles.error}>{errorText(uploadError)}</p>
         )}
-
-        {logLink && (
-          <p className={styles.success}>
-            {t("upload.success")}.{" "}
-            <button
-              type="button"
-              className={styles.linkButton}
-              onClick={() => void window.electronAPI.openExternal(logLink)}
-            >
-              {t("upload.openLog")}
-            </button>
-          </p>
-        )}
       </section>
 
-      {logId && (
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2>{t("log.title")}</h2>
-            <p>
-              {logSummary
-                ? t("log.subtitle", {
-                    logId: logSummary.logId,
-                    nickname: logSummary.nickname || "—",
-                  })
-                : logError
-                  ? t("log.error")
-                  : t("log.loading")}
-            </p>
-          </div>
+      <section className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2>{t("history.title")}</h2>
+          <p>{t("history.subtitle")}</p>
+        </div>
 
-          {logError && <p className={styles.error}>{errorText(logError)}</p>}
+        {historyError && <p className={styles.error}>{t("history.error")}</p>}
 
-          {logSummary && logSummary.types.length > 0 && (
-            <div className={styles.logTabs}>
-              {logSummary.types.map((type) => (
+        {history === null && (
+          <p className={styles.empty}>{t("history.loading")}</p>
+        )}
+
+        {history && history.length === 0 && (
+          <p className={styles.empty}>{t("history.empty")}</p>
+        )}
+
+        {history && history.length > 0 && (
+          <ul className={styles.historyList}>
+            {history.map((entry) => (
+              <li key={entry.logId} className={styles.historyItem}>
                 <button
-                  key={type.key}
                   type="button"
-                  className={classNames(styles.logTab, {
-                    [styles.logTabActive]: logType === type.key,
-                  })}
-                  onClick={() => void loadLogType(logSummary.logId, type.key)}
+                  className={styles.historyOpen}
+                  onClick={() => navigate(`/logs/${entry.logId}`)}
                 >
-                  <span>{logTypeLabel(type.key, type.label)}</span>
-                  <span className={styles.logTabCount}>{type.count}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {logSummary && logSummary.types.length === 0 && !logLoading && (
-            <p className={styles.empty}>{t("log.empty")}</p>
-          )}
-
-          {logTableLoading && (
-            <p className={styles.empty}>{t("log.tableLoading")}</p>
-          )}
-
-          {logTableError && (
-            <p className={styles.error}>{errorText(logTableError)}</p>
-          )}
-
-          {logTable && !logTableLoading && logTable.rows.length === 0 && (
-            <p className={styles.empty}>{t("log.tableEmpty")}</p>
-          )}
-
-          {logTable?.stats && logTable.stats.rows.length > 0 && (
-            <div className={styles.logStats}>
-              <h3 className={styles.logStatsTitle}>{t("logStats.title")}</h3>
-
-              <div className={styles.logTableWrap}>
-                <table className={styles.logStatsTable}>
-                  {logTable.stats.headers.length > 0 && (
-                    <thead>
-                      <tr>
-                        {logTable.stats.headers.map((header, index) => (
-                          <th
-                            key={`stat-head-${index}`}
-                            className={
-                              index === 0
-                                ? styles.logStatsName
-                                : styles.logStatsCenter
-                            }
-                          >
-                            {logStatsLabel(header)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                  )}
-
-                  <tbody>
-                    {logTable.stats.rows.map((row, rowIndex) => {
-                      const teamClass =
-                        row.team === "red"
-                          ? styles.teamRed
-                          : row.team === "green"
-                            ? styles.teamGreen
-                            : undefined;
-
-                      return (
-                        <tr
-                          key={`stat-row-${rowIndex}`}
-                          className={classNames(teamClass, {
-                            [styles.logStatsPlayer]:
-                              row.kind === "player",
-                            [styles.logStatsWeaponRow]:
-                              row.kind === "weapon",
-                          })}
-                        >
-                          {row.cells.map((cell, cellIndex) => (
-                            <td
-                              key={`stat-cell-${rowIndex}-${cellIndex}`}
-                              className={
-                                cellIndex === 0
-                                  ? styles.logStatsName
-                                  : styles.logStatsCenter
-                              }
-                              title={
-                                cellIndex === 0 && row.kind === "weapon"
-                                  ? row.weapon || cell
-                                  : undefined
-                              }
-                            >
-                              {cellIndex === 0 &&
-                              row.kind === "weapon" ? (
-                                <span className={styles.logStatsWeaponName}>
-                                  {row.weapon || cell}
-                                </span>
-                              ) : (
-                                cell
-                              )}
-                            </td>
-                          ))}
-                        </tr>
-                      );
+                  <span className={styles.historyNick}>
+                    {entry.nickname || entry.logId}
+                  </span>
+                  <span className={styles.historyId}>{entry.logId}</span>
+                  <span className={styles.historyMeta}>
+                    {entry.types
+                      .map(
+                        (type) =>
+                          `${logTypeLabel(type.key, type.label)}: ${type.count}`,
+                      )
+                      .join(" · ")}
+                    {entry.types.length > 0 ? " · " : ""}
+                    {t("history.saved", {
+                      date: formatDate(entry.savedAt / 1000),
+                      interpolation: { escapeValue: false },
                     })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+                  </span>
+                </button>
 
-          {logTable && logTable.rows.length > 0 && (
-            <div className={styles.logTableWrap}>
-              <table className={styles.logTable}>
-                <tbody>
-                  {logTable.rows.map((row, rowIndex) => {
-                    if (row.battle) {
-                      return (
-                        <tr
-                          key={`battle-${rowIndex}`}
-                          className={styles.logBattleRow}
-                        >
-                          <td
-                            className={styles.logBattleCell}
-                            colSpan={row.cells[0]?.colSpan || 1}
-                          >
-                            <span>
-                              {t("logTable.battle")} #{row.battle.index}
-                            </span>
-                            <span>
-                              {t("logTable.map")}: {mapLabel(row.battle.map)}
-                            </span>
-                            <span>
-                              {t("logTable.time")}:{" "}
-                              {formatBattleDuration(row.battle.duration)}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    }
-
-                    const isHeader =
-                      row.cls.includes("sticDiv") || rowIndex === 0;
-
-                    return (
-                      <tr
-                        key={`row-${rowIndex}`}
-                        className={classNames({
-                          [styles.logHeadRow]: isHeader,
-                        })}
-                      >
-                        {row.cells.map((cell, cellIndex) => {
-                          const teamClass = cell.cls.includes("red")
-                            ? styles.teamRed
-                            : cell.cls.includes("green")
-                              ? styles.teamGreen
-                              : undefined;
-
-                          return (
-                            <td
-                              key={`cell-${rowIndex}-${cellIndex}`}
-                              colSpan={cell.colSpan}
-                              rowSpan={cell.rowSpan}
-                              title={cell.weapon || undefined}
-                              className={classNames(styles.logCell, teamClass, {
-                                [styles.logCellCenter]:
-                                  cell.cls.includes("center"),
-                                [styles.logCellRight]:
-                                  cell.cls.includes("alignright"),
-                                [styles.logCellLeft]:
-                                  cell.cls.includes("alignleft"),
-                                [styles.destroyed]: cell.destroyed,
-                                [styles.logWeaponCell]:
-                                  !isHeader && Boolean(cell.weapon),
-                              })}
-                            >
-                              {isHeader
-                                ? logCellLabel(cell.text)
-                                : cell.text || cell.weapon}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      )}
+                <button
+                  type="button"
+                  className={styles.historyRemove}
+                  onClick={() => void removeHistory(entry.logId)}
+                  title={t("history.remove")}
+                  aria-label={t("history.remove")}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className={styles.card}>
         <div className={styles.cardHeader}>

@@ -25,6 +25,23 @@
     "openLog": "Open the log on crossout-info",
     "error": "Could not upload the log"
   },
+  "history": {
+    "title": "Upload history",
+    "subtitle": "Saved logs open without uploading them again",
+    "loading": "Loading history...",
+    "empty": "No uploaded logs yet",
+    "error": "Could not load the history",
+    "saved": "Opened {{date}}",
+    "remove": "Remove from history"
+  },
+  "result": {
+    "back": "Back to history",
+    "title": "Log results",
+    "subtitle": "Log {{logId}} · player {{nickname}}",
+    "loading": "Loading the log results...",
+    "error": "Could not load the log results",
+    "openSite": "Open on crossout-info"
+  },
   "log": {
     "title": "Log results",
     "subtitle": "Log {{logId}} · player {{nickname}}",

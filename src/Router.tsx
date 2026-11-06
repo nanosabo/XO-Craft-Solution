@@ -7,6 +7,7 @@ import SolvedPage from "./pages/SolvedPage";
 import MarketPage from "./pages/MarketPage";
 import AboutPage from "./pages/AboutPage";
 import LogsPage from "./pages/LogsPage";
+import LogsResultPage from "./pages/LogsResultPage";
 
 const Router = () => {
   const location = useLocation();
@@ -26,6 +27,7 @@ const Router = () => {
         <Route path="/solved" element={<SolvedPage />} />
         <Route path="/market" element={<MarketPage />} />
         <Route path="/logs" element={<LogsPage />} />
+        <Route path="/logs/:logId" element={<LogsResultPage />} />
         <Route path="/about" element={<AboutPage />} />
       </Routes>
     </AnimatePresence>

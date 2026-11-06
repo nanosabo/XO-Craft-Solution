@@ -94,6 +94,15 @@ interface Window {
       logId: string,
       type: string,
     ): Promise<import("@src/types/crossout").CrossoutLogTableResult>;
+    crossoutHistoryList(): Promise<
+      import("@src/types/crossout").CrossoutLogHistoryEntry[]
+    >;
+    crossoutHistorySave(
+      entry: import("@src/types/crossout").CrossoutLogHistoryInput,
+    ): Promise<import("@src/types/crossout").CrossoutLogHistoryEntry[]>;
+    crossoutHistoryRemove(
+      logId: string,
+    ): Promise<import("@src/types/crossout").CrossoutLogHistoryEntry[]>;
     crossoutPickLog(): Promise<string | null>;
   };
 }

@@ -186,6 +186,8 @@ export interface CrossoutLogCell {
   cls: string;
   /** Weapon name taken from the weapon icon title. */
   weapon: string;
+  /** Absolute URL of the weapon icon, when the cell contains one. */
+  image: string;
   destroyed: boolean;
 }
 
@@ -206,7 +208,16 @@ export interface CrossoutLogStatRow {
   kind: "player" | "weapon";
   name: string;
   weapon: string;
+  /** Absolute URL of the weapon icon for weapon rows. */
+  image: string;
+  /** Star rating fill percentage (0-100) for weapon rows. */
+  stars: number | null;
   team: string;
+  /** Average damage without the delta suffix. */
+  damage: string;
+  /** Difference from the server average, for example `6554` or `-350`. */
+  delta: string;
+  deltaKind: "up" | "down" | null;
   /** Values aligned with `CrossoutLogStat.headers`. */
   cells: string[];
 }
@@ -232,3 +243,14 @@ export type CrossoutLogSummaryResult =
 export type CrossoutLogTableResult =
   | { ok: true; table: CrossoutLogTable }
   | { ok: false; error: string; errorCode: CrossoutErrorCode };
+
+export interface CrossoutLogHistoryEntry {
+  logId: string;
+  nickname: string;
+  title: string;
+  types: CrossoutLogTypeOption[];
+  /** Unix timestamp in milliseconds of the last time the log was opened. */
+  savedAt: number;
+}
+
+export type CrossoutLogHistoryInput = Omit<CrossoutLogHistoryEntry, "savedAt">;

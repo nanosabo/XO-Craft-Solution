@@ -542,6 +542,7 @@ interface RawLogCell {
   rowSpan?: unknown;
   cls?: unknown;
   weapon?: unknown;
+  image?: unknown;
   destroyed?: unknown;
 }
 
@@ -562,7 +563,12 @@ interface RawLogStatRow {
   kind?: unknown;
   name?: unknown;
   weapon?: unknown;
+  image?: unknown;
+  stars?: unknown;
   team?: unknown;
+  damage?: unknown;
+  delta?: unknown;
+  deltaKind?: unknown;
   cells?: unknown;
 }
 
@@ -611,6 +617,15 @@ const LOG_TABLE_SCRIPT = `(() => {
   const bodyText = document.body ? document.body.innerText.trim() : "";
   if (bodyText === "Forbidden") return { forbidden: true };
 
+  const absoluteUrl = (value) => {
+    if (!value) return "";
+    try {
+      return new URL(value, location.origin).href;
+    } catch {
+      return value;
+    }
+  };
+
   const cellText = (span) => {
     const parts = Array.from(span.children).filter((child) => child.tagName === "SPAN");
     if (parts.length > 1) {
@@ -649,6 +664,32 @@ const LOG_TABLE_SCRIPT = `(() => {
         const teamMatch = body ? body.className.match(/red|green/) : null;
         currentTeam = teamMatch ? teamMatch[0] : "";
       }
+      const img = row.querySelector("img");
+      const starRect = row.querySelector(".div-star-mask rect");
+      const starWidth = starRect ? parseFloat(starRect.getAttribute("width") || "") : NaN;
+      const afterData = Array.from(row.querySelectorAll(".afterData"));
+      const deltaNode = afterData.length > 1 ? afterData[afterData.length - 1] : null;
+      const delta = deltaNode ? (deltaNode.textContent || "").replace(/\\s+/g, " ").trim() : "";
+      const deltaKind = deltaNode
+        ? deltaNode.className.includes("igreen")
+          ? "up"
+          : deltaNode.className.includes("ired")
+            ? "down"
+            : delta.startsWith("-")
+              ? "down"
+              : delta
+                ? "up"
+                : null
+        : null;
+      const damageNode = deltaNode ? deltaNode.parentElement : null;
+      const damage = isWeapon && damageNode
+        ? Array.from(damageNode.childNodes)
+            .filter((node) => node.nodeType === 3)
+            .map((node) => node.textContent || "")
+            .join(" ")
+            .replace(/\\s+/g, " ")
+            .trim()
+        : (cells[3] || "");
       statRows.push({
         kind: isPlayer ? "player" : "weapon",
         name: isPlayer
@@ -657,7 +698,14 @@ const LOG_TABLE_SCRIPT = `(() => {
         weapon: isWeapon
           ? (row.getAttribute("data-weaponfind") || cells[0] || "")
           : "",
+        image: isWeapon && img ? absoluteUrl(img.getAttribute("src") || "") : "",
+        stars: isWeapon && Number.isFinite(starWidth)
+          ? Math.max(0, Math.min(100, starWidth))
+          : null,
         team: currentTeam,
+        damage,
+        delta: isWeapon ? delta : "",
+        deltaKind: isWeapon ? deltaKind : null,
         cells
       });
     }
@@ -674,6 +722,7 @@ const LOG_TABLE_SCRIPT = `(() => {
         rowSpan: cell.rowSpan || 1,
         cls: cell.className || "",
         weapon: img ? (img.getAttribute("title") || img.getAttribute("alt") || "") : "",
+        image: img ? absoluteUrl(img.getAttribute("src") || "") : "",
         destroyed: Boolean(cell.querySelector(".trought"))
       };
     });
@@ -718,6 +767,7 @@ const normalizeLogCell = (value: unknown): CrossoutLogCell | null => {
     rowSpan: Math.max(1, asNumber(raw.rowSpan)),
     cls: asString(raw.cls),
     weapon: asString(raw.weapon),
+    image: asString(raw.image),
     destroyed: Boolean(raw.destroyed),
   };
 };
@@ -767,7 +817,16 @@ const normalizeLogStatRow = (value: unknown): CrossoutLogStatRow | null => {
     kind,
     name,
     weapon: asString(raw.weapon).trim(),
+    image: asString(raw.image),
+    stars:
+      typeof raw.stars === "number" && Number.isFinite(raw.stars)
+        ? Math.max(0, Math.min(100, raw.stars))
+        : null,
     team: asString(raw.team).trim(),
+    damage: asString(raw.damage),
+    delta: asString(raw.delta).trim(),
+    deltaKind:
+      raw.deltaKind === "up" || raw.deltaKind === "down" ? raw.deltaKind : null,
     cells,
   };
 };

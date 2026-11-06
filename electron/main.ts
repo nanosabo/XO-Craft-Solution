@@ -44,6 +44,7 @@ import {
 import type { UpdateMode } from "@src/store/slices/updater.slice";
 import type {
   CrossoutFetchBattlesParams,
+  CrossoutLogHistoryInput,
   CrossoutUploadLogParams,
 } from "@src/types/crossout";
 import {
@@ -55,6 +56,11 @@ import {
   saveCrossoutApiKey,
   uploadCrossoutLog,
 } from "./crossoutInfo";
+import {
+  listCrossoutHistory,
+  removeCrossoutHistory,
+  saveCrossoutHistory,
+} from "./crossoutHistory";
 import { closeCrossoutBrowser } from "./crossoutBrowser";
 import locales from "./locales.json";
 import axios from "axios";
@@ -417,6 +423,21 @@ ipcMain.handle(
     return loadCrossoutLogTable(String(logId ?? ""), String(type ?? ""));
   },
 );
+
+ipcMain.handle("crossout-history-list", () => {
+  return listCrossoutHistory();
+});
+
+ipcMain.handle(
+  "crossout-history-save",
+  (_, entry: CrossoutLogHistoryInput) => {
+    return saveCrossoutHistory(entry);
+  },
+);
+
+ipcMain.handle("crossout-history-remove", (_, logId: string) => {
+  return removeCrossoutHistory(String(logId ?? ""));
+});
 
 ipcMain.handle("crossout-pick-log", async () => {
   const options: OpenDialogOptions = {

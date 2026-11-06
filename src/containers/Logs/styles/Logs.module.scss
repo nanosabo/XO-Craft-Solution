@@ -565,3 +565,165 @@
   margin-left: 12px;
   font-style: italic;
 }
+
+.logStatsWeapon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.logStatsWeaponImage {
+  width: 43px;
+  height: 43px;
+  object-fit: contain;
+  flex: none;
+}
+
+.logStatsRatingCell,
+.logStatsDamageCell {
+  position: relative;
+}
+
+.logStatsRatingValue,
+.logStatsDelta {
+  position: absolute;
+  top: -7px;
+  right: 0;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.logStatsRatingValue {
+  color: rgba($white, 0.7);
+}
+
+.logStatsDeltaUp {
+  color: #21b742;
+}
+
+.logStatsDeltaDown {
+  color: #ea2f2f;
+}
+
+.logStars {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.logStarsSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+}
+
+.logStarsFill {
+  z-index: 2;
+}
+
+.starDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.logWeaponImage {
+  width: 49px;
+  height: 49px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.backButton {
+  display: block;
+  margin-bottom: 8px;
+  padding: 0;
+  color: $primary;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  @include caption;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba($white, 0.03);
+  border: 1px solid rgba($white, 0.06);
+  border-radius: 10px;
+}
+
+.historyOpen {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 0;
+  color: $white;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover .historyNick {
+    color: $primary;
+  }
+}
+
+.historyNick {
+  font-weight: 600;
+  @include body;
+}
+
+.historyId {
+  color: $default;
+  font-family: monospace;
+  @include caption;
+}
+
+.historyMeta {
+  flex-basis: 100%;
+  color: $default;
+  @include caption;
+}
+
+.historyRemove {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: $default;
+  background: transparent;
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 6px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: #ff5a5a;
+    border-color: rgba(#ff5a5a, 0.5);
+  }
+}

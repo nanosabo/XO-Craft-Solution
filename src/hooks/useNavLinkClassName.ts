@@ -6,7 +6,9 @@ const useNavLinkClassName = (href: string) => {
   const { pathname } = useLocation();
 
   const className = classNames(styles.navlink, {
-    [styles.active]: pathname === href,
+    [styles.active]:
+      pathname === href ||
+      (href !== "/" && pathname.startsWith(`${href}/`)),
   });
 
   return className;
