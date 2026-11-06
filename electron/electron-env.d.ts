@@ -78,6 +78,7 @@ interface Window {
     getLogPath(): Promise<string | null>;
     openLogsFolder(): Promise<boolean>;
     copyText(text: string): Promise<boolean>;
+    copyTableImage(html: string, width: number, height: number): Promise<boolean>;
     crossoutHasApiKey(): Promise<boolean>;
     crossoutSetApiKey(apiKey: string): Promise<boolean>;
     crossoutClearApiKey(): Promise<boolean>;
@@ -99,6 +100,7 @@ interface Window {
       logId: string,
       type: string,
       expectedBattles?: number,
+      range?: { from: number; to: number } | null,
     ): Promise<import("@src/types/crossout").CrossoutLogTableResult>;
     crossoutHistoryList(): Promise<
       import("@src/types/crossout").CrossoutLogHistoryEntry[]
@@ -109,10 +111,23 @@ interface Window {
     crossoutHistoryRemove(
       logId: string,
     ): Promise<import("@src/types/crossout").CrossoutLogHistoryEntry[]>;
+    crossoutHistoryClear(): Promise<
+      import("@src/types/crossout").CrossoutLogHistoryEntry[]
+    >;
+    crossoutStatsCacheGet(
+      logId: string,
+    ): Promise<import("@src/types/crossout").CrossoutCachedLogStats | null>;
+    crossoutStatsCacheSave(
+      input: import("@src/types/crossout").CrossoutStatsCacheInput,
+    ): Promise<void>;
     crossoutPickLog(): Promise<string | null>;
     crossoutFindLatestLog(
       customPath?: string | null,
     ): Promise<import("@src/types/crossout").CrossoutDetectedLog | null>;
     crossoutPickLogsFolder(): Promise<string | null>;
+    notifyAppLogListening(): void;
+    onAppOpenLog(
+      listener: (link: import("@src/helpers/appLogLink").AppLogLink) => void,
+    ): () => void;
   };
 }

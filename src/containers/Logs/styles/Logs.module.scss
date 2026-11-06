@@ -73,6 +73,11 @@
   }
 }
 
+.root.scrollPlain {
+  -webkit-mask: none;
+  mask: none;
+}
+
 .heading {
   padding-top: 2px;
 
@@ -87,12 +92,30 @@
   }
 }
 
+.headingTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+  }
+
+  .secondaryButton {
+    flex-shrink: 0;
+  }
+}
+
 .card {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
   padding: 18px 20px;
-  background: rgba(22, 25, 27, 0.75);
+  overflow: visible;
+  background: rgba(22, 25, 27, 0.92);
   border: 1px solid rgba($white, 0.08);
   border-radius: 14px;
-  backdrop-filter: blur(6px);
 }
 
 .cardHeader {
@@ -177,7 +200,14 @@
   padding: 0 18px;
   border-radius: 8px;
   @include body;
+  line-height: 34px;
   white-space: nowrap;
+
+  svg {
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: -3px;
+  }
 
   transition:
     background-color 0.2s ease-in-out,
@@ -365,6 +395,70 @@
   grid-column: 1;
 }
 
+.historyHead {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.historyTools {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 14px;
+
+  .secondaryButton {
+    flex: none;
+  }
+}
+
+.historyDate {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+
+  > span {
+    color: $default;
+    @include caption;
+  }
+}
+
+.historyDateField {
+  position: relative;
+  display: block;
+  width: 100%;
+
+  input {
+    width: 100%;
+    padding-right: 34px;
+  }
+
+  input::-webkit-calendar-picker-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 36px;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    filter: none;
+    cursor: pointer;
+  }
+}
+
+.historyDateIcon {
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  color: $default;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .latest {
   display: flex;
   flex-direction: column;
@@ -520,8 +614,7 @@
   }
 }
 
-.uploadActions,
-.linkRow {
+.uploadActions {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -530,6 +623,77 @@
   > :first-child {
     flex: 1;
     min-width: 180px;
+  }
+}
+
+.pasteNotice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background:
+    radial-gradient(
+      120% 160% at 0% 0%,
+      rgba($primary, 0.16) 0%,
+      transparent 55%
+    ),
+    rgba($input, 0.5);
+  border: 1px dashed rgba($primary, 0.45);
+  border-radius: 12px;
+}
+
+.pasteIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  color: $primary;
+  background: rgba($primary, 0.14);
+  border-radius: 10px;
+}
+
+.pasteCopy {
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-weight: 600;
+    @include subtitle2;
+  }
+
+  p {
+    margin-top: 2px;
+    color: $default;
+    @include caption;
+  }
+}
+
+.pasteKeys {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: $default;
+  @include caption;
+
+  kbd {
+    display: inline-block;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid rgba($white, 0.16);
+    border-bottom-width: 2px;
+    border-radius: 7px;
+    color: $white;
+    background: rgba($white, 0.06);
+    font-family: inherit;
+    font-weight: 600;
+    line-height: 25px;
+    text-align: center;
+    @include caption;
   }
 }
 
@@ -610,6 +774,31 @@
   }
 }
 
+.processingLogo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px 12px;
+
+  svg {
+    width: 96px;
+    height: auto;
+  }
+
+  strong {
+    margin-top: 4px;
+    color: $white;
+    @include body;
+    font-weight: 600;
+  }
+
+  p {
+    color: $default;
+    @include caption;
+  }
+}
+
 .spinner {
   width: 18px;
   height: 18px;
@@ -642,19 +831,6 @@
     border-radius: 50%;
     background: #0ac59a;
     vertical-align: middle;
-  }
-}
-
-.linkButton {
-  padding: 0;
-  color: $primary;
-  background: none;
-  border: none;
-  font: inherit;
-  text-decoration: underline;
-
-  &:hover {
-    color: $white;
   }
 }
 
@@ -765,9 +941,38 @@
 
 .logTabs {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
+}
+
+.logTimeToggle {
+  height: 36px;
+  margin-left: auto;
+  padding: 0 14px;
+  color: $white;
+  background: transparent;
+  border: 1px solid rgba($white, 0.15);
+  border-radius: 8px;
+  line-height: 34px;
+  @include body;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    vertical-align: -3px;
+  }
+
+  &:hover {
+    border-color: $primary;
+  }
+}
+
+.logTimeToggleOn {
+  background: rgba($primary, 0.16);
+  border-color: $primary;
 }
 
 .logTab {
@@ -807,28 +1012,255 @@
   font-weight: 600;
 }
 
+.logTimeFilter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px;
+  background: rgba($white, 0.03);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 12px;
+
+  .primaryButton {
+    flex: none;
+  }
+}
+
+.logTimeFilterActive {
+  border-color: rgba($primary, 0.55);
+  background: rgba($primary, 0.08);
+}
+
+.logTimeField {
+  display: flex;
+  flex: 1 1 180px;
+  min-width: 168px;
+}
+
+.logTimeDash {
+  flex: none;
+  width: 10px;
+  height: 1px;
+  background: rgba($white, 0.28);
+}
+
+.logTimeZone {
+  flex: none;
+  color: $default;
+  @include caption;
+}
+
+.logTimeReset {
+  flex: none;
+  height: 34px;
+  padding: 0 10px;
+  color: $default;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  @include body;
+
+  &:hover:not(:disabled) {
+    color: $white;
+    background: rgba($white, 0.06);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.logView {
+  --log-bar-height: 56px;
+  min-width: 0;
+  margin-top: 16px;
+}
+
+.logViewSentinel {
+  height: 1px;
+  margin-bottom: -1px;
+}
+
+.logViewCorners {
+  display: none;
+}
+
+.logViewStuck .logViewCorners {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  height: 0;
+  margin: 0 -21px;
+  pointer-events: none;
+
+  span {
+    width: 15px;
+    height: 15px;
+    background: $bg;
+  }
+}
+
+.logViewBar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: var(--log-bar-height);
+  gap: 12px 16px;
+  flex-wrap: nowrap;
+  margin: 0 -20px;
+  padding: 0 20px;
+  background: $bg;
+  border-bottom: 1px solid rgba($white, 0.06);
+}
+
+.logViewBarStuck {
+  margin-right: -21px;
+  margin-left: -21px;
+  padding-right: 21px;
+  padding-left: 21px;
+  background: $secondary;
+  border-top: 1px solid rgba($white, 0.08);
+  border-right: 1px solid rgba($white, 0.08);
+  border-left: 1px solid rgba($white, 0.08);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+.logSegment {
+  display: flex;
+  flex-shrink: 0;
+  gap: 3px;
+  padding: 3px;
+  background: rgba($input, 0.75);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 9px;
+}
+
+.logSegmentButton {
+  min-width: 112px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  color: $default;
+  background: transparent;
+  @include body;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.logSegmentActive {
+  color: $white;
+  background: $primary;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.logViewTools {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.logSearch {
+  width: 200px;
+  min-width: 140px;
+  flex: 0 1 200px;
+}
+
+.logEnemyToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: $default;
+  white-space: nowrap;
+  @include body;
+}
+
 .logTableWrap {
-  margin-top: 14px;
-  overflow-x: auto;
-  border: 1px solid rgba($white, 0.06);
-  border-radius: 10px;
+  margin: 8px -20px -18px;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
 }
 
 .logTable {
   width: 100%;
-  border-collapse: collapse;
-  @include caption;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  @include body;
+
+  tr:last-child td:first-child {
+    border-bottom-left-radius: 13px;
+  }
+
+  tr:last-child td:last-child {
+    border-bottom-right-radius: 13px;
+  }
 
   td {
-    padding: 8px 10px;
-    color: rgba($white, 0.85);
+    height: auto;
+    min-height: 44px;
+    padding: 6px 8px;
+    color: rgba($white, 0.9);
+    text-align: center;
     white-space: nowrap;
     vertical-align: middle;
+
+    &:first-child {
+      padding-left: 20px;
+    }
+
+    &:last-child {
+      padding-right: 20px;
+    }
   }
 
   tr + tr td {
     border-top: 1px solid rgba($white, 0.04);
   }
+}
+
+.logTableFixed {
+  table-layout: fixed;
+
+  td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.logTable td.logAlignLeft {
+  text-align: left;
+}
+
+.logTable td.logAlignRight {
+  text-align: right;
+}
+
+.logBorderLeft {
+  box-shadow: inset 1px 0 0 rgba($white, 0.1);
+}
+
+.logBorderRight {
+  box-shadow: inset -1px 0 0 rgba($white, 0.1);
 }
 
 .logCell {
@@ -841,23 +1273,16 @@
 
 .logHeadRow td {
   position: sticky;
-  top: 0;
-  z-index: 1;
+  top: var(--log-bar-height);
+  z-index: 4;
+  overflow: visible;
+  padding-top: 10px;
+  padding-bottom: 10px;
   color: $default;
   font-weight: 500;
-  background: rgba($secondary, 0.98);
-}
-
-.logCellCenter {
-  text-align: center;
-}
-
-.logCellRight {
-  text-align: right;
-}
-
-.logCellLeft {
-  text-align: left;
+  background: $secondary;
+  border-bottom: 1px solid rgba($white, 0.08);
+  box-shadow: 0 1px 0 rgba($bg, 1);
 }
 
 .teamRed {
@@ -874,55 +1299,97 @@
 }
 
 .logWeaponCell {
-  color: rgba($white, 0.7) !important;
-  font-style: italic;
+  color: rgba($white, 0.92) !important;
 }
 
 .logBattleRow td {
+  height: auto;
   padding: 0;
 }
 
 .logBattleCell {
-  padding: 10px !important;
+  padding: 10px 20px !important;
   color: $white !important;
-  text-align: center;
-  background: rgba(255, 193, 7, 0.1);
+  text-align: left;
+  background: rgba($primary, 0.12);
   border-top: 1px solid rgba($white, 0.08) !important;
   border-bottom: 1px solid rgba($white, 0.08) !important;
+}
 
-  span + span {
-    margin-left: 16px;
+.logBattleMeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+
+  span:nth-child(2) {
+    text-align: center;
+  }
+
+  span:nth-child(3) {
+    text-align: right;
   }
 }
 
 .logStats {
-  margin-top: 16px;
+  min-width: 0;
+  margin-top: 0;
 }
 
-.logStatsTitle {
-  margin-bottom: 8px;
-  font-size: 16px;
-  font-weight: 600;
+.logStatsWrap {
+  min-width: 0;
 }
 
 .logStatsTable {
   width: 100%;
-  border-collapse: collapse;
-  @include caption;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  @include body;
+
+  tr:last-child td:first-child {
+    border-bottom-left-radius: 13px;
+  }
+
+  tr:last-child td:last-child {
+    border-bottom-right-radius: 13px;
+  }
 
   th,
   td {
-    padding: 7px 10px;
+    height: auto;
+    min-height: 44px;
+    padding: 6px 8px;
+    overflow: hidden;
     white-space: nowrap;
     vertical-align: middle;
+
+    &:first-child {
+      padding-left: 20px;
+    }
+
+    &:last-child {
+      padding-right: 20px;
+    }
   }
 
   th {
     position: sticky;
-    top: 0;
+    top: var(--log-bar-height);
+    z-index: 4;
+    height: auto;
+    overflow: visible;
+    padding-top: 10px;
+    padding-bottom: 10px;
     color: $default;
     font-weight: 500;
-    background: rgba($secondary, 0.98);
+    line-height: 1.2;
+    white-space: nowrap;
+    background: $secondary;
+    border-bottom: 1px solid rgba($white, 0.08);
+    box-shadow: 0 1px 0 $bg;
   }
 
   td {
@@ -936,6 +1403,7 @@
 
 .logStatsName {
   text-align: left;
+  text-overflow: ellipsis;
 }
 
 .logStatsCenter {
@@ -945,49 +1413,92 @@
 .logStatsPlayer td {
   color: $white;
   font-weight: 500;
+  background: rgba($white, 0.07);
+}
+
+.logStatsPlayer.teamGreen td {
+  background: rgba(10, 197, 154, 0.18);
+}
+
+.logStatsPlayer.teamRed td {
+  background: rgba(255, 90, 90, 0.18);
+}
+
+.logStatsPlayer.teamGreen td:first-child,
+.logStatsWeaponRow.teamGreen td:first-child {
+  box-shadow: inset 2px 0 0 #0ac59a;
+}
+
+.logStatsPlayer.teamRed td:first-child,
+.logStatsWeaponRow.teamRed td:first-child {
+  box-shadow: inset 2px 0 0 #ff5a5a;
 }
 
 .logStatsWeaponRow td {
-  color: rgba($white, 0.7);
-  font-size: 12px;
+  color: rgba($white, 0.92);
 }
 
 .logStatsWeaponName {
-  display: inline-block;
-  margin-left: 12px;
-  font-style: italic;
+  flex: 1 1 72px;
+  min-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .logStatsWeapon {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 32px;
+  padding-left: 12px;
+}
+
+.logStatsWeaponIcons {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 28px);
+  align-items: center;
+  gap: 2px;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
 }
 
+.logStatsWeaponIcon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+}
+
 .logStatsWeaponImage {
-  width: 43px;
-  height: 43px;
+  width: 100%;
+  height: 100%;
+  max-height: 28px;
   object-fit: contain;
-  flex: none;
+  display: block;
 }
 
-.logStatsRatingCell,
-.logStatsDamageCell {
-  position: relative;
-}
-
-.logStatsRatingValue,
-.logStatsDelta {
-  position: absolute;
-  top: -7px;
-  right: 0;
-  font-size: 10px;
+.logStatsFigure {
+  display: inline-block;
   line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
-.logStatsRatingValue {
+.logStatsSup {
+  position: relative;
+  top: -0.55em;
+  margin-left: 1px;
   color: rgba($white, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 0;
 }
 
 .logStatsDeltaUp {
@@ -1001,8 +1512,9 @@
 .logStars {
   position: relative;
   display: inline-block;
-  width: 100px;
-  height: 20px;
+  width: 84px;
+  height: 17px;
+  flex: none;
   vertical-align: middle;
 }
 
@@ -1010,6 +1522,8 @@
   position: absolute;
   top: 0;
   left: 0;
+  width: 84px;
+  height: 17px;
   display: block;
 }
 
@@ -1024,27 +1538,83 @@
   overflow: hidden;
 }
 
-.logWeaponImage {
-  width: 49px;
-  height: 49px;
-  object-fit: contain;
+.logWeaponStrip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 28px);
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
   vertical-align: middle;
 }
 
-.backButton {
+.logWeaponStripStart {
+  justify-content: start;
+}
+
+.logWeaponStripEnd {
+  justify-content: end;
+}
+
+.logWeaponFrame {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  vertical-align: middle;
+}
+
+.logWeaponDestroyed {
+  opacity: 0.4;
+}
+
+.logWeaponImage {
+  width: 100%;
+  height: 100%;
+  max-height: 28px;
+  object-fit: contain;
   display: block;
-  margin-bottom: 8px;
-  padding: 0;
-  color: $primary;
-  background: none;
-  border: none;
-  font: inherit;
+}
+
+.backButton {
+  display: inline-block;
+  height: 36px;
+  margin-bottom: 12px;
+  padding: 0 16px 0 12px;
+  color: $white;
+  background: rgba($white, 0.04);
+  border: 1px solid rgba($white, 0.14);
+  border-radius: 999px;
+  line-height: 34px;
   cursor: pointer;
-  @include caption;
+  @include body;
+
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
 
   &:hover {
-    color: $white;
+    background: rgba($primary, 0.14);
+    border-color: $primary;
   }
+}
+
+.backArrow {
+  display: inline-block;
+  margin-right: 4px;
+  transition: transform 0.2s ease-in-out;
+
+  svg {
+    vertical-align: -3px;
+  }
+}
+
+.backButton:hover .backArrow {
+  transform: translateX(-3px);
 }
 
 .historyList {
@@ -1100,6 +1670,60 @@
   flex-basis: 100%;
   color: $default;
   @include caption;
+}
+
+.confirmRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.confirmDialog {
+  width: min(420px, 100%);
+  padding: 20px;
+  background: $secondary;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 14px;
+
+  h2 {
+    @include subtitle;
+    font-weight: 600;
+  }
+
+  p {
+    margin-top: 8px;
+    color: $default;
+    @include body;
+  }
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.dangerButton {
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: $white;
+  background: #d23b3b;
+  line-height: 34px;
+  white-space: nowrap;
+  cursor: pointer;
+  @include body;
+
+  &:hover {
+    background: #e14d4d;
+  }
 }
 
 .helpRoot {

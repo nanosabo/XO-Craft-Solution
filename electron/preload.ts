@@ -6,9 +6,11 @@ import type {
   UpdateMode,
   UpdateState,
 } from "@src/store/slices/updater.slice";
+import type { AppLogLink } from "@src/helpers/appLogLink";
 import type {
   CrossoutDetectedLog,
   CrossoutFetchBattlesParams,
+  CrossoutStatsCacheInput,
   CrossoutUploadLogParams,
   CrossoutUploadProgress,
 } from "@src/types/crossout";
@@ -56,6 +58,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getLogPath: () => ipcRenderer.invoke("get-log-path"),
   openLogsFolder: () => ipcRenderer.invoke("open-logs-folder"),
   copyText: (text: string) => ipcRenderer.invoke("copy-text", text),
+  copyTableImage: (html: string, width: number, height: number) =>
+    ipcRenderer.invoke("copy-table-image", html, width, height),
   crossoutHasApiKey: () => ipcRenderer.invoke("crossout-has-api-key"),
   crossoutSetApiKey: (apiKey: string) =>
     ipcRenderer.invoke("crossout-set-api-key", apiKey),
@@ -81,12 +85,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   crossoutLoadLog: (logId: string) =>
     ipcRenderer.invoke("crossout-load-log", logId),
-  crossoutLoadLogTable: (logId: string, type: string, expectedBattles?: number) =>
+  crossoutLoadLogTable: (
+    logId: string,
+    type: string,
+    expectedBattles?: number,
+    range?: { from: number; to: number } | null,
+  ) =>
     ipcRenderer.invoke(
       "crossout-load-log-table",
       logId,
       type,
       expectedBattles,
+      range ?? null,
     ),
   crossoutHistoryList: () => ipcRenderer.invoke("crossout-history-list"),
   crossoutHistorySave: (
@@ -94,6 +104,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   ) => ipcRenderer.invoke("crossout-history-save", entry),
   crossoutHistoryRemove: (logId: string) =>
     ipcRenderer.invoke("crossout-history-remove", logId),
+  crossoutHistoryClear: () => ipcRenderer.invoke("crossout-history-clear"),
+  crossoutStatsCacheGet: (logId: string) =>
+    ipcRenderer.invoke("crossout-stats-cache-get", logId),
+  crossoutStatsCacheSave: (input: CrossoutStatsCacheInput) =>
+    ipcRenderer.invoke("crossout-stats-cache-save", input),
   crossoutPickLog: () => ipcRenderer.invoke("crossout-pick-log"),
   crossoutFindLatestLog: (customPath?: string | null) =>
     ipcRenderer.invoke(
@@ -102,6 +117,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ) as Promise<CrossoutDetectedLog | null>,
   crossoutPickLogsFolder: () =>
     ipcRenderer.invoke("crossout-pick-logs-folder") as Promise<string | null>,
+  notifyAppLogListening: () => ipcRenderer.send("app-log-listening"),
+  onAppOpenLog: (listener: (link: AppLogLink) => void) => {
+    const wrapped = (_: Electron.IpcRendererEvent, link: AppLogLink) => {
+      listener(link);
+    };
+
+    ipcRenderer.on("app-open-log", wrapped);
+
+    return () => ipcRenderer.removeListener("app-open-log", wrapped);
+  },
 });
 
 // `exposeInMainWorld` can't detect attributes and methods of `prototype`, manually patching it.

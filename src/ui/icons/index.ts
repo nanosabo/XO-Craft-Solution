@@ -23,6 +23,8 @@ export { default as SlidersIcon } from "./SlidersIcon";
 export { default as BellIcon } from "./BellIcon";
 export { default as MinusIcon } from "./MinusIcon";
 export { default as ExternalIcon } from "./ExternalIcon";
+export { default as LinkIcon } from "./LinkIcon";
+export { default as CameraIcon } from "./CameraIcon";
 export { default as RefreshIcon } from "./RefreshIcon";
 export { default as CraftIcon } from "./CraftIcon";
 export { default as LogsIcon } from "./LogsIcon";

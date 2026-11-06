@@ -47,11 +47,21 @@ const normalizeEntry = (value: unknown): CrossoutLogHistoryEntry | null => {
       typeof raw.savedAt === "number" && Number.isFinite(raw.savedAt)
         ? raw.savedAt
         : 0,
+    uploadedAt:
+      typeof raw.uploadedAt === "number" && Number.isFinite(raw.uploadedAt)
+        ? raw.uploadedAt
+        : 0,
   };
 };
 
+const historyOrder = (entry: CrossoutLogHistoryEntry) =>
+  entry.uploadedAt > 0 ? entry.uploadedAt : entry.savedAt;
+
 const sortHistory = (entries: CrossoutLogHistoryEntry[]) =>
-  [...entries].sort((a, b) => b.savedAt - a.savedAt);
+  [...entries].sort(
+    (left, right) =>
+      historyOrder(right) - historyOrder(left) || right.savedAt - left.savedAt,
+  );
 
 const readHistory = (): CrossoutLogHistoryEntry[] => {
   try {
@@ -93,6 +103,9 @@ export const saveCrossoutHistory = (
 
   if (!logId) return readHistory();
 
+  const current = readHistory();
+  const previous = current.find((item) => item.logId === logId);
+  const incomingUpload = Math.trunc(Number(input.uploadedAt));
   const entry: CrossoutLogHistoryEntry = {
     logId,
     nickname: asString(input.nickname).trim(),
@@ -100,16 +113,27 @@ export const saveCrossoutHistory = (
     types: (Array.isArray(input.types) ? input.types : [])
       .map(normalizeType)
       .filter((type): type is CrossoutLogTypeOption => type !== null),
-    savedAt: Date.now(),
+    savedAt: previous && previous.savedAt > 0 ? previous.savedAt : Date.now(),
+    uploadedAt:
+      Number.isFinite(incomingUpload) && incomingUpload > 0
+        ? incomingUpload
+        : (previous?.uploadedAt ?? 0),
   };
 
   // A log id is unique, so re-opening or re-uploading the same log updates the
-  // existing history item instead of adding a duplicate.
-  const entries = readHistory().filter((item) => item.logId !== logId);
+  // existing history item instead of adding a duplicate. Opening it again does
+  // not change the upload date used for sorting.
+  const entries = current.filter((item) => item.logId !== logId);
   entries.unshift(entry);
   writeHistory(entries);
 
   return sortHistory(entries);
+};
+
+export const clearCrossoutHistory = (): CrossoutLogHistoryEntry[] => {
+  writeHistory([]);
+
+  return [];
 };
 
 export const removeCrossoutHistory = (

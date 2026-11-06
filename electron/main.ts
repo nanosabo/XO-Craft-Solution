@@ -45,6 +45,7 @@ import type { UpdateMode } from "@src/store/slices/updater.slice";
 import type {
   CrossoutFetchBattlesParams,
   CrossoutLogHistoryInput,
+  CrossoutStatsCacheInput,
   CrossoutUploadLogParams,
 } from "@src/types/crossout";
 import {
@@ -57,12 +58,25 @@ import {
   uploadCrossoutLog,
 } from "./crossoutInfo";
 import {
+  clearCrossoutHistory,
   listCrossoutHistory,
   removeCrossoutHistory,
   saveCrossoutHistory,
 } from "./crossoutHistory";
+import {
+  clearCrossoutStatsCache,
+  forgetCrossoutStatsCache,
+  getCrossoutStatsCache,
+  saveCrossoutStatsCache,
+} from "./crossoutStatsCache";
 import { closeCrossoutBrowser } from "./crossoutBrowser";
 import { findLatestCombatLog } from "./crossoutLogFind";
+import {
+  type AppLogLink,
+  findAppLogLink,
+  parseAppLogLink,
+  APP_LOG_PROTOCOL,
+} from "../src/helpers/appLogLink";
 import locales from "./locales.json";
 import axios from "axios";
 
@@ -104,14 +118,45 @@ const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   app.quit();
+} else if (process.defaultApp && process.argv.length >= 2) {
+  app.setAsDefaultProtocolClient(APP_LOG_PROTOCOL, process.execPath, [
+    path.resolve(process.argv[1]),
+  ]);
+} else {
+  app.setAsDefaultProtocolClient(APP_LOG_PROTOCOL);
 }
 
-app.on("second-instance", () => {
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.show();
-    win.focus();
+let pendingAppLog: AppLogLink | null = findAppLogLink(process.argv);
+let appLogListening = false;
+
+const focusWindow = () => {
+  if (!win || win.isDestroyed()) return;
+
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+};
+
+const queueAppLog = (link: AppLogLink | null) => {
+  if (!link) return;
+
+  pendingAppLog = link;
+  focusWindow();
+
+  if (appLogListening && win && !win.isDestroyed()) {
+    win.webContents.send("app-open-log", pendingAppLog);
+    pendingAppLog = null;
   }
+};
+
+app.on("second-instance", (_event, argv) => {
+  queueAppLog(findAppLogLink(argv));
+  focusWindow();
+});
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  queueAppLog(parseAppLogLink(url));
 });
 
 app.on("before-quit", () => {
@@ -317,10 +362,22 @@ function createWindow() {
     });
   });
 
+  const logRoute = pendingAppLog
+    ? `/logs/${encodeURIComponent(pendingAppLog.logId)}${
+        pendingAppLog.type
+          ? `?type=${encodeURIComponent(pendingAppLog.type)}`
+          : ""
+      }`
+    : "";
+
   if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
+    const base = VITE_DEV_SERVER_URL.replace(/\/?$/, "/");
+    win.loadURL(logRoute ? `${base}#${logRoute}` : VITE_DEV_SERVER_URL);
   } else {
-    win.loadFile(path.join(process.env.DIST, "index.html"));
+    win.loadFile(
+      path.join(process.env.DIST, "index.html"),
+      logRoute ? { hash: logRoute } : undefined,
+    );
   }
 }
 
@@ -338,6 +395,16 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+ipcMain.on("app-log-listening", (event) => {
+  appLogListening = true;
+
+  if (!pendingAppLog) return;
+
+  event.sender.send("app-open-log", pendingAppLog);
+  pendingAppLog = null;
+  focusWindow();
 });
 
 ipcMain.on("minimize", (e) => {
@@ -388,6 +455,123 @@ ipcMain.handle("copy-text", (_, text: string) => {
   return true;
 });
 
+ipcMain.handle(
+  "copy-table-image",
+  async (_event, html: string, width: number, height: number) => {
+    const shotWidth = Math.max(1, Math.ceil(width));
+    const shotHeight = Math.min(16000, Math.max(1, Math.ceil(height)));
+    const display = screen.getPrimaryDisplay().bounds;
+    const win = new BrowserWindow({
+      show: false,
+      frame: false,
+      x: display.x + display.width + 40,
+      y: display.y,
+      width: shotWidth,
+      height: shotHeight + 32,
+      useContentSize: true,
+      enableLargerThanScreen: true,
+      focusable: false,
+      skipTaskbar: true,
+      backgroundColor: "#111316",
+      webPreferences: {
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+
+    try {
+      await win.loadURL("about:blank");
+      await win.webContents.executeJavaScript(
+        `document.open(); document.write(${JSON.stringify(html)}); document.close(); true;`,
+      );
+      await win.webContents.executeJavaScript(`
+        (async () => {
+          const imageDone = Promise.all(Array.from(document.images).map((img) => (
+            img.complete
+              ? Promise.resolve()
+              : new Promise((resolve) => {
+                  img.addEventListener("load", () => resolve(), { once: true });
+                  img.addEventListener("error", () => resolve(), { once: true });
+                })
+          )));
+          await Promise.race([
+            Promise.all([document.fonts.ready, imageDone]),
+            new Promise((resolve) => setTimeout(resolve, 4000)),
+          ]);
+          await new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          });
+        })()
+      `);
+
+      const readBounds = `(function () {
+        const table = document.querySelector("table");
+        const node = table && table.parentElement ? table.parentElement : table;
+        if (!node) return null;
+        const rect = node.getBoundingClientRect();
+        return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom };
+      })()`;
+
+      let bounds = await win.webContents.executeJavaScript(readBounds);
+
+      if (bounds) {
+        const needWidth = Math.ceil(bounds.right);
+        const needHeight = Math.ceil(bounds.bottom);
+        const [contentWidth, contentHeight] = win.getContentSize();
+
+        if (contentWidth < needWidth || contentHeight < needHeight) {
+          win.setContentSize(
+            Math.max(contentWidth, needWidth),
+            Math.max(contentHeight, needHeight),
+          );
+          await win.webContents.executeJavaScript(`new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          })`);
+          bounds = await win.webContents.executeJavaScript(readBounds);
+        }
+      }
+
+      let image = await win.webContents.capturePage();
+
+      if (image.isEmpty()) {
+        win.showInactive();
+        image = await win.webContents.capturePage();
+      }
+
+      if (image.isEmpty()) return false;
+
+      if (bounds) {
+        const { width: imageWidth, height: imageHeight } = image.getSize();
+        const [contentWidth, contentHeight] = win.getContentSize();
+        const scaleX = contentWidth > 0 ? imageWidth / contentWidth : 1;
+        const scaleY = contentHeight > 0 ? imageHeight / contentHeight : 1;
+        const cropX = Math.max(0, Math.floor(bounds.x * scaleX));
+        const cropY = Math.max(0, Math.floor(bounds.y * scaleY));
+        const cropRight = Math.min(imageWidth, Math.ceil(bounds.right * scaleX));
+        const cropBottom = Math.min(
+          imageHeight,
+          Math.ceil(bounds.bottom * scaleY),
+        );
+
+        if (cropRight > cropX && cropBottom > cropY) {
+          image = image.crop({
+            x: cropX,
+            y: cropY,
+            width: cropRight - cropX,
+            height: cropBottom - cropY,
+          });
+        }
+      }
+
+      clipboard.writeImage(image);
+      return true;
+    } finally {
+      if (!win.isDestroyed()) win.destroy();
+    }
+  },
+);
+
 ipcMain.handle("crossout-has-api-key", () => {
   return getCrossoutApiKey() !== null;
 });
@@ -424,12 +608,24 @@ ipcMain.handle("crossout-load-log", (_, logId: string) => {
 
 ipcMain.handle(
   "crossout-load-log-table",
-  (_, logId: string, type: string, expectedBattles?: number) => {
+  (
+    _,
+    logId: string,
+    type: string,
+    expectedBattles?: number,
+    range?: { from?: number; to?: number } | null,
+  ) => {
+    const from = Number(range?.from);
+    const to = Number(range?.to);
+
     return loadCrossoutLogTable(
       String(logId ?? ""),
       String(type ?? ""),
       lang,
       Number(expectedBattles) || 0,
+      Number.isFinite(from) && Number.isFinite(to)
+        ? { from, to }
+        : null,
     );
   },
 );
@@ -446,8 +642,29 @@ ipcMain.handle(
 );
 
 ipcMain.handle("crossout-history-remove", (_, logId: string) => {
-  return removeCrossoutHistory(String(logId ?? ""));
+  const id = String(logId ?? "");
+
+  forgetCrossoutStatsCache(id);
+
+  return removeCrossoutHistory(id);
 });
+
+ipcMain.handle("crossout-history-clear", () => {
+  clearCrossoutStatsCache();
+
+  return clearCrossoutHistory();
+});
+
+ipcMain.handle("crossout-stats-cache-get", (_, logId: string) => {
+  return getCrossoutStatsCache(String(logId ?? ""), lang);
+});
+
+ipcMain.handle(
+  "crossout-stats-cache-save",
+  (_, input: CrossoutStatsCacheInput) => {
+    saveCrossoutStatsCache(input, lang);
+  },
+);
 
 ipcMain.handle("crossout-find-latest-log", (_, customPath?: string) => {
   return findLatestCombatLog({

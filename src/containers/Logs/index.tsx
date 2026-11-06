@@ -1,7 +1,9 @@
 import classNames from "classnames";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { parseAppLogLink } from "@src/helpers/appLogLink";
 import { logWarning } from "@src/helpers/errorLog";
 import formatBytes from "@src/helpers/formatBytes";
 import useScrollFade from "@src/hooks/useScrollFade";
@@ -13,7 +15,6 @@ import {
   type CrossoutLogHistoryEntry,
   type CrossoutUploadProgress,
 } from "@src/types/crossout";
-import Input from "@src/ui/Input";
 import LogHelpModal from "./LogHelpModal";
 import styles from "./styles/Logs.module.scss";
 
@@ -40,24 +41,43 @@ const shortenPath = (value: string): string => {
 const LOG_LINK =
   /(?:https?:\/\/)?(?:www\.)?(?:en\.)?crossout-info\.com\/log\/([A-Za-z0-9_-]{4,64})(?:\/([A-Za-z0-9_-]{1,32}))?/i;
 
-const BARE_LOG_ID = /^[A-Za-z0-9_-]{4,64}$/;
+const APP_LINK = /(?:https?:\/\/nanosabo\.github\.io\/xocs-imgs\/log\/?\?[^\s]+|xocraft:\/\/[^\s]+)/i;
 
-const parseLogLink = (
+const crossoutLogFromText = (
   value: string,
 ): { logId: string; type: string | null } | null => {
-  const trimmed = value.trim();
-  const match = LOG_LINK.exec(trimmed);
+  const match = value.match(LOG_LINK);
 
-  if (match) {
-    const type = match[2]?.toLowerCase() ?? "";
-    const slug = /^[a-z0-9_-]{1,32}$/.test(type) ? type : null;
+  if (!match) return null;
 
-    return { logId: match[1], type: slug };
+  const type = match[2]?.toLowerCase() ?? "";
+  const slug = /^[a-z0-9_-]{1,32}$/.test(type) ? type : null;
+
+  return { logId: match[1], type: slug };
+};
+
+const logFromClipboard = (
+  value: string,
+): { logId: string; type: string | null } | null => {
+  const direct = parseAppLogLink(value);
+
+  if (direct) return direct;
+
+  const appMatch = value.match(APP_LINK);
+
+  if (appMatch) {
+    const parsed = parseAppLogLink(appMatch[0]);
+
+    if (parsed) return parsed;
   }
 
-  if (BARE_LOG_ID.test(trimmed)) return { logId: trimmed, type: null };
+  return crossoutLogFromText(value);
+};
 
-  return null;
+const logResultsPath = (parsed: { logId: string; type: string | null }): string => {
+  const query = parsed.type ? `?type=${encodeURIComponent(parsed.type)}` : "";
+
+  return `/logs/${encodeURIComponent(parsed.logId)}${query}`;
 };
 
 const clampPercent = (percent: number): number =>
@@ -124,7 +144,6 @@ const Logs = () => {
   const [latestLog, setLatestLog] = useState<
     CrossoutDetectedLog | null | undefined
   >(undefined);
-  const [logLink, setLogLink] = useState("");
   const [linkError, setLinkError] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -138,6 +157,10 @@ const Logs = () => {
     null,
   );
   const [historyError, setHistoryError] = useState(false);
+  const [historyDate, setHistoryDate] = useState("");
+  const [historyConfirm, setHistoryConfirm] = useState<
+    { kind: "clear" } | { kind: "remove"; id: string; name: string } | null
+  >(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -198,6 +221,24 @@ const Logs = () => {
     };
   }, []);
 
+  const visibleHistory = useMemo(() => {
+    if (!history) return null;
+    if (!historyDate) return history;
+
+    const [year, month, day] = historyDate.split("-").map(Number);
+    const from = new Date(year, month - 1, day).getTime();
+
+    if (!Number.isFinite(from)) return history;
+
+    const to = from + 24 * 60 * 60 * 1000;
+
+    return history.filter((entry) => {
+      const stamp = entry.uploadedAt > 0 ? entry.uploadedAt : entry.savedAt;
+
+      return stamp >= from && stamp < to;
+    });
+  }, [history, historyDate]);
+
   const formatDate = (unix: number) =>
     new Date(unix * 1000).toLocaleString(numberLocale, {
       day: "2-digit",
@@ -239,6 +280,45 @@ const Logs = () => {
       logWarning("crossout-history", error);
       setHistoryError(true);
     }
+  };
+
+  const clearHistory = async () => {
+    try {
+      const entries = await window.electronAPI.crossoutHistoryClear();
+
+      setHistory(entries);
+      setHistoryDate("");
+    } catch (error) {
+      logWarning("crossout-history", error);
+      setHistoryError(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!historyConfirm) return;
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setHistoryConfirm(null);
+    };
+
+    window.addEventListener("keydown", onKey);
+
+    return () => window.removeEventListener("keydown", onKey);
+  }, [historyConfirm]);
+
+  const confirmHistory = () => {
+    if (!historyConfirm) return;
+
+    const pending = historyConfirm;
+
+    setHistoryConfirm(null);
+
+    if (pending.kind === "clear") {
+      void clearHistory();
+      return;
+    }
+
+    void removeHistory(pending.id);
   };
 
   const upload = async (selectedPath: string) => {
@@ -311,22 +391,36 @@ const Logs = () => {
     }
   };
 
-  const openLink = () => {
-    const parsed = parseLogLink(logLink);
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      if (helpOpen || historyConfirm) return;
 
-    if (!parsed) {
-      setLinkError(true);
-      return;
-    }
+      const element = event.target instanceof HTMLElement ? event.target : null;
+      const typing =
+        element &&
+        (element.tagName === "TEXTAREA" ||
+          element.tagName === "INPUT" ||
+          element.isContentEditable);
 
-    setLinkError(false);
+      if (typing) return;
 
-    const query = parsed.type
-      ? `?type=${encodeURIComponent(parsed.type)}`
-      : "";
+      const text = event.clipboardData?.getData("text") ?? "";
+      const parsed = logFromClipboard(text);
 
-    navigate(`/logs/${encodeURIComponent(parsed.logId)}${query}`);
-  };
+      if (!parsed) {
+        if (source === "link" && text.trim()) setLinkError(true);
+        return;
+      }
+
+      event.preventDefault();
+      setLinkError(false);
+      navigate(logResultsPath(parsed));
+    };
+
+    window.addEventListener("paste", onPaste);
+
+    return () => window.removeEventListener("paste", onPaste);
+  }, [helpOpen, historyConfirm, navigate, source]);
 
   return (
     <div
@@ -375,7 +469,10 @@ const Logs = () => {
               className={classNames(styles.sourceOption, {
                 [styles.sourceOptionActive]: source === "link",
               })}
-              onClick={() => setSource("link")}
+              onClick={() => {
+                setLinkError(false);
+                setSource("link");
+              }}
             >
               <span className={styles.sourceIcon}>
                 <LinkGlyph />
@@ -487,32 +584,20 @@ const Logs = () => {
         )}
 
         {!uploading && source === "link" && (
-          <form
-            className={styles.linkRow}
-            onSubmit={(event) => {
-              event.preventDefault();
-              openLink();
-            }}
-          >
-            <Input
-              value={logLink}
-              onChange={(event) => {
-                setLogLink(event.target.value);
-                setLinkError(false);
-              }}
-              placeholder={t("upload.linkPlaceholder")}
-              aria-label={t("upload.sourceLink")}
-              spellCheck={false}
-            />
-
-            <button
-              type="submit"
-              className={styles.primaryButton}
-              disabled={!logLink.trim()}
-            >
-              {t("upload.openLink")}
-            </button>
-          </form>
+          <div className={styles.pasteNotice}>
+            <span className={styles.pasteIcon} aria-hidden="true">
+              <LinkGlyph />
+            </span>
+            <div className={styles.pasteCopy}>
+              <strong>{t("upload.pasteTitle")}</strong>
+              <p>{t("upload.pasteHint")}</p>
+            </div>
+            <span className={styles.pasteKeys}>
+              <kbd>Ctrl</kbd>
+              <span aria-hidden="true">+</span>
+              <kbd>V</kbd>
+            </span>
+          </div>
         )}
 
         {uploadProgress && (
@@ -598,9 +683,66 @@ const Logs = () => {
       </section>
 
       <section className={classNames(styles.card, styles.historyCard)}>
-        <div className={styles.cardHeader}>
-          <h2>{t("history.title")}</h2>
-          <p>{t("history.subtitle")}</p>
+        <div className={styles.historyHead}>
+          <div className={styles.cardHeader}>
+            <h2>{t("history.title")}</h2>
+            <p>{t("history.subtitle")}</p>
+          </div>
+          {history && history.length > 0 && (
+            <div className={styles.historyTools}>
+            <label className={styles.historyDate}>
+              <span>{t("history.date")}</span>
+              <span className={styles.historyDateField}>
+                <input
+                  type="date"
+                  className={styles.date}
+                  value={historyDate}
+                  aria-label={t("history.date")}
+                  onChange={(event) => setHistoryDate(event.target.value)}
+                />
+                <svg
+                  className={styles.historyDateIcon}
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="2.25"
+                    y="3.25"
+                    width="11.5"
+                    height="10.5"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <path
+                    d="M2.25 6.5h11.5M5.25 1.75v2.5M10.75 1.75v2.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </label>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              disabled={!historyDate}
+              onClick={() => setHistoryDate("")}
+            >
+              {t("history.reset")}
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => setHistoryConfirm({ kind: "clear" })}
+            >
+              {t("history.clear")}
+            </button>
+            </div>
+          )}
         </div>
 
         {historyError && <p className={styles.error}>{t("history.error")}</p>}
@@ -613,9 +755,13 @@ const Logs = () => {
           <p className={styles.empty}>{t("history.empty")}</p>
         )}
 
-        {history && history.length > 0 && (
+        {visibleHistory && history && history.length > 0 && visibleHistory.length === 0 && (
+          <p className={styles.empty}>{t("history.dateEmpty")}</p>
+        )}
+
+        {visibleHistory && visibleHistory.length > 0 && (
           <ul className={styles.historyList}>
-            {history.map((entry) => (
+            {visibleHistory.map((entry) => (
               <li key={entry.logId} className={styles.historyItem}>
                 <button
                   type="button"
@@ -634,17 +780,35 @@ const Logs = () => {
                       )
                       .join(" · ")}
                     {entry.types.length > 0 ? " · " : ""}
-                    {t("history.saved", {
-                      date: formatDate(entry.savedAt / 1000),
-                      interpolation: { escapeValue: false },
-                    })}
+                    {entry.uploadedAt > 0
+                      ? t("history.uploaded", {
+                          date: new Date(entry.uploadedAt).toLocaleDateString(
+                            numberLocale,
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            },
+                          ),
+                          interpolation: { escapeValue: false },
+                        })
+                      : t("history.saved", {
+                          date: formatDate(entry.savedAt / 1000),
+                          interpolation: { escapeValue: false },
+                        })}
                   </span>
                 </button>
 
                 <button
                   type="button"
                   className={styles.historyRemove}
-                  onClick={() => void removeHistory(entry.logId)}
+                  onClick={() =>
+                    setHistoryConfirm({
+                      kind: "remove",
+                      id: entry.logId,
+                      name: entry.nickname || entry.logId,
+                    })
+                  }
                   title={t("history.remove")}
                   aria-label={t("history.remove")}
                 >
@@ -657,6 +821,50 @@ const Logs = () => {
       </section>
       </div>
       <LogHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      {historyConfirm &&
+        createPortal(
+          <div
+            className={styles.confirmRoot}
+            onMouseDown={() => setHistoryConfirm(null)}
+          >
+            <div
+              className={styles.confirmDialog}
+              role="dialog"
+              aria-modal="true"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <h2>
+                {historyConfirm.kind === "clear"
+                  ? t("history.confirmClearTitle")
+                  : t("history.confirmRemoveTitle")}
+              </h2>
+              <p>
+                {historyConfirm.kind === "clear"
+                  ? t("history.confirmClear")
+                  : t("history.confirmRemove", { name: historyConfirm.name })}
+              </p>
+              <div className={styles.confirmActions}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => setHistoryConfirm(null)}
+                >
+                  {t("history.cancel")}
+                </button>
+                <button
+                  type="button"
+                  className={styles.dangerButton}
+                  onClick={confirmHistory}
+                >
+                  {historyConfirm.kind === "clear"
+                    ? t("history.clear")
+                    : t("history.remove")}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

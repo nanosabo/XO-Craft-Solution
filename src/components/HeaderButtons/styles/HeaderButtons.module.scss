@@ -1,5 +1,6 @@
 .buttons {
   display: flex;
+  flex-shrink: 0;
   gap: 16px;
   margin-right: 128px;
 }

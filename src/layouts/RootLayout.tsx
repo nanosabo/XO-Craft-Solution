@@ -1,3 +1,4 @@
+import AppOpenLog from "@src/components/AppOpenLog";
 import ErrorBoundary from "@src/components/ErrorBoundary";
 import GlobalErrorHandler from "@src/components/GlobalErrorHandler";
 import UpdaterBridge from "@src/components/UpdaterBridge";
@@ -14,6 +15,7 @@ const RootLayout: FC<PropsWithChildren> = ({ children }) => {
     <Provider store={store}>
       <HashRouter>
         <GlobalErrorHandler />
+        <AppOpenLog />
         {/* Keep the window controls available even when a render error is shown. */}
         <WindowActions />
         <ErrorBoundary>

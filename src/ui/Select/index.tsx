@@ -23,6 +23,9 @@ interface CustomSelectProps {
   onChange?: (value: string) => void;
   order?: "asc" | "desc";
   menuPlacement?: MenuPlacement;
+  disabled?: boolean;
+  /** Keep the menu as wide as the closed control. */
+  menuFit?: boolean;
 }
 
 const MAX_MENU_HEIGHT = 300;
@@ -47,6 +50,8 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
     onChange,
     order,
     menuPlacement = "down",
+    disabled = false,
+    menuFit = false,
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
@@ -90,14 +95,14 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
 
       const rect = container.getBoundingClientRect();
       const width = Math.min(
-        rect.width * MENU_WIDTH_RATIO,
+        menuFit ? rect.width : rect.width * MENU_WIDTH_RATIO,
         window.innerWidth - VIEWPORT_MARGIN * 2,
       );
+      const preferredLeft = menuFit
+        ? rect.left
+        : rect.left + rect.width / 2 - width / 2;
       const left = Math.min(
-        Math.max(
-          rect.left + rect.width / 2 - width / 2,
-          VIEWPORT_MARGIN,
-        ),
+        Math.max(preferredLeft, VIEWPORT_MARGIN),
         window.innerWidth - width - VIEWPORT_MARGIN,
       );
 
@@ -141,7 +146,7 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
             up: false,
             top: rect.bottom + MENU_GAP,
           };
-    }, [menuPlacement]);
+    }, [menuFit, menuPlacement]);
 
     useEffect(() => {
       if (!isOpen) return;
@@ -171,6 +176,8 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
     };
 
     const handleToggle = () => {
+      if (disabled) return;
+
       if (isOpen) {
         setIsOpen(false);
         return;
@@ -183,7 +190,10 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
     return (
       <div className={styles.container} ref={containerRef}>
         <div
-          className={classNames(styles.control, { [styles.isOpen]: isOpen })}
+          className={classNames(styles.control, {
+            [styles.isOpen]: isOpen,
+            [styles.disabled]: disabled,
+          })}
           onClick={handleToggle}
           title={selected.label}
         >
@@ -207,6 +217,7 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
               ref={menuRef}
               className={classNames(styles.menu, styles.menuPortal, {
                 [styles.menuUp]: menuPosition.up,
+                [styles.menuFit]: menuFit,
               })}
               style={{
                 left: menuPosition.left,

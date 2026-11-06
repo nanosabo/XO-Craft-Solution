@@ -18,6 +18,7 @@ import {
   type CrossoutLogSummaryResult,
   type CrossoutLogTable,
   type CrossoutLogTableResult,
+  type CrossoutLogTime,
   type CrossoutUploadLogParams,
   type CrossoutUploadLogResult,
   type CrossoutUploadProgress,
@@ -475,14 +476,22 @@ const translateLogTable = async (
     table.rows.map(async (row) => ({
       ...row,
       cells: await Promise.all(
-        row.cells.map(async (cell) =>
-          cell.weapon
-            ? {
-                ...cell,
-                weapon: await translate(cell.weapon),
-              }
-            : cell,
-        ),
+        row.cells.map(async (cell) => {
+          if (cell.images.length === 0 && !cell.weapon) return cell;
+
+          const images = await Promise.all(
+            cell.images.map(async (item) => ({
+              ...item,
+              name: item.name ? await translate(item.name) : item.name,
+            })),
+          );
+
+          return {
+            ...cell,
+            images,
+            weapon: images.find((item) => item.name)?.name || cell.weapon,
+          };
+        }),
       ),
     })),
   );
@@ -758,6 +767,7 @@ interface RawLogCell {
   cls?: unknown;
   weapon?: unknown;
   image?: unknown;
+  images?: unknown;
   destroyed?: unknown;
 }
 
@@ -779,6 +789,7 @@ interface RawLogStatRow {
   name?: unknown;
   weapon?: unknown;
   image?: unknown;
+  images?: unknown;
   stars?: unknown;
   team?: unknown;
   damage?: unknown;
@@ -792,9 +803,15 @@ interface RawLogStat {
   rows?: unknown;
 }
 
+interface RawLogTime {
+  at?: unknown;
+  label?: unknown;
+}
+
 interface RawLogTable {
   forbidden?: unknown;
   date?: unknown;
+  times?: unknown;
   rows?: unknown;
   stats?: unknown;
 }
@@ -852,6 +869,37 @@ const LOG_TABLE_SCRIPT = `(() => {
     return (span.innerText || span.textContent || "").replace(/\\s+/g, " ").trim();
   };
 
+  const readImages = (root) => {
+    const images = [];
+    const push = (src, name, destroyed) => {
+      const url = absoluteUrl(src || "");
+      if (!url) return;
+      images.push({
+        src: url,
+        name: (name || "").replace(/\\s+/g, " ").trim(),
+        destroyed: Boolean(destroyed)
+      });
+    };
+
+    root.querySelectorAll("img").forEach((img) => {
+      push(
+        img.getAttribute("src") || img.getAttribute("data-src") || "",
+        img.getAttribute("title") || img.getAttribute("alt") || "",
+        img.classList.contains("trought") || Boolean(img.closest(".trought"))
+      );
+    });
+
+    root.querySelectorAll(".imgweap").forEach((node) => {
+      if (node.querySelector("img")) return;
+      const match = /url\\(["']?([^"')]+)["']?\\)/.exec(
+        window.getComputedStyle(node).backgroundImage || ""
+      );
+      if (match) push(match[1], node.getAttribute("title") || "", node.classList.contains("trought"));
+    });
+
+    return images;
+  };
+
   const statsNode = document.querySelector("div.stat");
   let stats = null;
   if (statsNode) {
@@ -879,7 +927,8 @@ const LOG_TABLE_SCRIPT = `(() => {
         const teamMatch = body ? body.className.match(/red|green/) : null;
         currentTeam = teamMatch ? teamMatch[0] : "";
       }
-      const img = row.querySelector("img");
+      const images = isWeapon ? readImages(row).map((item) => item.src) : [];
+      const img = images[0] || "";
       const starRect = row.querySelector(".div-star-mask rect");
       const starWidth = starRect ? parseFloat(starRect.getAttribute("width") || "") : NaN;
       const afterData = Array.from(row.querySelectorAll(".afterData"));
@@ -913,7 +962,8 @@ const LOG_TABLE_SCRIPT = `(() => {
         weapon: isWeapon
           ? (row.getAttribute("data-weaponfind") || cells[0] || "")
           : "",
-        image: isWeapon && img ? absoluteUrl(img.getAttribute("src") || "") : "",
+        image: img,
+        images,
         stars: isWeapon && Number.isFinite(starWidth)
           ? Math.max(0, Math.min(100, starWidth))
           : null,
@@ -930,15 +980,19 @@ const LOG_TABLE_SCRIPT = `(() => {
   const table = document.querySelector("table.maps");
   const rows = table ? Array.from(table.rows).map((row) => {
     const cells = Array.from(row.cells).map((cell) => {
-      const img = cell.querySelector("img");
+      const images = readImages(cell);
+      const first = images[0];
       return {
         text: (cell.innerText || "").replace(/\\s+/g, " ").trim(),
         colSpan: cell.colSpan || 1,
         rowSpan: cell.rowSpan || 1,
         cls: cell.className || "",
-        weapon: img ? (img.getAttribute("title") || img.getAttribute("alt") || "") : "",
-        image: img ? absoluteUrl(img.getAttribute("src") || "") : "",
-        destroyed: Boolean(cell.querySelector(".trought"))
+        weapon: first ? first.name : "",
+        image: first ? first.src : "",
+        images,
+        destroyed: images.length
+          ? images.every((item) => item.destroyed)
+          : Boolean(cell.querySelector(".trought"))
       };
     });
 
@@ -962,29 +1016,88 @@ const LOG_TABLE_SCRIPT = `(() => {
 
   const dateNode = document.querySelector(".grays.bold400.roboto");
   const dateMatch = dateNode ? (dateNode.textContent || "").match(/\\d{2}\\.\\d{2}\\.\\d{4}/) : null;
+  const fromSelect = document.querySelector('select[name="t_from"]');
+  const times = fromSelect
+    ? Array.from(fromSelect.options).map((option) => ({
+        at: parseInt(option.value, 10) || 0,
+        label: (option.textContent || "").replace(/\\s+/g, " ").trim()
+      })).filter((item) => item.at > 0 && item.label)
+    : [];
 
   return {
     forbidden: false,
     date: dateMatch ? dateMatch[0] : "",
+    times,
     rows,
     stats
   };
 })()`;
 
+const normalizeLogImages = (value: unknown): CrossoutLogCell["images"] => {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+
+    const raw = item as { src?: unknown; name?: unknown; destroyed?: unknown };
+    const src = asString(raw.src).trim();
+
+    if (!src) return [];
+
+    return [
+      {
+        src,
+        name: asString(raw.name).trim(),
+        destroyed: Boolean(raw.destroyed),
+      },
+    ];
+  });
+};
+
 const normalizeLogCell = (value: unknown): CrossoutLogCell | null => {
   if (!value || typeof value !== "object") return null;
 
   const raw = value as RawLogCell;
+  const image = asString(raw.image).trim();
+  const weapon = asString(raw.weapon).trim();
+  const images = normalizeLogImages(raw.images);
+
+  if (images.length === 0 && image) {
+    images.push({ src: image, name: weapon, destroyed: Boolean(raw.destroyed) });
+  }
 
   return {
     text: asString(raw.text),
     colSpan: Math.max(1, asNumber(raw.colSpan)),
     rowSpan: Math.max(1, asNumber(raw.rowSpan)),
     cls: asString(raw.cls),
-    weapon: asString(raw.weapon),
-    image: asString(raw.image),
+    weapon: images[0]?.name || weapon,
+    image: images[0]?.src || image,
+    images,
     destroyed: Boolean(raw.destroyed),
   };
+};
+
+const normalizeLogTimes = (value: unknown): CrossoutLogTime[] => {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<number>();
+
+  return value
+    .flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+
+      const raw = item as RawLogTime;
+      const at = Math.trunc(asNumber(raw.at));
+      const label = asString(raw.label).replace(/\s+/g, " ").trim();
+
+      if (at <= 0 || !label || seen.has(at)) return [];
+
+      seen.add(at);
+
+      return [{ at, label }];
+    })
+    .sort((left, right) => left.at - right.at);
 };
 
 const normalizeLogRow = (value: unknown): CrossoutLogRow | null => {
@@ -1028,11 +1141,20 @@ const normalizeLogStatRow = (value: unknown): CrossoutLogStatRow | null => {
 
   if (!name && cells.length === 0) return null;
 
+  const image = asString(raw.image).trim();
+  const images = (Array.isArray(raw.images) ? raw.images : [])
+    .map(asString)
+    .map((src) => src.trim())
+    .filter(Boolean);
+
+  if (images.length === 0 && image) images.push(image);
+
   return {
     kind,
     name,
     weapon: asString(raw.weapon).trim(),
-    image: asString(raw.image),
+    image: images[0] || image,
+    images,
     stars:
       typeof raw.stars === "number" && Number.isFinite(raw.stars)
         ? Math.max(0, Math.min(100, raw.stars))
@@ -1134,9 +1256,18 @@ export const loadCrossoutLogTable = async (
   type: string,
   language: CrossoutLanguage = "ru",
   expectedBattles = 0,
+  range?: { from: number; to: number } | null,
 ): Promise<CrossoutLogTableResult> => {
   const id = logId.trim();
   const slug = type.trim().toLowerCase();
+  const from = Math.trunc(range?.from ?? 0);
+  const to = Math.trunc(range?.to ?? 0);
+  // The site applies the time filter by navigating to
+  // /log/{id}/{type}/f_{unix}/t_{unix}, not by posting the form.
+  const rangePath =
+    from > 0 && to > 0
+      ? `/f_${Math.min(from, to)}/t_${Math.max(from, to)}`
+      : "";
 
   if (!LOG_ID_PATTERN.test(id) || !LOG_TYPE_PATTERN.test(slug)) {
     return logTableFailure("invalid-log-id", "Некорректный идентификатор лога.");
@@ -1147,7 +1278,7 @@ export const loadCrossoutLogTable = async (
   for (const baseUrl of getBaseUrls(language)) {
     try {
       const page = await extractCrossoutPage<RawLogTable>(
-        `${baseUrl}/log/${id}/${slug}`,
+        `${baseUrl}/log/${id}/${slug}${rangePath}`,
         LOG_TABLE_SCRIPT,
       );
 
@@ -1178,7 +1309,7 @@ export const loadCrossoutLogTable = async (
       // example, the last battle is missing) and caches it. The log summary
       // knows how many battles the type contains, so use that to reject an
       // incomplete table and retry on the next host.
-      if (expectedBattles > 0) {
+      if (expectedBattles > 0 && !rangePath) {
         const battles = new Set(
           rows
             .map((row) => row.battle?.index)
@@ -1197,6 +1328,7 @@ export const loadCrossoutLogTable = async (
       const table: CrossoutLogTable = {
         type: slug,
         date: asString(page.value.date),
+        times: normalizeLogTimes(page.value.times),
         stats: normalizeLogStat(page.value.stats),
         rows,
       };

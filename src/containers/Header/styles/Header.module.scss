@@ -1,7 +1,17 @@
 .header span {
-  padding: 0 44px;
-  margin: 24px 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  margin: 24px 0;
+  padding: 0 44px;
+}
+
+.bar {
+  justify-content: flex-start;
+  gap: 24px;
+  width: 100%;
+  min-width: 0;
+
+  > svg {
+    flex-shrink: 0;
+  }
 }

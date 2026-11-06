@@ -67,6 +67,7 @@ const Header = () => {
       <AnimatePresence>
         {!isLoadingPage && (
           <motion.span
+            className={styles.bar}
             variants={headerAnimation}
             initial="initial"
             animate="animate"

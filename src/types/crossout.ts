@@ -198,15 +198,23 @@ export interface CrossoutLogSummary {
   types: CrossoutLogTypeOption[];
 }
 
+export interface CrossoutLogWeaponImage {
+  src: string;
+  name: string;
+  destroyed: boolean;
+}
+
 export interface CrossoutLogCell {
   text: string;
   colSpan: number;
   rowSpan: number;
   cls: string;
-  /** Weapon name taken from the weapon icon title. */
+  /** Weapon name taken from the first weapon icon title. */
   weapon: string;
-  /** Absolute URL of the weapon icon, when the cell contains one. */
+  /** Absolute URL of the first weapon icon, when the cell contains one. */
   image: string;
+  /** Every weapon icon in the cell, in the site order. */
+  images: CrossoutLogWeaponImage[];
   destroyed: boolean;
 }
 
@@ -227,8 +235,10 @@ export interface CrossoutLogStatRow {
   kind: "player" | "weapon";
   name: string;
   weapon: string;
-  /** Absolute URL of the weapon icon for weapon rows. */
+  /** Absolute URL of the first weapon icon for weapon rows. */
   image: string;
+  /** Every weapon icon on the row, in the site order. */
+  images: string[];
   /** Star rating fill percentage (0-100) for weapon rows. */
   stars: number | null;
   team: string;
@@ -246,10 +256,19 @@ export interface CrossoutLogStat {
   rows: CrossoutLogStatRow[];
 }
 
+export interface CrossoutLogTime {
+  /** Battle start as a Unix timestamp in seconds. */
+  at: number;
+  /** Label shown on the site, for example `19:45, 05:11:2026`. */
+  label: string;
+}
+
 export interface CrossoutLogTable {
   type: string;
   /** Upload date shown on the site, in DD.MM.YYYY format. */
   date: string;
+  /** Battle start times for the site's time filter, earliest first. */
+  times: CrossoutLogTime[];
   /** Aggregate "battle log statistics" table shown above the battle list. */
   stats: CrossoutLogStat | null;
   rows: CrossoutLogRow[];
@@ -268,8 +287,30 @@ export interface CrossoutLogHistoryEntry {
   nickname: string;
   title: string;
   types: CrossoutLogTypeOption[];
-  /** Unix timestamp in milliseconds of the last time the log was opened. */
+  /** Unix timestamp in milliseconds of the first time the log was saved. */
   savedAt: number;
+  /** Site upload date as local-midnight unix milliseconds. 0 when unknown. */
+  uploadedAt: number;
 }
 
-export type CrossoutLogHistoryInput = Omit<CrossoutLogHistoryEntry, "savedAt">;
+export type CrossoutLogHistoryInput = Omit<
+  CrossoutLogHistoryEntry,
+  "savedAt" | "uploadedAt"
+> & {
+  uploadedAt?: number;
+};
+
+/** One viewed log kept on disk. Holds every battle type opened for that log. */
+export interface CrossoutCachedLogStats {
+  logId: string;
+  language: "ru" | "en";
+  /** Unix timestamp in milliseconds of the last time this log was opened. */
+  viewedAt: number;
+  summary: CrossoutLogSummary;
+  tables: CrossoutLogTable[];
+}
+
+export interface CrossoutStatsCacheInput {
+  summary: CrossoutLogSummary;
+  table: CrossoutLogTable;
+}

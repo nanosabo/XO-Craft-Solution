@@ -4,6 +4,12 @@
 {
   $schema: "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   appId: "xo.craft.solution",
+  protocols: [
+    {
+      name: "XO Craft Solution",
+      schemes: ["xocraft"],
+    },
+  ],
   asar: true,
   productName: "XO Craft Solution",
   directories: {

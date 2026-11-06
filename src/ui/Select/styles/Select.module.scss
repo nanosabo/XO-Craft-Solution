@@ -34,6 +34,15 @@
   &.isOpen {
     border-color: $primary;
   }
+
+  &.disabled {
+    opacity: 0.55;
+    cursor: default;
+
+    &:hover {
+      border-color: rgba($white, 0.1);
+    }
+  }
 }
 
 .sort {
@@ -65,6 +74,27 @@
   z-index: 100;
   max-height: 300px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($primary, 0.5) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 4px solid rgba($primary, 0.5);
+    border-radius: 8px;
+  }
+}
+
+.menuFit {
+  background: $secondary;
+  backdrop-filter: none;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
 
 .menuUp {
