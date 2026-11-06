@@ -17,7 +17,6 @@ export type ClanSyncDetail =
   | "need-code"
   | "need-profile"
   | "bad-profile"
-  | "no-key"
   | "profile-failed"
   | "online"
   | "offline"

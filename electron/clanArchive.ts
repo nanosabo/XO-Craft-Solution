@@ -66,7 +66,7 @@ export const sanitizeBattle = (value: unknown): CrossoutBattle | null => {
     score: asNumber(raw.score),
     tank: asNumber(raw.tank),
     weapon,
-    win: asNumber(raw.win) > 0 ? 1 : 0,
+    win: asNumber(raw.win) > 0 ? 1 : asNumber(raw.win) < 0 ? -1 : 0,
     party: asNumber(raw.party),
     timebattle: asNumber(raw.timebattle),
     type,

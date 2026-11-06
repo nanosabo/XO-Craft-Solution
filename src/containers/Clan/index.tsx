@@ -39,7 +39,6 @@ const Clan = ({ view, onView }: Props) => {
   const [state, setState] = useState<ClanState | null>(null);
   const [profile, setProfile] = useState("");
   const [code, setCode] = useState("");
-  const [apiKey, setApiKey] = useState("");
   const [visible, setVisible] = useState(PAGE);
   const edited = useRef(false);
   const isRu = Boolean(i18n.language?.startsWith("ru"));
@@ -130,9 +129,13 @@ const Clan = ({ view, onView }: Props) => {
   };
 
   const result = (players: CrossoutBattle[]) => {
-    const wins = players.filter((player) => player.win > 0).length;
+    const known = players.filter((player) => player.win >= 0);
 
-    if (wins === players.length) return { key: "win" as const, label: t("table.win") };
+    if (known.length === 0) return null;
+
+    const wins = known.filter((player) => player.win > 0).length;
+
+    if (wins === known.length) return { key: "win" as const, label: t("table.win") };
     if (wins === 0) return { key: "loss" as const, label: t("table.loss") };
 
     return { key: "mixed" as const, label: t("clan.mixed") };
@@ -141,8 +144,7 @@ const Clan = ({ view, onView }: Props) => {
   const statusClass =
     state?.detail === "online"
       ? styles.online
-      : state?.detail === "no-key" ||
-          state?.detail === "profile-failed" ||
+      :     state?.detail === "profile-failed" ||
           state?.detail === "bad-profile" ||
           state?.detail === "offline"
         ? styles.bad
@@ -154,7 +156,7 @@ const Clan = ({ view, onView }: Props) => {
     if (state.step === "profile") return t("clan.stepProfile");
     if (state.step === "battles") return t("clan.stepBattles");
     if (state.step === "publish") return t("clan.stepPublish");
-    if (state.message === "battles") return t("clan.battlesFailed");
+    if (state.message === "logs") return t("clan.logsEmpty");
     if (state.message) return state.message;
 
     switch (state.detail) {
@@ -164,8 +166,6 @@ const Clan = ({ view, onView }: Props) => {
         return t("clan.needProfile");
       case "bad-profile":
         return t("clan.badProfile");
-      case "no-key":
-        return t("clan.noKey");
       case "profile-failed":
         return t("clan.profileFailed");
       case "offline":
@@ -178,13 +178,7 @@ const Clan = ({ view, onView }: Props) => {
   };
 
   const sync = () => {
-    void (async () => {
-      if (apiKey.trim()) {
-        await window.electronAPI.crossoutSetApiKey(apiKey.trim());
-      }
-
-      setState(await window.electronAPI.clanSync({ profile, code }));
-    })();
+    void window.electronAPI.clanSync({ profile, code }).then(setState);
   };
 
   return (
@@ -229,16 +223,6 @@ const Clan = ({ view, onView }: Props) => {
           >
             {state?.status === "syncing" ? t("clan.syncing") : t("clan.save")}
           </button>
-          <label className={classNames(styles.field, styles.keyField)}>
-            <span>{t("clan.apiKey")}</span>
-            <Input
-              type="password"
-              value={apiKey}
-              placeholder={t("clan.apiKeyPlaceholder")}
-              autoComplete="off"
-              onChange={(event) => setApiKey(event.target.value)}
-            />
-          </label>
         </div>
 
         <div className={styles.statusRow}>
@@ -299,9 +283,11 @@ const Clan = ({ view, onView }: Props) => {
                 <span className={styles.fightMeta}>{mapLabel(fight.map)}</span>
                 <span className={styles.fightMeta}>{when(fight.date)}</span>
                 {length && <span className={styles.fightMeta}>{length}</span>}
-                <span className={classNames(styles.fightMeta, styles[outcome.key])}>
-                  {outcome.label}
-                </span>
+                {outcome && (
+                  <span className={classNames(styles.fightMeta, styles[outcome.key])}>
+                    {outcome.label}
+                  </span>
+                )}
               </div>
               <table className={styles.table}>
                 <thead>
@@ -321,7 +307,9 @@ const Clan = ({ view, onView }: Props) => {
                         {player.damage.toLocaleString(locale)}
                       </td>
                       <td className={styles.number}>
-                        {player.kill}/{player.death}
+                        {player.death < 0
+                          ? player.kill
+                          : `${player.kill}/${player.death}`}
                       </td>
                       <td className={styles.number}>
                         {player.ur ? player.ur.toLocaleString(locale) : "—"}

@@ -148,6 +148,8 @@ const writeCache = (entries: CrossoutCachedLogStats[]) => {
   }
 };
 
+export const listCrossoutStatsCache = (): CrossoutCachedLogStats[] => readCache();
+
 export const getCrossoutStatsCache = (
   logId: string,
   language: "ru" | "en",

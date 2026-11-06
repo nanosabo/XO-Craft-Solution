@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import WebSocket from "ws";
-import type { CrossoutBattle, CrossoutBattleType } from "@src/types/crossout";
+import type { CrossoutBattle, CrossoutLogTable } from "@src/types/crossout";
 import type {
   ClanMate,
   ClanState,
@@ -30,8 +31,8 @@ import {
   type NostrEvent,
 } from "./clanCrypto";
 import { extractCrossoutPage } from "./crossoutBrowser";
-import { fetchCrossoutBattles, getCrossoutApiKey } from "./crossoutInfo";
 import { writeLog } from "./logger";
+import { listCrossoutStatsCache } from "./crossoutStatsCache";
 
 const RELAYS = [
   "wss://relay.damus.io",
@@ -42,15 +43,6 @@ const RELAYS = [
 const STORED_KIND = 30078;
 const WANT_KIND = 24444;
 const GIVE_KIND = 24445;
-const BATTLE_TYPES: CrossoutBattleType[] = [
-  "KV",
-  "PRT",
-  "PVP",
-  "PVE",
-  "ARCADE",
-  "BRAWL",
-  "CREATE",
-];
 const DAY_CHUNK = 40;
 const FETCH_INTERVAL = 30 * 60 * 1000;
 const REPUBLISH_INTERVAL = 12 * 60 * 60 * 1000;
@@ -133,13 +125,6 @@ const exclusive = <T>(task: () => Promise<T>): Promise<T> => {
 const profileHost = (language: "ru" | "en"): string =>
   language === "en" ? "https://en.crossout-info.com" : "https://crossout-info.com";
 
-const formatDate = (date: Date): string => {
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-
-  return `${day}.${month}.${date.getFullYear()}`;
-};
-
 const relaySnapshot = () =>
   RELAYS.map((url) => ({
     url,
@@ -163,9 +148,6 @@ const toState = (): ClanState => {
   } else if (!connected) {
     status = "offline";
     detail = "offline";
-  } else if (notice === "no-key") {
-    status = "online";
-    detail = "no-key";
   } else if (notice === "profile-failed" && archive.mates.length === 0) {
     status = "online";
     detail = "profile-failed";
@@ -669,46 +651,113 @@ const refreshProfile = async (): Promise<void> => {
   keepAllowedBattles(archive);
 };
 
-const fetchOwnBattles = async (): Promise<void> => {
-  if (!getCrossoutApiKey()) {
-    notice = "no-key";
+const parseCount = (value: string | undefined): number => {
+  const match = value?.replace(/\s/g, "").match(/-?\d+/);
 
-    return;
-  }
+  return match ? Number(match[0]) : 0;
+};
 
-  const to = new Date();
-  const from = new Date();
+const parseDuration = (value: string): number => {
+  const minutes = value.match(/(\d+)\s*(?:м|m)/i);
+  const seconds = value.match(/(\d+)\s*(?:с|s)/i);
 
-  from.setDate(from.getDate() - 6);
+  return (minutes ? Number(minutes[1]) : 0) * 60 + (seconds ? Number(seconds[1]) : 0);
+};
 
-  const collected: CrossoutBattle[] = [];
-  let failed = 0;
+const fightId = (type: string, at: number, map: string): number => {
+  const hex = createHash("sha256")
+    .update(`${type}|${at}|${map}`)
+    .digest("hex")
+    .slice(0, 10);
 
-  for (const type of BATTLE_TYPES) {
-    const result = await fetchCrossoutBattles(
-      {
-        type,
-        from: formatDate(from),
-        to: formatDate(to),
-      },
-      options.getLanguage(),
-    );
+  return Number.parseInt(hex, 16);
+};
 
-    if (result.errorCode && result.battles.length === 0) {
-      failed += 1;
+const battlesFromTable = (
+  table: CrossoutLogTable,
+  allowed: Set<string>,
+): CrossoutBattle[] => {
+  const type = table.type.toUpperCase();
+  const battles: CrossoutBattle[] = [];
+  let current: { index: number; map: string; duration: number } | null = null;
+
+  for (const row of table.rows) {
+    if (row.battle) {
+      current = {
+        index: row.battle.index,
+        map: row.map || row.battle.map,
+        duration: parseDuration(row.battle.duration),
+      };
       continue;
     }
 
-    collected.push(...result.battles);
+    if (!current || row.cls.includes("sticDiv")) continue;
+
+    const date = table.times[current.index - 1]?.at ?? 0;
+    const cells = row.cells;
+
+    for (let index = 0; index < cells.length; index += 1) {
+      const cell = cells[index];
+      const nickname = cell.text.trim();
+      const green = cell.cls.includes("green") && cell.cls.includes("alignleft");
+      const red = cell.cls.includes("red") && cell.cls.includes("alignright");
+
+      if ((!green && !red) || !nickname || cell.weapon) continue;
+      if (allowed.size > 0 && !allowed.has(nickname)) continue;
+
+      const weapon = green ? cells[index + 1]?.weapon ?? "" : cells[index - 1]?.weapon ?? "";
+      const damage = green
+        ? parseCount(cells[index + 2]?.text)
+        : parseCount(cells[index - 2]?.text);
+      const kills = green
+        ? parseCount(cells[index + 3]?.text)
+        : parseCount(cells[index - 3]?.text);
+
+      battles.push({
+        nickname,
+        important: 0,
+        ur: 0,
+        damage,
+        kill: kills,
+        death: -1,
+        score: 0,
+        tank: 0,
+        weapon,
+        win: -1,
+        party: 0,
+        timebattle: current.duration,
+        type,
+        battle_id: date > 0 ? fightId(type, date, current.map) : 0,
+        teams: 2,
+        map: current.map,
+        date,
+      });
+    }
   }
 
-  if (failed === BATTLE_TYPES.length) {
-    message = "battles";
+  return battles;
+};
+
+const fetchOwnBattles = (): void => {
+  const allowed = new Set(archive.mates.map((mate) => mate.nickname));
+
+  if (archive.nickname) allowed.add(archive.nickname);
+
+  const collected: CrossoutBattle[] = [];
+
+  for (const entry of listCrossoutStatsCache()) {
+    for (const table of entry.tables) {
+      collected.push(...battlesFromTable(table, allowed));
+    }
+  }
+
+  if (collected.length === 0) {
+    message = "logs";
 
     return;
   }
 
-  if (message === "battles") message = "";
+  if (message === "logs") message = "";
 
   const nickname = collected.find((battle) => battle.nickname)?.nickname;
 
@@ -716,8 +765,6 @@ const fetchOwnBattles = async (): Promise<void> => {
 
   mergeBattles(archive, collected, true);
   archive.lastFetchAt = Date.now();
-
-  if (notice === "no-key") notice = "";
 };
 
 const applyInput = (profile: string, code: string): boolean => {
