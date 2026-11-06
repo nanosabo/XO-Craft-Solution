@@ -25,3 +25,4 @@ export { default as MinusIcon } from "./MinusIcon";
 export { default as ExternalIcon } from "./ExternalIcon";
 export { default as RefreshIcon } from "./RefreshIcon";
 export { default as CraftIcon } from "./CraftIcon";
+export { default as LogsIcon } from "./LogsIcon";

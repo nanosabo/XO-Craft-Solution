@@ -22,6 +22,9 @@ import aboutPageEn from "./en/aboutPage.json";
 import updaterRu from "./ru/updater.json";
 import updaterEn from "./en/updater.json";
 
+import logsPageRu from "./ru/logsPage.json";
+import logsPageEn from "./en/logsPage.json";
+
 export const resources = {
   en: {
     loaderPage: loaderPageEn,
@@ -32,6 +35,7 @@ export const resources = {
     settingsPage: settingsPageEn,
     aboutPage: aboutPageEn,
     updater: updaterEn,
+    logsPage: logsPageEn,
   },
   ru: {
     loaderPage: loaderPageRu,
@@ -42,5 +46,6 @@ export const resources = {
     settingsPage: settingsPageRu,
     aboutPage: aboutPageRu,
     updater: updaterRu,
+    logsPage: logsPageRu,
   },
 };

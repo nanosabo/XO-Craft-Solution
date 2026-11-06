@@ -1,0 +1,372 @@
+@import "@styles/theme";
+
+.root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-right: 8px;
+  padding-bottom: 24px;
+
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  -webkit-mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position:
+    0 -60px,
+    0 0;
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  mask-repeat: no-repeat;
+  mask-position:
+    0 -60px,
+    0 0;
+  mask-composite: intersect;
+  transition:
+    -webkit-mask-position 0.2s ease-in-out,
+    mask-position 0.2s ease-in-out;
+
+  &.fadeTop {
+    -webkit-mask-position:
+      0 0,
+      0 0;
+    mask-position:
+      0 0,
+      0 0;
+  }
+
+  &.fadeBottom {
+    -webkit-mask-position:
+      0 -60px,
+      0 -60px;
+    mask-position:
+      0 -60px,
+      0 -60px;
+  }
+
+  &.fadeTop.fadeBottom {
+    -webkit-mask-position:
+      0 0,
+      0 -60px;
+    mask-position:
+      0 0,
+      0 -60px;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 4px solid rgba($primary, 0.5);
+    border-radius: 8px;
+  }
+}
+
+.heading {
+  padding-top: 2px;
+
+  h1 {
+    @include h1;
+  }
+
+  p {
+    margin-top: 6px;
+    color: $default;
+    @include body;
+  }
+}
+
+.card {
+  padding: 18px 20px;
+  background: rgba(22, 25, 27, 0.75);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.cardHeader {
+  margin-bottom: 14px;
+
+  h2 {
+    @include h2;
+  }
+
+  p {
+    margin-top: 4px;
+    color: $default;
+    @include caption;
+  }
+}
+
+.keyRow,
+.uploadRow,
+.filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.keyRow {
+  align-items: center;
+
+  > :first-child {
+    flex: 1;
+    min-width: 260px;
+  }
+}
+
+.uploadRow {
+  > :nth-child(2) {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 130px;
+
+  span {
+    color: $default;
+    @include caption;
+  }
+}
+
+.mapField {
+  flex: 1;
+  min-width: 180px;
+}
+
+.date {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  color: $white;
+  background-color: rgba($input, 0.5);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 8px;
+  color-scheme: dark;
+  @include body;
+
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+
+  &:focus {
+    outline: none;
+    background-color: rgba($primary, 0.1);
+    border-color: $primary;
+  }
+
+  &::-webkit-calendar-picker-indicator {
+    opacity: 0.7;
+    filter: invert(1);
+    cursor: pointer;
+  }
+}
+
+.primaryButton,
+.secondaryButton,
+.fileButton {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 8px;
+  @include body;
+  white-space: nowrap;
+
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
+}
+
+.primaryButton {
+  color: $white;
+  background: $primary;
+  border: 1px solid transparent;
+
+  &:hover:not(:disabled) {
+    background: #1a86ff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.secondaryButton {
+  color: $white;
+  background: transparent;
+  border: 1px solid rgba($white, 0.15);
+
+  &:hover {
+    border-color: $primary;
+  }
+}
+
+.fileButton {
+  flex: 1;
+  min-width: 220px;
+  color: $white;
+  background: rgba($input, 0.5);
+  border: 1px solid rgba($white, 0.1);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    border-color: $primary;
+  }
+}
+
+.keyConfigured {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $default;
+  @include caption;
+
+  span::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: #0ac59a;
+    vertical-align: middle;
+  }
+}
+
+.linkButton {
+  padding: 0;
+  color: $primary;
+  background: none;
+  border: none;
+  font: inherit;
+  text-decoration: underline;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.error {
+  margin-top: 10px;
+  color: #ff5a5a;
+  @include caption;
+}
+
+.success {
+  margin-top: 10px;
+  color: #0ac59a;
+  @include caption;
+}
+
+.empty {
+  margin-top: 16px;
+  color: $default;
+  @include body;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.summaryCard {
+  padding: 12px 14px;
+  background: rgba($white, 0.03);
+  border: 1px solid rgba($white, 0.06);
+  border-radius: 10px;
+
+  span {
+    display: block;
+    color: $default;
+    @include caption;
+  }
+
+  strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 600;
+  }
+}
+
+.tableWrap {
+  margin-top: 16px;
+  overflow-x: auto;
+  border: 1px solid rgba($white, 0.06);
+  border-radius: 10px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  @include caption;
+
+  th,
+  td {
+    padding: 9px 12px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    color: $default;
+    font-weight: 500;
+    background: rgba($secondary, 0.95);
+  }
+
+  tbody tr {
+    border-top: 1px solid rgba($white, 0.05);
+
+    &:hover {
+      background: rgba($white, 0.03);
+    }
+  }
+
+  td {
+    color: rgba($white, 0.85);
+  }
+}
+
+.win {
+  color: #0ac59a !important;
+}
+
+.loss {
+  color: #ff5a5a !important;
+}
+
+.mapCell {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.weaponCell {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

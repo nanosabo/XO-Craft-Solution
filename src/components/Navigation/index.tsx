@@ -1,5 +1,11 @@
 import NavLink from "@src/ui/NavLink";
-import { HomeIcon, InfoIcon, MarketIcon, SettingsIcon } from "@src/ui/icons";
+import {
+  HomeIcon,
+  InfoIcon,
+  LogsIcon,
+  MarketIcon,
+  SettingsIcon,
+} from "@src/ui/icons";
 import styles from "./styles/Navigation.module.scss";
 import { useTranslation } from "react-i18next";
 
@@ -18,6 +24,11 @@ const links = [
     href: "/market",
     icon: <MarketIcon />,
     key: "market",
+  },
+  {
+    href: "/logs",
+    icon: <LogsIcon />,
+    key: "logs",
   },
   {
     href: "/about",

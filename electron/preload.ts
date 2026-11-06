@@ -6,6 +6,10 @@ import type {
   UpdateMode,
   UpdateState,
 } from "@src/store/slices/updater.slice";
+import type {
+  CrossoutFetchBattlesParams,
+  CrossoutUploadLogParams,
+} from "@src/types/crossout";
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld("ipcRenderer", withPrototype(ipcRenderer));
@@ -50,6 +54,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getLogPath: () => ipcRenderer.invoke("get-log-path"),
   openLogsFolder: () => ipcRenderer.invoke("open-logs-folder"),
   copyText: (text: string) => ipcRenderer.invoke("copy-text", text),
+  crossoutHasApiKey: () => ipcRenderer.invoke("crossout-has-api-key"),
+  crossoutSetApiKey: (apiKey: string) =>
+    ipcRenderer.invoke("crossout-set-api-key", apiKey),
+  crossoutClearApiKey: () => ipcRenderer.invoke("crossout-clear-api-key"),
+  crossoutFetchBattles: (params: CrossoutFetchBattlesParams) =>
+    ipcRenderer.invoke("crossout-fetch-battles", params),
+  crossoutUploadLog: (params: CrossoutUploadLogParams) =>
+    ipcRenderer.invoke("crossout-upload-log", params),
+  crossoutPickLog: () => ipcRenderer.invoke("crossout-pick-log"),
 });
 
 // `exposeInMainWorld` can't detect attributes and methods of `prototype`, manually patching it.

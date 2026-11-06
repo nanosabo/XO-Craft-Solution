@@ -78,5 +78,15 @@ interface Window {
     getLogPath(): Promise<string | null>;
     openLogsFolder(): Promise<boolean>;
     copyText(text: string): Promise<boolean>;
+    crossoutHasApiKey(): Promise<boolean>;
+    crossoutSetApiKey(apiKey: string): Promise<boolean>;
+    crossoutClearApiKey(): Promise<boolean>;
+    crossoutFetchBattles(
+      params: import("@src/types/crossout").CrossoutFetchBattlesParams,
+    ): Promise<import("@src/types/crossout").CrossoutBattlesResult>;
+    crossoutUploadLog(
+      params: import("@src/types/crossout").CrossoutUploadLogParams,
+    ): Promise<import("@src/types/crossout").CrossoutUploadLogResult>;
+    crossoutPickLog(): Promise<string | null>;
   };
 }

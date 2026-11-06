@@ -42,6 +42,17 @@ import {
   startDownload,
 } from "./updateManager";
 import type { UpdateMode } from "@src/store/slices/updater.slice";
+import type {
+  CrossoutFetchBattlesParams,
+  CrossoutUploadLogParams,
+} from "@src/types/crossout";
+import {
+  clearCrossoutApiKey,
+  fetchCrossoutBattles,
+  getCrossoutApiKey,
+  saveCrossoutApiKey,
+  uploadCrossoutLog,
+} from "./crossoutInfo";
 import locales from "./locales.json";
 import axios from "axios";
 
@@ -361,6 +372,57 @@ ipcMain.handle("open-logs-folder", async () => {
 ipcMain.handle("copy-text", (_, text: string) => {
   clipboard.writeText(String(text ?? ""));
   return true;
+});
+
+ipcMain.handle("crossout-has-api-key", () => {
+  return getCrossoutApiKey() !== null;
+});
+
+ipcMain.handle("crossout-set-api-key", (_, apiKey: string) => {
+  return saveCrossoutApiKey(String(apiKey ?? ""));
+});
+
+ipcMain.handle("crossout-clear-api-key", () => {
+  return clearCrossoutApiKey();
+});
+
+ipcMain.handle(
+  "crossout-fetch-battles",
+  (_, params: CrossoutFetchBattlesParams) => {
+    return fetchCrossoutBattles(params);
+  },
+);
+
+ipcMain.handle(
+  "crossout-upload-log",
+  (_, params: CrossoutUploadLogParams) => {
+    return uploadCrossoutLog(params);
+  },
+);
+
+ipcMain.handle("crossout-pick-log", async () => {
+  const options: OpenDialogOptions = {
+    title: locales[lang].crossout.pick,
+    properties: ["openFile"],
+    filters: [
+      {
+        name: locales[lang].crossout.filter,
+        extensions: ["log", "txt"],
+      },
+      {
+        name: locales[lang].crossout.all,
+        extensions: ["*"],
+      },
+    ],
+  };
+
+  const result = win
+    ? await dialog.showOpenDialog(win, options)
+    : await dialog.showOpenDialog(options);
+
+  if (result.canceled || result.filePaths.length === 0) return null;
+
+  return result.filePaths[0];
 });
 
 ipcMain.on(
