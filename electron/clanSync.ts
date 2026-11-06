@@ -442,15 +442,23 @@ const ensureRelays = (room: string): void => {
   if (activeRoom === room && relays.length > 0) return;
 
   stopRelays();
-  activeRoom = room;
-  relays = RELAYS.map(
+
+  const next = RELAYS.map(
     (url) =>
       new Relay(url, onRelayEvent, emit, () => {
         scheduleWant();
       }),
   );
 
-  for (const relay of relays) relay.start(room);
+  try {
+    for (const relay of next) relay.start(room);
+  } catch (error) {
+    for (const relay of next) relay.stop();
+    throw error;
+  }
+
+  relays = next;
+  activeRoom = room;
 };
 
 const refreshProfile = async (): Promise<void> => {
