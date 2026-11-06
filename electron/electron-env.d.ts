@@ -93,6 +93,7 @@ interface Window {
     crossoutLoadLogTable(
       logId: string,
       type: string,
+      expectedBattles?: number,
     ): Promise<import("@src/types/crossout").CrossoutLogTableResult>;
     crossoutHistoryList(): Promise<
       import("@src/types/crossout").CrossoutLogHistoryEntry[]

@@ -12,7 +12,8 @@ import {
 } from "@src/types/crossout";
 import styles from "@src/containers/Logs/styles/Logs.module.scss";
 
-const SITE_URL = "https://crossout-info.com";
+const SITE_URL_RU = "https://crossout-info.com";
+const SITE_URL_EN = "https://en.crossout-info.com";
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
@@ -29,7 +30,13 @@ type ResultError = {
 };
 
 const StarDefs = () => (
-  <svg className={styles.starDefs} width="0" height="0" aria-hidden="true">
+  <svg
+    className={styles.starDefs}
+    width="0"
+    height="0"
+    viewBox="0 0 20 20"
+    aria-hidden="true"
+  >
     <defs>
       <linearGradient id="xocs-grad-orange" x1="0" x2="100%" y1="0" y2="0">
         <stop offset="0%" stopColor="gray" />
@@ -105,14 +112,18 @@ const LogsResult = () => {
   const [logTableLoading, setLogTableLoading] = useState(false);
   const [logTableError, setLogTableError] = useState<ResultError | null>(null);
 
-  const loadLogType = useCallback(async (id: string, slug: string) => {
+  const loadLogType = useCallback(async (id: string, slug: string, expectedBattles = 0) => {
     setLogType(slug);
     setLogTable(null);
     setLogTableError(null);
     setLogTableLoading(true);
 
     try {
-      const result = await window.electronAPI.crossoutLoadLogTable(id, slug);
+      const result = await window.electronAPI.crossoutLoadLogTable(
+        id,
+        slug,
+        expectedBattles,
+      );
 
       if (result.ok) {
         setLogTable(result.table);
@@ -163,7 +174,7 @@ const LogsResult = () => {
           const firstType = result.summary.types[0];
 
           if (firstType) {
-            void loadLogType(logId, firstType.key);
+            void loadLogType(logId, firstType.key, firstType.count);
           }
         } else {
           setError({
@@ -337,7 +348,7 @@ const LogsResult = () => {
             className={styles.linkButton}
             onClick={() =>
               void window.electronAPI.openExternal(
-                `${SITE_URL}/log/${summary.logId}`,
+                `${isRu ? SITE_URL_RU : SITE_URL_EN}/log/${summary.logId}`,
               )
             }
           >
@@ -362,7 +373,9 @@ const LogsResult = () => {
                 className={classNames(styles.logTab, {
                   [styles.logTabActive]: logType === type.key,
                 })}
-                onClick={() => void loadLogType(summary.logId, type.key)}
+                onClick={() =>
+                  void loadLogType(summary.logId, type.key, type.count)
+                }
               >
                 <span>{logTypeLabel(type.key, type.label)}</span>
                 <span className={styles.logTabCount}>{type.count}</span>

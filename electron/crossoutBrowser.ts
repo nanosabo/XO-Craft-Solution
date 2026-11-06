@@ -49,6 +49,13 @@ const getWindow = (): BrowserWindow => {
 
   created.webContents.setUserAgent(USER_AGENT);
   created.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+
+  try {
+    created.webContents.debugger.attach("1.3");
+  } catch {
+    // The fallback readPage path still works for regular pages.
+  }
+
   created.on("closed", () => {
     if (browserWindow === created) {
       browserWindow = null;
@@ -60,18 +67,57 @@ const getWindow = (): BrowserWindow => {
   return created;
 };
 
+/**
+ * Drops the hidden window. A stalled API response keeps the underlying
+ * connection open, which blocks the next navigation for tens of seconds, so a
+ * truncated response is handled by recreating the window (the persistent
+ * session keeps the anti-bot cookies).
+ */
+const resetWindow = (win: BrowserWindow): void => {
+  if (browserWindow === win) {
+    browserWindow = null;
+  }
+
+  if (!win.isDestroyed()) {
+    win.destroy();
+  }
+};
+
 interface PageState extends CrossoutPage {
   ready: boolean;
 }
 
+const readPageScript = `({
+  title: document.title || "",
+  text: document.body ? document.body.innerText || "" : "",
+  ready: document.readyState !== "loading"
+})`;
+
 const readPage = async (win: BrowserWindow): Promise<PageState> => {
+  const debuggerApi = win.webContents.debugger;
+
+  // webContents.executeJavaScript waits for the document to finish loading.
+  // The English mirror stalls on large API responses, so the document stays in
+  // the "loading" state for tens of seconds even though the body is already
+  // readable. The DevTools protocol can evaluate in the page immediately.
+  if (debuggerApi.isAttached()) {
+    try {
+      const response = (await debuggerApi.sendCommand("Runtime.evaluate", {
+        expression: readPageScript,
+        returnByValue: true,
+      })) as { result?: { value?: PageState } };
+
+      if (response.result?.value) {
+        return response.result.value;
+      }
+    } catch {
+      // Fall back to executeJavaScript below.
+    }
+  }
+
   try {
     return (await win.webContents.executeJavaScript(
-      `({
-        title: document.title || "",
-        text: document.body ? document.body.innerText || "" : "",
-        ready: document.readyState === "complete"
-      })`,
+      readPageScript,
       true,
     )) as PageState;
   } catch {
@@ -87,15 +133,83 @@ const isChallenge = (page: CrossoutPage): boolean => {
   );
 };
 
-const waitForPage = async (win: BrowserWindow): Promise<CrossoutPage> => {
+const waitForPage = async (
+  win: BrowserWindow,
+  url: string,
+): Promise<CrossoutPage> => {
   const startedAt = Date.now();
   let last: PageState = { title: "", text: "", ready: false };
+  let lastLength = -1;
+  let stableCount = 0;
+
+  const samePage = (current: string): boolean => {
+    try {
+      const currentUrl = new URL(current);
+      const targetUrl = new URL(url);
+
+      return (
+        currentUrl.origin === targetUrl.origin &&
+        currentUrl.pathname.replace(/\/+$/, "") ===
+          targetUrl.pathname.replace(/\/+$/, "")
+      );
+    } catch {
+      return false;
+    }
+  };
 
   while (Date.now() - startedAt < LOAD_TIMEOUT) {
-    last = await readPage(win);
+    // A failed navigation leaves the previous page in the window. Do not read
+    // it as the requested page: that would silently return data from another
+    // host or another log.
+    if (samePage(win.webContents.getURL())) {
+      last = await readPage(win);
 
-    if (last.ready && last.text.trim() && !isChallenge(last)) {
-      return { title: last.title, text: last.text };
+      const text = last.text.trim();
+      const isJson = text.startsWith("{") || text.startsWith("[");
+
+      // API responses are rendered as a JSON text document. A complete JSON
+      // body can be used before the browser marks the document as loaded.
+      if (isJson && (text.endsWith("}") || text.endsWith("]"))) {
+        return { title: last.title, text: last.text };
+      }
+
+      const canRead = Boolean(text) && !isChallenge(last);
+
+      // Both the English mirror and some of its HTML pages can keep the
+      // document in the "loading" state for tens of seconds after the body is
+      // already readable (a stalled subresource or API stream). Treat a body
+      // that stopped growing as complete instead of waiting for the timeout.
+      if (canRead) {
+        if (text.length === lastLength) {
+          stableCount += 1;
+        } else {
+          lastLength = text.length;
+          stableCount = 0;
+        }
+
+        if (stableCount >= 6) {
+          if (isJson) {
+            resetWindow(win);
+          } else {
+            win.webContents.stop();
+          }
+
+          return { title: last.title, text: last.text };
+        }
+      } else {
+        lastLength = -1;
+        stableCount = 0;
+      }
+
+      if (last.ready && canRead) {
+        if (isJson) {
+          resetWindow(win);
+        } else {
+          win.webContents.stop();
+        }
+
+        return { title: last.title, text: last.text };
+      }
     }
 
     await sleep(POLL_INTERVAL);
@@ -107,14 +221,16 @@ const waitForPage = async (win: BrowserWindow): Promise<CrossoutPage> => {
 const load = async (url: string): Promise<CrossoutPage> => {
   const win = getWindow();
 
-  try {
-    await win.loadURL(url);
-  } catch {
-    // The anti-bot page can abort the first navigation and reload itself.
-    // The polling loop below waits for the final page.
-  }
+  // Abort a previous navigation that may still be streaming (the English
+  // mirror stalls on large API responses) before starting the next one.
+  win.webContents.stop();
 
-  return waitForPage(win);
+  // Do not await loadURL: it resolves only after the whole response has been
+  // received, and the English mirror can stall for tens of seconds on large
+  // API responses. The polling loop below decides when the page is usable.
+  void win.loadURL(url).catch(() => {});
+
+  return waitForPage(win, url);
 };
 
 const enqueue = <T>(task: () => Promise<T>): Promise<T> => {

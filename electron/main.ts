@@ -402,25 +402,30 @@ ipcMain.handle("crossout-clear-api-key", () => {
 ipcMain.handle(
   "crossout-fetch-battles",
   (_, params: CrossoutFetchBattlesParams) => {
-    return fetchCrossoutBattles(params);
+    return fetchCrossoutBattles(params, lang);
   },
 );
 
 ipcMain.handle(
   "crossout-upload-log",
   (_, params: CrossoutUploadLogParams) => {
-    return uploadCrossoutLog(params);
+    return uploadCrossoutLog(params, lang);
   },
 );
 
 ipcMain.handle("crossout-load-log", (_, logId: string) => {
-  return loadCrossoutLog(String(logId ?? ""));
+  return loadCrossoutLog(String(logId ?? ""), lang);
 });
 
 ipcMain.handle(
   "crossout-load-log-table",
-  (_, logId: string, type: string) => {
-    return loadCrossoutLogTable(String(logId ?? ""), String(type ?? ""));
+  (_, logId: string, type: string, expectedBattles?: number) => {
+    return loadCrossoutLogTable(
+      String(logId ?? ""),
+      String(type ?? ""),
+      lang,
+      Number(expectedBattles) || 0,
+    );
   },
 );
 
@@ -799,7 +804,11 @@ const onUpdate = async () => {
 };
 
 ipcMain.on("lang", (_, language) => {
-  lang = language;
+  lang = String(language ?? "")
+    .toLowerCase()
+    .startsWith("ru")
+    ? "ru"
+    : "en";
 });
 
 ipcMain.handle(

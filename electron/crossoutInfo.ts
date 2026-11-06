@@ -15,6 +15,7 @@ import {
   type CrossoutLogStat,
   type CrossoutLogStatRow,
   type CrossoutLogSummaryResult,
+  type CrossoutLogTable,
   type CrossoutLogTableResult,
   type CrossoutUploadLogParams,
   type CrossoutUploadLogResult,
@@ -23,11 +24,41 @@ import {
   extractCrossoutPage,
   loadCrossoutPage,
 } from "./crossoutBrowser";
+import {
+  translateCrossoutWeaponName,
+  translateCrossoutWeaponNameToEnglish,
+} from "./crossoutNames";
 
-const BASE_URLS = [
-  "https://crossout-info.com",
-  "https://en.crossout-info.com",
-];
+const RU_HOST = "https://crossout-info.com";
+const EN_HOST = "https://en.crossout-info.com";
+
+export type CrossoutLanguage = "ru" | "en";
+
+type WeaponTranslator = (name: string) => Promise<string>;
+
+/**
+ * The English interface prefers the English subdomain, but its battle API
+ * truncates responses larger than ~256 KB, so the Russian host is kept as a
+ * fallback. The Russian interface prefers the main domain and falls back to the
+ * English mirror when the main domain is unavailable.
+ */
+const getBaseUrls = (language: CrossoutLanguage): string[] =>
+  language === "en" ? [EN_HOST, RU_HOST] : [RU_HOST, EN_HOST];
+
+const getWeaponTranslator = (
+  language: CrossoutLanguage,
+  baseUrl: string,
+): WeaponTranslator | null => {
+  if (language === "ru" && baseUrl === EN_HOST) {
+    return translateCrossoutWeaponName;
+  }
+
+  if (language === "en" && baseUrl === RU_HOST) {
+    return translateCrossoutWeaponNameToEnglish;
+  }
+
+  return null;
+};
 const API_VERSION = "api_ver1";
 const UPLOAD_TIMEOUT = 120_000;
 const MAX_RANGE_DAYS = 7;
@@ -326,8 +357,83 @@ const shouldTryNextHost = (error: unknown): boolean => {
   return [403, 429, 500, 502, 503, 504].includes(error.response.status);
 };
 
+const translateBattles = async (
+  battles: CrossoutBattle[],
+  translate: WeaponTranslator,
+): Promise<CrossoutBattle[]> => {
+  const unique = new Set(
+    battles.map((battle) => battle.weapon).filter((weapon) => Boolean(weapon)),
+  );
+  const translations = new Map<string, string>();
+
+  for (const weapon of unique) {
+    translations.set(weapon, await translate(weapon));
+  }
+
+  return battles.map((battle) => {
+    const translated = translations.get(battle.weapon);
+
+    return translated && translated !== battle.weapon
+      ? { ...battle, weapon: translated }
+      : battle;
+  });
+};
+
+const translateLogStatRow = async (
+  row: CrossoutLogStatRow,
+  translate: WeaponTranslator,
+): Promise<CrossoutLogStatRow> => {
+  if (row.kind !== "weapon") return row;
+
+  const cells = row.cells.length > 0 ? [...row.cells] : [];
+
+  if (cells[0]) {
+    cells[0] = await translate(cells[0]);
+  }
+
+  return {
+    ...row,
+    name: await translate(row.name),
+    weapon: await translate(row.weapon || row.name),
+    cells,
+  };
+};
+
+const translateLogTable = async (
+  table: CrossoutLogTable,
+  translate: WeaponTranslator,
+): Promise<CrossoutLogTable> => {
+  const stats = table.stats
+    ? {
+        ...table.stats,
+        rows: await Promise.all(
+          table.stats.rows.map((row) => translateLogStatRow(row, translate)),
+        ),
+      }
+    : null;
+
+  const rows = await Promise.all(
+    table.rows.map(async (row) => ({
+      ...row,
+      cells: await Promise.all(
+        row.cells.map(async (cell) =>
+          cell.weapon
+            ? {
+                ...cell,
+                weapon: await translate(cell.weapon),
+              }
+            : cell,
+        ),
+      ),
+    })),
+  );
+
+  return { ...table, stats, rows };
+};
+
 export const fetchCrossoutBattles = async (
   params: CrossoutFetchBattlesParams,
+  language: CrossoutLanguage = "ru",
 ): Promise<CrossoutBattlesResult> => {
   const apiKey = getCrossoutApiKey();
 
@@ -377,7 +483,7 @@ export const fetchCrossoutBattles = async (
 
   let lastError: unknown = null;
 
-  for (const baseUrl of BASE_URLS) {
+  for (const baseUrl of getBaseUrls(language)) {
     try {
       const page = await loadCrossoutPage(`${baseUrl}/${path}`);
       const text = page.text.trim();
@@ -410,7 +516,14 @@ export const fetchCrossoutBattles = async (
         continue;
       }
 
-      return normalizeResponse(data);
+      const result = normalizeResponse(data);
+      const translate = getWeaponTranslator(language, baseUrl);
+
+      if (!translate) return result;
+
+      const battles = await translateBattles(result.battles, translate);
+
+      return { ...result, battles };
     } catch (error) {
       lastError = error;
     }
@@ -433,6 +546,7 @@ const timezoneOffset = (): string => {
 
 export const uploadCrossoutLog = async (
   params: CrossoutUploadLogParams,
+  language: CrossoutLanguage = "ru",
 ): Promise<CrossoutUploadLogResult> => {
   const filePath = params.filePath.trim();
 
@@ -471,7 +585,7 @@ export const uploadCrossoutLog = async (
 
   let lastError: unknown = null;
 
-  for (const baseUrl of BASE_URLS) {
+  for (const baseUrl of getBaseUrls(language)) {
     const form = new FormData();
 
     form.append("file", file, {
@@ -848,6 +962,7 @@ const normalizeLogStat = (value: unknown): CrossoutLogStat | null => {
 
 export const loadCrossoutLog = async (
   logId: string,
+  language: CrossoutLanguage = "ru",
 ): Promise<CrossoutLogSummaryResult> => {
   const id = logId.trim();
 
@@ -860,7 +975,7 @@ export const loadCrossoutLog = async (
 
   let lastError: unknown = null;
 
-  for (const baseUrl of BASE_URLS) {
+  for (const baseUrl of getBaseUrls(language)) {
     try {
       const page = await extractCrossoutPage<RawLogSummary>(
         `${baseUrl}/log/${id}`,
@@ -916,6 +1031,8 @@ export const loadCrossoutLog = async (
 export const loadCrossoutLogTable = async (
   logId: string,
   type: string,
+  language: CrossoutLanguage = "ru",
+  expectedBattles = 0,
 ): Promise<CrossoutLogTableResult> => {
   const id = logId.trim();
   const slug = type.trim().toLowerCase();
@@ -926,7 +1043,7 @@ export const loadCrossoutLogTable = async (
 
   let lastError: unknown = null;
 
-  for (const baseUrl of BASE_URLS) {
+  for (const baseUrl of getBaseUrls(language)) {
     try {
       const page = await extractCrossoutPage<RawLogTable>(
         `${baseUrl}/log/${id}/${slug}`,
@@ -956,14 +1073,37 @@ export const loadCrossoutLogTable = async (
         .map(normalizeLogRow)
         .filter((row): row is CrossoutLogRow => row !== null);
 
+      // The English mirror occasionally returns a truncated log table (for
+      // example, the last battle is missing) and caches it. The log summary
+      // knows how many battles the type contains, so use that to reject an
+      // incomplete table and retry on the next host.
+      if (expectedBattles > 0) {
+        const battles = new Set(
+          rows
+            .map((row) => row.battle?.index)
+            .filter((index): index is number => Boolean(index)),
+        );
+
+        if (battles.size < expectedBattles) {
+          lastError = new CrossoutServiceError(
+            "unexpected-response",
+            "Сервис вернул неполную таблицу боя.",
+          );
+          continue;
+        }
+      }
+
+      const table: CrossoutLogTable = {
+        type: slug,
+        date: asString(page.value.date),
+        stats: normalizeLogStat(page.value.stats),
+        rows,
+      };
+      const translate = getWeaponTranslator(language, baseUrl);
+
       return {
         ok: true,
-        table: {
-          type: slug,
-          date: asString(page.value.date),
-          stats: normalizeLogStat(page.value.stats),
-          rows,
-        },
+        table: translate ? await translateLogTable(table, translate) : table,
       };
     } catch (error) {
       lastError = error;

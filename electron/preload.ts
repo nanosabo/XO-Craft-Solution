@@ -64,8 +64,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("crossout-upload-log", params),
   crossoutLoadLog: (logId: string) =>
     ipcRenderer.invoke("crossout-load-log", logId),
-  crossoutLoadLogTable: (logId: string, type: string) =>
-    ipcRenderer.invoke("crossout-load-log-table", logId, type),
+  crossoutLoadLogTable: (logId: string, type: string, expectedBattles?: number) =>
+    ipcRenderer.invoke(
+      "crossout-load-log-table",
+      logId,
+      type,
+      expectedBattles,
+    ),
   crossoutHistoryList: () => ipcRenderer.invoke("crossout-history-list"),
   crossoutHistorySave: (
     entry: import("@src/types/crossout").CrossoutLogHistoryInput,
