@@ -3,19 +3,22 @@ import { useAppDispatch, useAppSelector } from "@src/store/store";
 import {
   selectSettingsState,
   setAutoUpdate,
+  setStartScreen,
 } from "@src/store/slices/settings.slice";
 import useAppVersion from "./useAppVersion";
 import AboutSection from "./general/AboutSection";
 import DataSection from "./general/DataSection";
 import LanguageSection from "./general/LanguageSection";
 import LogsPathSection from "./general/LogsPathSection";
+import StartScreenSection from "./general/StartScreenSection";
 import UpdatesSection from "./general/UpdatesSection";
 import styles from "./styles/Settings.module.scss";
 
 const GeneralSettings = () => {
   const { t, i18n } = useTranslation("settingsPage");
   const dispatch = useAppDispatch();
-  const { autoUpdate, crossoutLogsPath } = useAppSelector(selectSettingsState);
+  const { autoUpdate, crossoutLogsPath, startScreen } =
+    useAppSelector(selectSettingsState);
   const version = useAppVersion();
 
   const language = i18n.language.startsWith("ru") ? "ru" : "en";
@@ -33,6 +36,11 @@ const GeneralSettings = () => {
       </div>
 
       <LanguageSection language={language} onChange={changeLanguage} />
+
+      <StartScreenSection
+        startScreen={startScreen}
+        onChange={(screen) => dispatch(setStartScreen(screen))}
+      />
 
       <LogsPathSection logsPath={crossoutLogsPath} />
 

@@ -9,7 +9,7 @@
   },
   "general": {
     "title": "General settings",
-    "subtitle": "Interface language, Crossout logs, updates and app data.",
+    "subtitle": "Interface language, start screen, Crossout logs, updates and app data.",
     "logs": {
       "title": "Crossout logs",
       "subtitle": "The folder that contains combat.log. Use it when the app cannot find the logs on its own.",
@@ -24,6 +24,13 @@
       "subtitle": "Applies to every section of the app.",
       "ru": "Русский",
       "en": "English"
+    },
+    "startScreen": {
+      "title": "Start screen",
+      "subtitle": "What opens after loading. Craft is the main page, Stats is Battles.",
+      "craft": "Craft",
+      "market": "Market",
+      "stats": "Stats"
     },
     "updates": {
       "title": "Updates",
@@ -60,7 +67,7 @@
       "clearCacheHint": "Resets market filters, recipes, required parts and the last solution. Inventory settings are kept.",
       "clearCacheConfirm": "Clear the data cache? The app will restart.",
       "reset": "Reset all settings",
-      "resetHint": "Restores the inventory, analog criteria and notifications to their defaults.",
+      "resetHint": "Restores the inventory, analog criteria, notifications and start screen to their defaults.",
       "resetConfirm": "Reset all settings? This cannot be undone."
     },
     "about": {

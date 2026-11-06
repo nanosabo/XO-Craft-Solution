@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { isStartScreen, type StartScreen } from "@src/helpers/startScreen";
 import { RootState } from "../store";
 
 export type NotificationSignal = "coins" | "radar" | "soft" | "custom";
@@ -25,6 +26,8 @@ export interface SettingsState {
   autoUpdate: boolean;
   /** Folder that contains combat.log, or the log file itself. */
   crossoutLogsPath: string | null;
+  /** Page opened after the first load. */
+  startScreen: StartScreen;
 }
 
 export const SETTINGS_STORAGE_KEY = "settings";
@@ -46,6 +49,7 @@ export const createDefaultSettings = (): SettingsState => ({
   },
   autoUpdate: true,
   crossoutLogsPath: null,
+  startScreen: "craft",
 });
 
 const loadSettings = (): SettingsState => {
@@ -85,6 +89,9 @@ const loadSettings = (): SettingsState => {
       ...defaults,
       ...parsed,
       crossoutLogsPath: logsPath || null,
+      startScreen: isStartScreen(parsed.startScreen)
+        ? parsed.startScreen
+        : defaults.startScreen,
       inventory:
         parsed.inventory && typeof parsed.inventory === "object"
           ? parsed.inventory
@@ -170,6 +177,12 @@ export const settingsSlice = createSlice({
       state.crossoutLogsPath = value || null;
       saveSettings(state);
     },
+    setStartScreen(state, action: PayloadAction<StartScreen>) {
+      if (!isStartScreen(action.payload)) return;
+
+      state.startScreen = action.payload;
+      saveSettings(state);
+    },
     resetSettings() {
       const defaults = createDefaultSettings();
       saveSettings(defaults);
@@ -188,6 +201,7 @@ export const {
   setNotificationSettings,
   setAutoUpdate,
   setCrossoutLogsPath,
+  setStartScreen,
   resetSettings,
 } = settingsSlice.actions;
 

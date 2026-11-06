@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { logError } from "@src/helpers/errorLog";
 import { getLastAppRoute } from "@src/helpers/lastRoute";
+import { startScreenPath } from "@src/helpers/startScreen";
 import { RootState } from "../store";
 import { NavigateFunction } from "react-router-dom";
 import { setAppLoadedStatus } from "./app.slice";
@@ -188,7 +189,7 @@ const initialState: MarketState = {
 
 export const fetchData = createAsyncThunk(
   "market/fetch",
-  async (navigate: NavigateFunction | null, { dispatch }) => {
+  async (navigate: NavigateFunction | null, { dispatch, getState }) => {
     try {
       const own_recipes_json = localStorage.getItem("own");
       const own_recipes = own_recipes_json ? JSON.parse(own_recipes_json) : {};
@@ -203,7 +204,15 @@ export const fetchData = createAsyncThunk(
 
       dispatch(setAppLoadedStatus());
       if (navigate) {
-        navigate("/");
+        const hashPath =
+          window.location.hash.replace(/^#/, "").split("?")[0] || "/";
+
+        // A link opened while data was loading already chose the page.
+        if (hashPath === "/loading" || hashPath === "/") {
+          const screen = (getState() as RootState).settings.startScreen;
+
+          navigate(startScreenPath(screen));
+        }
       }
       return data;
     } catch (error) {
