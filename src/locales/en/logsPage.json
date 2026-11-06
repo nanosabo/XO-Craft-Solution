@@ -272,7 +272,7 @@
   },
   "clan": {
     "title": "Clan stats",
-    "subtitle": "The same clan code collects links to clanmates' stats. Open someone else's and your rows are highlighted.",
+    "subtitle": "The same clan code collects stat links and one shared clanmate list, so a fuller profile fills in the people others are missing. Your rows are highlighted in someone else's stat.",
     "profile": "crossout-info profile",
     "profilePlaceholder": "https://crossout-info.com/pers/…",
     "code": "Clan code",

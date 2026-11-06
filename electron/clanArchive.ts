@@ -5,6 +5,7 @@ import type { ClanLog, ClanLogType, ClanMate } from "@src/types/clan";
 import { createSecretKey } from "./clanCrypto";
 
 const MAX_LOGS = 200;
+const MAX_MATES = 100;
 
 export interface ClanArchive {
   code: string;
@@ -156,6 +157,36 @@ const allowedNicks = (archive: ClanArchive): Set<string> => {
   if (archive.nickname.trim()) allowed.add(archive.nickname.trim().toLowerCase());
 
   return allowed;
+};
+
+/** Union of clanmate lists. A shorter profile page must not wipe people learned from others. */
+export const mergeMates = (archive: ClanArchive, incoming: unknown[]): number => {
+  const byId = new Map(archive.mates.map((mate) => [mate.profileId, mate]));
+  let added = 0;
+
+  for (const value of incoming) {
+    const mate = sanitizeMate(value);
+
+    if (!mate || mate.profileId === archive.profileId) continue;
+
+    const previous = byId.get(mate.profileId);
+
+    if (!previous) {
+      added += 1;
+      byId.set(mate.profileId, mate);
+      continue;
+    }
+
+    if (mate.nickname !== previous.nickname) {
+      byId.set(mate.profileId, mate);
+    }
+  }
+
+  archive.mates = [...byId.values()]
+    .sort((left, right) => left.nickname.localeCompare(right.nickname))
+    .slice(0, MAX_MATES);
+
+  return added;
 };
 
 export const mergeLogs = (

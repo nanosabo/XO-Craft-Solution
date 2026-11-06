@@ -4,6 +4,7 @@ import {
   ensureSecret,
   keepAllowedLogs,
   mergeLogs,
+  mergeMates,
   parseProfileId,
   readClanArchive,
   sameNick,
@@ -188,11 +189,22 @@ const publishEvent = (
   for (const relay of relays) relay.send(event);
 };
 
+const sharedMates = () => {
+  const mates = archive.mates.filter((mate) => mate.profileId !== archive.profileId);
+
+  if (archive.nickname && archive.profileId) {
+    mates.push({ nickname: archive.nickname, profileId: archive.profileId });
+  }
+
+  return mates;
+};
+
 const logsPayload = (logs: ClanLog[]) => ({
   v: 1,
   op: "logs" as const,
   nickname: archive.nickname,
   profileId: archive.profileId,
+  mates: sharedMates(),
   logs: logs.slice(0, 100),
 });
 
@@ -201,7 +213,7 @@ const publishOwn = (force: boolean): void => {
 
   const logs = ownLogs(archive);
 
-  if (logs.length === 0) return;
+  if (logs.length === 0 && sharedMates().length === 0) return;
 
   ensureSecret(archive);
 
@@ -225,7 +237,12 @@ const answerWant = (from: string): void => {
   const now = Date.now();
   const previous = wantCooldown.get(from) ?? 0;
 
-  if (now - previous < 60_000 || archive.logs.length === 0) return;
+  if (
+    now - previous < 60_000 ||
+    (archive.logs.length === 0 && archive.mates.length === 0)
+  ) {
+    return;
+  }
 
   wantCooldown.set(from, now);
   publishEvent(
@@ -270,12 +287,19 @@ const acceptPayload = (event: NostrEvent, payload: unknown): void => {
   const op = raw.op;
 
   if (op === "logs" || op === "give") {
+    const mates = Array.isArray(raw.mates) ? [...raw.mates] : [];
+
+    if (typeof raw.nickname === "string" && typeof raw.profileId === "string") {
+      mates.push({ nickname: raw.nickname, profileId: raw.profileId });
+    }
+
+    const matesAdded = mergeMates(archive, mates);
     const logs = (Array.isArray(raw.logs) ? raw.logs : [])
       .map(sanitizeLog)
       .filter((log): log is ClanLog => log !== null);
     const added = mergeLogs(archive, logs, false);
 
-    if (added > 0) persist();
+    if (added > 0 || matesAdded > 0) persist();
 
     return;
   }
@@ -494,7 +518,7 @@ const refreshProfile = async (): Promise<void> => {
     return;
   }
 
-  archive.mates = unique;
+  mergeMates(archive, unique);
 
   const nickname = page.value.nickname?.trim() ?? "";
 
