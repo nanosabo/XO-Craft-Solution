@@ -1434,6 +1434,21 @@
   box-shadow: inset 2px 0 0 #ff5a5a;
 }
 
+.logStatsPlayer.logMe td,
+.logStatsWeaponRow.logMe td {
+  background: rgba($primary, 0.24);
+}
+
+.logStatsPlayer.logMe td:first-child,
+.logStatsWeaponRow.logMe td:first-child {
+  box-shadow: inset 2px 0 0 $primary;
+}
+
+.logCell.logMeName {
+  background: rgba($primary, 0.28);
+  box-shadow: inset 0 0 0 1px $primary;
+}
+
 .logStatsWeaponRow td {
   color: rgba($white, 0.92);
 }

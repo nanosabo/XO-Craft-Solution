@@ -1,11 +1,10 @@
 import { app } from "electron";
 import fs from "node:fs";
 import path from "node:path";
-import type { ClanMate } from "@src/types/clan";
-import type { CrossoutBattle } from "@src/types/crossout";
+import type { ClanLog, ClanLogType, ClanMate } from "@src/types/clan";
 import { createSecretKey } from "./clanCrypto";
 
-const MAX_BATTLES = 8000;
+const MAX_LOGS = 200;
 
 export interface ClanArchive {
   code: string;
@@ -13,11 +12,8 @@ export interface ClanArchive {
   nickname: string;
   mates: ClanMate[];
   secretKey: string;
-  battles: CrossoutBattle[];
-  /** Keys of battles fetched with this install's own API key. */
-  ownKeys: string[];
-  /** Hash of the last payload published for each own day chunk. */
-  published: Record<string, string>;
+  logs: ClanLog[];
+  publishedHash: string;
   lastFetchAt: number;
   lastRepublish: number;
 }
@@ -33,47 +29,48 @@ const asNumber = (value: unknown): number => {
   return Number.isFinite(number) ? number : 0;
 };
 
-export const battleKey = (battle: CrossoutBattle): string =>
-  `${battle.nickname}\0${battle.battle_id}\0${battle.type}\0${battle.date}`;
+export const sameNick = (left: string, right: string): boolean => {
+  const a = left.trim().toLowerCase();
+  const b = right.trim().toLowerCase();
 
-export const battleDay = (battle: CrossoutBattle): string => {
-  const ms = battle.date > 10_000_000_000 ? battle.date : battle.date * 1000;
-
-  return new Date(ms).toISOString().slice(0, 10);
+  return Boolean(a) && a === b;
 };
 
-export const sanitizeBattle = (value: unknown): CrossoutBattle | null => {
+const sanitizeType = (value: unknown): ClanLogType | null => {
   if (!value || typeof value !== "object") return null;
 
-  const raw = value as Record<string, unknown>;
+  const raw = value as Partial<ClanLogType>;
+  const key = asString(raw.key).trim().toLowerCase();
+  const label = asString(raw.label).trim();
+  const count = Number(raw.count);
+
+  if (!/^[a-z0-9_-]{1,32}$/.test(key)) return null;
+  if (!Number.isFinite(count) || count <= 0) return null;
+
+  return { key, label: label || key, count };
+};
+
+export const sanitizeLog = (value: unknown): ClanLog | null => {
+  if (!value || typeof value !== "object") return null;
+
+  const raw = value as Partial<ClanLog>;
+  const logId = asString(raw.logId).trim();
   const nickname = asString(raw.nickname).trim();
-  const battleId = Number(raw.battle_id);
 
+  if (!/^[A-Za-z0-9_-]{4,64}$/.test(logId)) return null;
   if (!nickname || nickname.length > 40) return null;
-  if (!Number.isSafeInteger(battleId) || battleId < 0) return null;
 
-  const type = asString(raw.type).slice(0, 16);
-  const weapon = asString(raw.weapon).slice(0, 80);
-  const map = asString(raw.map).slice(0, 64);
+  const types = (Array.isArray(raw.types) ? raw.types : [])
+    .map(sanitizeType)
+    .filter((type): type is ClanLogType => type !== null);
 
   return {
+    logId,
     nickname,
-    important: asNumber(raw.important),
-    ur: asNumber(raw.ur),
-    damage: asNumber(raw.damage),
-    kill: asNumber(raw.kill),
-    death: asNumber(raw.death),
-    score: asNumber(raw.score),
-    tank: asNumber(raw.tank),
-    weapon,
-    win: asNumber(raw.win) > 0 ? 1 : asNumber(raw.win) < 0 ? -1 : 0,
-    party: asNumber(raw.party),
-    timebattle: asNumber(raw.timebattle),
-    type,
-    battle_id: battleId,
-    teams: asNumber(raw.teams),
-    map,
-    date: asNumber(raw.date),
+    title: asString(raw.title).trim().slice(0, 120),
+    types,
+    uploadedAt: Math.max(0, Math.trunc(asNumber(raw.uploadedAt))),
+    savedAt: Math.max(0, Math.trunc(asNumber(raw.savedAt))),
   };
 };
 
@@ -96,30 +93,28 @@ const emptyArchive = (): ClanArchive => ({
   nickname: "",
   mates: [],
   secretKey: "",
-  battles: [],
-  ownKeys: [],
-  published: {},
+  logs: [],
+  publishedHash: "",
   lastFetchAt: 0,
   lastRepublish: 0,
 });
 
+const logOrder = (log: ClanLog): number =>
+  log.uploadedAt > 0 ? log.uploadedAt : log.savedAt;
+
 export const readClanArchive = (): ClanArchive => {
   try {
-    const parsed: unknown = JSON.parse(
-      fs.readFileSync(archivePath(), "utf8"),
-    );
+    const parsed: unknown = JSON.parse(fs.readFileSync(archivePath(), "utf8"));
 
     if (!parsed || typeof parsed !== "object") return emptyArchive();
 
     const raw = parsed as Partial<ClanArchive>;
-    const battles = (Array.isArray(raw.battles) ? raw.battles : [])
-      .map(sanitizeBattle)
-      .filter((battle): battle is CrossoutBattle => battle !== null);
+    const logs = (Array.isArray(raw.logs) ? raw.logs : [])
+      .map(sanitizeLog)
+      .filter((log): log is ClanLog => log !== null);
     const mates = (Array.isArray(raw.mates) ? raw.mates : [])
       .map(sanitizeMate)
       .filter((mate): mate is ClanMate => mate !== null);
-    const published =
-      raw.published && typeof raw.published === "object" ? raw.published : {};
 
     return {
       code: asString(raw.code),
@@ -129,15 +124,8 @@ export const readClanArchive = (): ClanArchive => {
       secretKey: /^[0-9a-f]{64}$/.test(asString(raw.secretKey))
         ? asString(raw.secretKey)
         : "",
-      battles,
-      ownKeys: Array.isArray(raw.ownKeys)
-        ? raw.ownKeys.filter((key): key is string => typeof key === "string")
-        : [],
-      published: Object.fromEntries(
-        Object.entries(published).filter(
-          (entry): entry is [string, string] => typeof entry[1] === "string",
-        ),
-      ),
+      logs: logs.sort((left, right) => logOrder(right) - logOrder(left)),
+      publishedHash: asString(raw.publishedHash),
       lastFetchAt: asNumber(raw.lastFetchAt),
       lastRepublish: asNumber(raw.lastRepublish),
     };
@@ -160,70 +148,55 @@ export const ensureSecret = (archive: ClanArchive): void => {
   archive.secretKey = createSecretKey();
 };
 
-const byDate = (left: CrossoutBattle, right: CrossoutBattle) =>
-  right.date - left.date || right.battle_id - left.battle_id;
-
-export const trimBattles = (archive: ClanArchive): void => {
-  if (archive.battles.length <= MAX_BATTLES) return;
-
-  const own = new Set(archive.ownKeys);
-  const ownBattles = archive.battles.filter((battle) => own.has(battleKey(battle)));
-  const otherBattles = archive.battles.filter(
-    (battle) => !own.has(battleKey(battle)),
+const allowedNicks = (archive: ClanArchive): Set<string> => {
+  const allowed = new Set(
+    archive.mates.map((mate) => mate.nickname.trim().toLowerCase()),
   );
-  const room = Math.max(0, MAX_BATTLES - ownBattles.length);
 
-  archive.battles = [...ownBattles, ...otherBattles.slice(0, room)].sort(byDate);
+  if (archive.nickname.trim()) allowed.add(archive.nickname.trim().toLowerCase());
+
+  return allowed;
 };
 
-export const mergeBattles = (
+export const mergeLogs = (
   archive: ClanArchive,
-  incoming: CrossoutBattle[],
+  incoming: ClanLog[],
   own: boolean,
 ): number => {
-  const allowed = new Set(archive.mates.map((mate) => mate.nickname));
-
-  if (archive.nickname) allowed.add(archive.nickname);
-
-  const byKey = new Map(
-    archive.battles.map((battle) => [battleKey(battle), battle]),
-  );
-  const ownKeys = new Set(archive.ownKeys);
+  const allowed = allowedNicks(archive);
+  const byId = new Map(archive.logs.map((log) => [log.logId, log]));
   let added = 0;
 
-  for (const battle of incoming) {
-    if (!own && allowed.size > 0 && !allowed.has(battle.nickname)) continue;
-    if (!own && allowed.size === 0) continue;
+  for (const log of incoming) {
+    const nick = log.nickname.trim().toLowerCase();
 
-    const key = battleKey(battle);
-    if (!byKey.has(key)) added += 1;
+    if (!own && (allowed.size === 0 || !allowed.has(nick))) continue;
 
-    byKey.set(key, battle);
+    if (!byId.has(log.logId)) added += 1;
 
-    if (own) ownKeys.add(key);
+    const previous = byId.get(log.logId);
+
+    byId.set(
+      log.logId,
+      previous && logOrder(previous) > logOrder(log) ? previous : log,
+    );
   }
 
-  archive.ownKeys = [...ownKeys].filter((key) => byKey.has(key));
-  archive.battles = [...byKey.values()].sort(byDate);
-  trimBattles(archive);
+  archive.logs = [...byId.values()]
+    .sort((left, right) => logOrder(right) - logOrder(left))
+    .slice(0, MAX_LOGS);
 
   return added;
 };
 
-export const keepAllowedBattles = (archive: ClanArchive): void => {
-  const allowed = new Set(archive.mates.map((mate) => mate.nickname));
+export const keepAllowedLogs = (archive: ClanArchive): void => {
+  const allowed = allowedNicks(archive);
 
-  if (archive.nickname) allowed.add(archive.nickname);
+  if (allowed.size === 0) return;
 
-  const own = new Set(archive.ownKeys);
-
-  archive.battles = archive.battles.filter(
-    (battle) => own.has(battleKey(battle)) || allowed.has(battle.nickname),
+  archive.logs = archive.logs.filter((log) =>
+    allowed.has(log.nickname.trim().toLowerCase()),
   );
-
-  const keys = new Set(archive.battles.map((battle) => battleKey(battle)));
-
-  archive.ownKeys = archive.ownKeys.filter((key) => keys.has(key));
 };
 
 export const parseProfileId = (value: string): string | null => {

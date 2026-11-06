@@ -1,22 +1,13 @@
-import { createHash } from "node:crypto";
 import WebSocket from "ws";
-import type { CrossoutBattle, CrossoutLogTable } from "@src/types/crossout";
-import type {
-  ClanMate,
-  ClanState,
-  ClanSyncDetail,
-  ClanSyncStatus,
-  ClanSyncStep,
-} from "@src/types/clan";
+import type { ClanLog, ClanMate, ClanState, ClanSyncDetail, ClanSyncStatus, ClanSyncStep } from "@src/types/clan";
 import {
-  battleDay,
-  battleKey,
   ensureSecret,
-  keepAllowedBattles,
-  mergeBattles,
+  keepAllowedLogs,
+  mergeLogs,
   parseProfileId,
   readClanArchive,
-  sanitizeBattle,
+  sameNick,
+  sanitizeLog,
   writeClanArchive,
   type ClanArchive,
 } from "./clanArchive";
@@ -31,8 +22,8 @@ import {
   type NostrEvent,
 } from "./clanCrypto";
 import { extractCrossoutPage } from "./crossoutBrowser";
+import { listCrossoutHistory } from "./crossoutHistory";
 import { writeLog } from "./logger";
-import { listCrossoutStatsCache } from "./crossoutStatsCache";
 
 const RELAYS = [
   "wss://relay.damus.io",
@@ -43,7 +34,6 @@ const RELAYS = [
 const STORED_KIND = 30078;
 const WANT_KIND = 24444;
 const GIVE_KIND = 24445;
-const DAY_CHUNK = 40;
 const FETCH_INTERVAL = 30 * 60 * 1000;
 const REPUBLISH_INTERVAL = 12 * 60 * 60 * 1000;
 
@@ -71,11 +61,6 @@ const PROFILE_SCRIPT = `
 })()
 `;
 
-interface DayIndex {
-  nickname: string;
-  days: string[];
-}
-
 interface SyncOptions {
   getLanguage: () => "ru" | "en";
   onState: (state: ClanState) => void;
@@ -92,9 +77,8 @@ let archive: ClanArchive = {
   nickname: "",
   mates: [],
   secretKey: "",
-  battles: [],
-  ownKeys: [],
-  published: {},
+  logs: [],
+  publishedHash: "",
   lastFetchAt: 0,
   lastRepublish: 0,
 };
@@ -108,7 +92,6 @@ let relays: Relay[] = [];
 let activeRoom = "";
 let emitTimer: NodeJS.Timeout | null = null;
 let wantTimer: NodeJS.Timeout | null = null;
-const indexes = new Map<string, DayIndex>();
 const wantCooldown = new Map<string, number>();
 
 const exclusive = <T>(task: () => Promise<T>): Promise<T> => {
@@ -161,7 +144,7 @@ const toState = (): ClanState => {
     profileId: archive.profileId,
     nickname: archive.nickname,
     mates: archive.mates,
-    battles: archive.battles,
+    logs: archive.logs,
     status,
     detail,
     message,
@@ -185,25 +168,8 @@ const persist = (): void => {
   emit();
 };
 
-const ownBattles = (source: ClanArchive): CrossoutBattle[] => {
-  const own = new Set(source.ownKeys);
-
-  return source.battles.filter((battle) => own.has(battleKey(battle)));
-};
-
-const groupedOwnDays = (source: ClanArchive): Map<string, CrossoutBattle[]> => {
-  const days = new Map<string, CrossoutBattle[]>();
-
-  for (const battle of ownBattles(source)) {
-    const day = battleDay(battle);
-    const list = days.get(day) ?? [];
-
-    list.push(battle);
-    days.set(day, list);
-  }
-
-  return days;
-};
+const ownLogs = (source: ClanArchive): ClanLog[] =>
+  source.logs.filter((log) => sameNick(log.nickname, source.nickname));
 
 const publishEvent = (
   kind: number,
@@ -222,131 +188,51 @@ const publishEvent = (
   for (const relay of relays) relay.send(event);
 };
 
+const logsPayload = (logs: ClanLog[]) => ({
+  v: 1,
+  op: "logs" as const,
+  nickname: archive.nickname,
+  profileId: archive.profileId,
+  logs: logs.slice(0, 100),
+});
+
 const publishOwn = (force: boolean): void => {
   if (!archive.code.trim()) return;
+
+  const logs = ownLogs(archive);
+
+  if (logs.length === 0) return;
 
   ensureSecret(archive);
 
   const room = roomIdFor(archive.code);
   const pubkey = publicKeyOf(archive.secretKey);
-  const days = groupedOwnDays(archive);
+  const payload = logsPayload(logs);
+  const hash = payloadHash(payload);
   const stale = Date.now() - archive.lastRepublish > REPUBLISH_INTERVAL;
-  const dayNames = [...days.keys()].sort();
 
-  for (const day of dayNames) {
-    const battles = days.get(day) ?? [];
-    const parts = Math.max(1, Math.ceil(battles.length / DAY_CHUNK));
-
-    for (let part = 0; part < parts; part += 1) {
-      const slice = battles.slice(part * DAY_CHUNK, (part + 1) * DAY_CHUNK);
-      const payload = {
-        v: 1,
-        op: "day",
-        nickname: archive.nickname,
-        profileId: archive.profileId,
-        day,
-        part,
-        battles: slice,
-      };
-      const hash = payloadHash(payload);
-      const hashKey = `${day}:${part}`;
-
-      if (!force && !stale && archive.published[hashKey] === hash) continue;
-
-      publishEvent(STORED_KIND, [
-        ["d", `${room}:${pubkey}:day:${day}:${part}`],
-        ["t", room],
-      ], payload);
-      archive.published[hashKey] = hash;
-    }
-  }
+  if (!force && !stale && archive.publishedHash === hash) return;
 
   publishEvent(STORED_KIND, [
-    ["d", `${room}:${pubkey}:index`],
+    ["d", `${room}:${pubkey}:logs`],
     ["t", room],
-  ], {
-    v: 1,
-    op: "index",
-    nickname: archive.nickname,
-    profileId: archive.profileId,
-    days: dayNames,
-  });
-
-  if (stale || force) archive.lastRepublish = Date.now();
+  ], payload);
+  archive.publishedHash = hash;
+  archive.lastRepublish = Date.now();
 };
 
-const battlesByDay = (
-  nickname: string,
-  day: string,
-): CrossoutBattle[] =>
-  archive.battles.filter(
-    (battle) => battle.nickname === nickname && battleDay(battle) === day,
-  );
-
-const sendGive = (nickname: string, day: string): void => {
-  const battles = battlesByDay(nickname, day);
-
-  if (battles.length === 0) return;
-
-  const room = roomIdFor(archive.code);
-
-  for (let part = 0; part < battles.length; part += DAY_CHUNK) {
-    publishEvent(
-      GIVE_KIND,
-      [["t", room]],
-      {
-        v: 1,
-        op: "give",
-        nickname,
-        day,
-        battles: battles.slice(part, part + DAY_CHUNK),
-      },
-    );
-  }
-};
-
-const answerWant = (from: string, payload: Record<string, unknown>): void => {
+const answerWant = (from: string): void => {
   const now = Date.now();
   const previous = wantCooldown.get(from) ?? 0;
 
-  if (now - previous < 60_000) return;
+  if (now - previous < 60_000 || archive.logs.length === 0) return;
 
   wantCooldown.set(from, now);
-
-  if (payload.full === true) {
-    const newest = new Map<string, string>();
-
-    for (const battle of archive.battles) {
-      const day = battleDay(battle);
-      const key = `${battle.nickname}\0${day}`;
-
-      newest.set(key, day);
-    }
-
-    const items = [...newest.keys()].slice(0, 120);
-
-    for (const key of items) {
-      const [nickname, day] = key.split("\0");
-
-      if (nickname && day) sendGive(nickname, day);
-    }
-
-    return;
-  }
-
-  const items = Array.isArray(payload.items) ? payload.items : [];
-
-  for (const item of items.slice(0, 60)) {
-    if (!item || typeof item !== "object") continue;
-
-    const raw = item as Record<string, unknown>;
-    const nickname = typeof raw.nickname === "string" ? raw.nickname.trim() : "";
-    const day = typeof raw.day === "string" ? raw.day : "";
-
-    if (!nickname || !/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
-
-    sendGive(nickname, day);
-  }
+  publishEvent(
+    GIVE_KIND,
+    [["t", roomIdFor(archive.code)]],
+    logsPayload(archive.logs),
+  );
 };
 
 const ensureLoaded = (): void => {
@@ -359,35 +245,10 @@ const ensureLoaded = (): void => {
 const requestMissing = (): void => {
   if (!archive.code.trim()) return;
 
-  const room = roomIdFor(archive.code);
-  const have = new Set(
-    archive.battles.map((battle) => `${battle.nickname}\0${battleDay(battle)}`),
-  );
-
-  if (indexes.size === 0) {
-    publishEvent(WANT_KIND, [["t", room]], { v: 1, op: "want", full: true });
-
-    return;
-  }
-
-  const items: { nickname: string; day: string }[] = [];
-
-  for (const entry of indexes.values()) {
-    if (entry.nickname && entry.nickname === archive.nickname) continue;
-
-    for (const day of entry.days) {
-      if (have.has(`${entry.nickname}\0${day}`)) continue;
-
-      items.push({ nickname: entry.nickname, day });
-    }
-  }
-
-  if (items.length === 0) return;
-
-  publishEvent(WANT_KIND, [["t", room]], {
+  publishEvent(WANT_KIND, [["t", roomIdFor(archive.code)]], {
     v: 1,
     op: "want",
-    items: items.slice(0, 60),
+    full: true,
   });
 };
 
@@ -408,25 +269,11 @@ const acceptPayload = (event: NostrEvent, payload: unknown): void => {
   const raw = payload as Record<string, unknown>;
   const op = raw.op;
 
-  if (op === "index") {
-    const nickname = typeof raw.nickname === "string" ? raw.nickname.trim() : "";
-    const days = Array.isArray(raw.days)
-      ? raw.days.filter((day): day is string => typeof day === "string")
-      : [];
-
-    if (!nickname) return;
-
-    indexes.set(event.pubkey, { nickname, days });
-    scheduleWant();
-
-    return;
-  }
-
-  if (op === "day" || op === "give") {
-    const battles = (Array.isArray(raw.battles) ? raw.battles : [])
-      .map(sanitizeBattle)
-      .filter((battle): battle is CrossoutBattle => battle !== null);
-    const added = mergeBattles(archive, battles, false);
+  if (op === "logs" || op === "give") {
+    const logs = (Array.isArray(raw.logs) ? raw.logs : [])
+      .map(sanitizeLog)
+      .filter((log): log is ClanLog => log !== null);
+    const added = mergeLogs(archive, logs, false);
 
     if (added > 0) persist();
 
@@ -436,7 +283,7 @@ const acceptPayload = (event: NostrEvent, payload: unknown): void => {
   if (op === "want") {
     if (event.pubkey === publicKeyOf(archive.secretKey)) return;
 
-    answerWant(event.pubkey, raw);
+    answerWant(event.pubkey);
   }
 };
 
@@ -589,7 +436,6 @@ const stopRelays = (): void => {
 
   relays = [];
   activeRoom = "";
-  indexes.clear();
 };
 
 const ensureRelays = (room: string): void => {
@@ -648,110 +494,22 @@ const refreshProfile = async (): Promise<void> => {
 
   if (notice === "profile-failed") notice = "";
 
-  keepAllowedBattles(archive);
+  keepAllowedLogs(archive);
 };
 
-const parseCount = (value: string | undefined): number => {
-  const match = value?.replace(/\s/g, "").match(/-?\d+/);
+const fetchOwnLogs = (): void => {
+  const mine = listCrossoutHistory()
+    .filter((entry) => sameNick(entry.nickname, archive.nickname))
+    .map((entry) => ({
+      logId: entry.logId,
+      nickname: entry.nickname,
+      title: entry.title,
+      types: entry.types,
+      uploadedAt: entry.uploadedAt,
+      savedAt: entry.savedAt,
+    }));
 
-  return match ? Number(match[0]) : 0;
-};
-
-const parseDuration = (value: string): number => {
-  const minutes = value.match(/(\d+)\s*(?:м|m)/i);
-  const seconds = value.match(/(\d+)\s*(?:с|s)/i);
-
-  return (minutes ? Number(minutes[1]) : 0) * 60 + (seconds ? Number(seconds[1]) : 0);
-};
-
-const fightId = (type: string, at: number, map: string): number => {
-  const hex = createHash("sha256")
-    .update(`${type}|${at}|${map}`)
-    .digest("hex")
-    .slice(0, 10);
-
-  return Number.parseInt(hex, 16);
-};
-
-const battlesFromTable = (
-  table: CrossoutLogTable,
-  allowed: Set<string>,
-): CrossoutBattle[] => {
-  const type = table.type.toUpperCase();
-  const battles: CrossoutBattle[] = [];
-  let current: { index: number; map: string; duration: number } | null = null;
-
-  for (const row of table.rows) {
-    if (row.battle) {
-      current = {
-        index: row.battle.index,
-        map: row.map || row.battle.map,
-        duration: parseDuration(row.battle.duration),
-      };
-      continue;
-    }
-
-    if (!current || row.cls.includes("sticDiv")) continue;
-
-    const date = table.times[current.index - 1]?.at ?? 0;
-    const cells = row.cells;
-
-    for (let index = 0; index < cells.length; index += 1) {
-      const cell = cells[index];
-      const nickname = cell.text.trim();
-      const green = cell.cls.includes("green") && cell.cls.includes("alignleft");
-      const red = cell.cls.includes("red") && cell.cls.includes("alignright");
-
-      if ((!green && !red) || !nickname || cell.weapon) continue;
-      if (allowed.size > 0 && !allowed.has(nickname)) continue;
-
-      const weapon = green ? cells[index + 1]?.weapon ?? "" : cells[index - 1]?.weapon ?? "";
-      const damage = green
-        ? parseCount(cells[index + 2]?.text)
-        : parseCount(cells[index - 2]?.text);
-      const kills = green
-        ? parseCount(cells[index + 3]?.text)
-        : parseCount(cells[index - 3]?.text);
-
-      battles.push({
-        nickname,
-        important: 0,
-        ur: 0,
-        damage,
-        kill: kills,
-        death: -1,
-        score: 0,
-        tank: 0,
-        weapon,
-        win: -1,
-        party: 0,
-        timebattle: current.duration,
-        type,
-        battle_id: date > 0 ? fightId(type, date, current.map) : 0,
-        teams: 2,
-        map: current.map,
-        date,
-      });
-    }
-  }
-
-  return battles;
-};
-
-const fetchOwnBattles = (): void => {
-  const allowed = new Set(archive.mates.map((mate) => mate.nickname));
-
-  if (archive.nickname) allowed.add(archive.nickname);
-
-  const collected: CrossoutBattle[] = [];
-
-  for (const entry of listCrossoutStatsCache()) {
-    for (const table of entry.tables) {
-      collected.push(...battlesFromTable(table, allowed));
-    }
-  }
-
-  if (collected.length === 0) {
+  if (mine.length === 0) {
     message = "logs";
 
     return;
@@ -759,11 +517,7 @@ const fetchOwnBattles = (): void => {
 
   if (message === "logs") message = "";
 
-  const nickname = collected.find((battle) => battle.nickname)?.nickname;
-
-  if (nickname && !archive.nickname) archive.nickname = nickname;
-
-  mergeBattles(archive, collected, true);
+  mergeLogs(archive, mine, true);
   archive.lastFetchAt = Date.now();
 };
 
@@ -786,13 +540,9 @@ const applyInput = (profile: string, code: string): boolean => {
   }
 
   if (nextCode !== archive.code) {
-    const own = new Set(archive.ownKeys);
-
-    archive.battles = archive.battles.filter((battle) =>
-      own.has(battleKey(battle)),
-    );
+    archive.logs = [];
     archive.mates = [];
-    archive.published = {};
+    archive.publishedHash = "";
     archive.nickname = "";
     stopRelays();
   }
@@ -818,7 +568,7 @@ const runSync = async (fetchFresh: boolean): Promise<void> => {
     step = "battles";
     emit();
 
-    if (fetchFresh) await fetchOwnBattles();
+    if (fetchFresh) fetchOwnLogs();
 
     step = "publish";
     emit();

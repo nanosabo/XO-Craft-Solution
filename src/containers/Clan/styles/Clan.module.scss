@@ -197,11 +197,59 @@
   gap: 10px;
 }
 
-.fight {
-  padding: 14px 16px;
+.link {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 16px;
+  width: 100%;
+  padding: 12px 16px;
+  color: $white;
+  text-align: left;
   background: rgba(22, 25, 27, 0.92);
   border: 1px solid rgba($white, 0.08);
   border-radius: 14px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba($primary, 0.55);
+  }
+}
+
+.linkMine {
+  box-shadow: inset 2px 0 0 $primary;
+}
+
+.linkNick {
+  overflow: hidden;
+  color: $white;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  @include body;
+}
+
+.linkTitle,
+.linkDate {
+  overflow: hidden;
+  color: $default;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  @include caption;
+}
+
+.linkTypes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  color: $default;
+  @include caption;
+
+  span {
+    padding: 2px 8px;
+    border: 1px solid rgba($white, 0.12);
+    border-radius: 999px;
+  }
 }
 
 .fightHead {

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { buildAppLogLink } from "@src/helpers/appLogLink";
+import type { ClanState } from "@src/types/clan";
 import { logWarning } from "@src/helpers/errorLog";
 import Switch from "@src/containers/Settings/components/Switch";
 import {
@@ -109,6 +110,13 @@ const sameName = (left: string, right: string) => {
   if (!a || !b) return false;
 
   return a === b || a.includes(b) || b.includes(a);
+};
+
+const exactName = (left: string, right: string) => {
+  const a = left.trim().toLowerCase();
+  const b = right.trim().toLowerCase();
+
+  return Boolean(a) && a === b;
 };
 
 const statColumnWeight = (index: number) => {
@@ -298,6 +306,7 @@ const LogsResult = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const barSentinelRef = useRef<HTMLDivElement>(null);
   const [barStuck, setBarStuck] = useState(false);
+  const [meName, setMeName] = useState("");
   const [statsQuery, setStatsQuery] = useState("");
   const [mapQuery, setMapQuery] = useState("");
   const [uploadDate, setUploadDate] = useState("");
@@ -666,6 +675,22 @@ const LogsResult = () => {
   );
 
   useEffect(() => {
+    let active = true;
+    const apply = (next: ClanState) => {
+      if (active) setMeName(next.nickname);
+    };
+
+    void window.electronAPI.clanGetState().then(apply).catch(() => undefined);
+
+    const unsubscribe = window.electronAPI.onClanState(apply);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!logTable) return;
 
     const hasStats = Boolean(logTable.stats && logTable.stats.rows.length > 0);
@@ -695,7 +720,10 @@ const LogsResult = () => {
     return groupStatRows(rows).flatMap((group) => {
       const team = group.player?.team || group.weapons[0]?.team || "";
 
-      if (alliesOnly && allyTeam && team && team !== allyTeam) return [];
+      const mine =
+        Boolean(group.player) && exactName(group.player?.name ?? "", meName);
+
+      if (alliesOnly && allyTeam && team && team !== allyTeam && !mine) return [];
 
       const weapons = group.weapons.filter((row) => {
         if (!query) return true;
@@ -717,7 +745,7 @@ const LogsResult = () => {
 
       return group.player ? [group.player, ...weapons] : weapons;
     });
-  }, [alliesOnly, allyTeam, logTable, statsQuery]);
+  }, [alliesOnly, allyTeam, logTable, meName, statsQuery]);
 
   const filteredBattles = useMemo(() => {
     const rows = logTable?.rows ?? [];
@@ -1209,6 +1237,13 @@ const LogsResult = () => {
                             : row.team === "green"
                               ? styles.teamGreen
                               : undefined;
+                        const owner =
+                          row.kind === "player"
+                            ? row.name
+                            : filteredStats
+                                .slice(0, rowIndex)
+                                .reverse()
+                                .find((item) => item.kind === "player")?.name ?? "";
 
                         return (
                           <tr
@@ -1217,6 +1252,7 @@ const LogsResult = () => {
                             className={classNames(teamClass, {
                               [styles.logStatsPlayer]: row.kind === "player",
                               [styles.logStatsWeaponRow]: row.kind === "weapon",
+                              [styles.logMe]: exactName(owner, meName),
                             })}
                           >
                             {row.cells.map((cell, cellIndex) => {
@@ -1407,6 +1443,12 @@ const LogsResult = () => {
                                   [styles.logAlignRight]: alignRight,
                                   [styles.logBorderLeft]: cell.cls.includes("brl"),
                                   [styles.logBorderRight]: cell.cls.includes("brr"),
+                                  [styles.logMeName]:
+                                    !isHeader &&
+                                    pictures.length === 0 &&
+                                    !cell.weapon &&
+                                    (alignLeft || alignRight) &&
+                                    exactName(cell.text, meName),
                                 })}
                               >
                                 {!isHeader && pictures.length > 0 ? (

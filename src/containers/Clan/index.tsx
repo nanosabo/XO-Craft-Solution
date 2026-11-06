@@ -1,24 +1,15 @@
 import classNames from "classnames";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import BattlesView, { type BattlesViewName } from "@src/components/BattlesView";
-import type { ClanState } from "@src/types/clan";
-import { CROSSOUT_MAPS, type CrossoutBattle } from "@src/types/crossout";
+import type { ClanLog, ClanState } from "@src/types/clan";
 import Input from "@src/ui/Input";
 import styles from "./styles/Clan.module.scss";
 
 interface Props {
   view: BattlesViewName;
   onView: (view: BattlesViewName) => void;
-}
-
-interface Fight {
-  key: string;
-  map: string;
-  date: number;
-  type: string;
-  duration: number;
-  players: CrossoutBattle[];
 }
 
 const PAGE = 40;
@@ -34,8 +25,16 @@ const relayName = (url: string): string => {
 const profileValue = (profileId: string): string =>
   profileId ? `https://crossout-info.com/pers/${profileId}` : "";
 
+const sameNick = (left: string, right: string): boolean => {
+  const a = left.trim().toLowerCase();
+  const b = right.trim().toLowerCase();
+
+  return Boolean(a) && a === b;
+};
+
 const Clan = ({ view, onView }: Props) => {
   const { t, i18n } = useTranslation("logsPage");
+  const navigate = useNavigate();
   const [state, setState] = useState<ClanState | null>(null);
   const [profile, setProfile] = useState("");
   const [code, setCode] = useState("");
@@ -59,92 +58,26 @@ const Clan = ({ view, onView }: Props) => {
     });
   }, []);
 
-  const fights = useMemo(() => {
-    const groups = new Map<string, CrossoutBattle[]>();
+  const logs = state?.logs ?? [];
+  const shown = logs.slice(0, visible);
+  const mine = logs.filter((log) => sameNick(log.nickname, state?.nickname ?? "")).length;
 
-    for (const battle of state?.battles ?? []) {
-      const key =
-        battle.battle_id > 0
-          ? `${battle.type}:${battle.battle_id}`
-          : `${battle.type}:${battle.date}:${battle.map}:${battle.nickname}`;
-      const list = groups.get(key) ?? [];
+  const when = (log: ClanLog): string => {
+    const ms = log.uploadedAt > 0 ? log.uploadedAt : log.savedAt;
 
-      list.push(battle);
-      groups.set(key, list);
-    }
+    if (!ms) return "";
 
-    return [...groups.values()]
-      .map((players): Fight => {
-        const first = [...players].sort((left, right) => right.date - left.date)[0];
-
-        return {
-          key: `${first.type}:${first.battle_id}:${first.date}:${first.map}:${first.nickname}`,
-          map: first.map,
-          date: first.date,
-          type: first.type,
-          duration: Math.max(...players.map((player) => player.timebattle)),
-          players: [...players].sort((left, right) => right.damage - left.damage),
-        };
-      })
-      .sort((left, right) => right.date - left.date);
-  }, [state?.battles]);
-
-  const shared = fights.filter((fight) => fight.players.length > 1).length;
-  const shown = fights.slice(0, visible);
-
-  const mapLabel = (value: string): string => {
-    const map = CROSSOUT_MAPS.find((item) => item.value === value);
-
-    if (!map) return value || "—";
-
-    return isRu ? map.ru : map.en;
-  };
-
-  const typeLabel = (value: string): string => {
-    if (!value) return "—";
-
-    return t(`types.${value.toUpperCase()}`, { defaultValue: value });
-  };
-
-  const when = (date: number): string => {
-    const ms = date > 10_000_000_000 ? date : date * 1000;
-
-    if (!ms) return "—";
-
-    return new Date(ms).toLocaleString(locale, {
+    return new Date(ms).toLocaleDateString(locale, {
       day: "2-digit",
       month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric",
     });
-  };
-
-  const duration = (seconds: number): string => {
-    if (!seconds) return "";
-
-    const minutes = Math.floor(seconds / 60);
-    const rest = Math.floor(seconds % 60);
-
-    return `${minutes}:${String(rest).padStart(2, "0")}`;
-  };
-
-  const result = (players: CrossoutBattle[]) => {
-    const known = players.filter((player) => player.win >= 0);
-
-    if (known.length === 0) return null;
-
-    const wins = known.filter((player) => player.win > 0).length;
-
-    if (wins === known.length) return { key: "win" as const, label: t("table.win") };
-    if (wins === 0) return { key: "loss" as const, label: t("table.loss") };
-
-    return { key: "mixed" as const, label: t("clan.mixed") };
   };
 
   const statusClass =
     state?.detail === "online"
       ? styles.online
-      :     state?.detail === "profile-failed" ||
+      : state?.detail === "profile-failed" ||
           state?.detail === "bad-profile" ||
           state?.detail === "offline"
         ? styles.bad
@@ -179,6 +112,13 @@ const Clan = ({ view, onView }: Props) => {
 
   const sync = () => {
     void window.electronAPI.clanSync({ profile, code }).then(setState);
+  };
+
+  const openLog = (log: ClanLog) => {
+    const type = log.types[0]?.key;
+    const query = type ? `?type=${encodeURIComponent(type)}` : "";
+
+    navigate(`/logs/${encodeURIComponent(log.logId)}${query}`);
   };
 
   return (
@@ -228,29 +168,29 @@ const Clan = ({ view, onView }: Props) => {
         <div className={styles.statusRow}>
           <span className={classNames(styles.status, statusClass)}>{statusText()}</span>
           {state?.code && (
-          <div className={styles.relays}>
-            {state.relays.map((relay) => (
-              <span key={relay.url} className={styles.relay}>
-                <span
-                  className={classNames(styles.dot, {
-                    [styles.on]: relay.connected,
-                  })}
-                />
-                {relayName(relay.url)}
-              </span>
-            ))}
-          </div>
+            <div className={styles.relays}>
+              {state.relays.map((relay) => (
+                <span key={relay.url} className={styles.relay}>
+                  <span
+                    className={classNames(styles.dot, {
+                      [styles.on]: relay.connected,
+                    })}
+                  />
+                  {relayName(relay.url)}
+                </span>
+              ))}
+            </div>
           )}
         </div>
 
         <div className={styles.summary}>
           <div className={styles.stat}>
-            <strong>{state?.battles.length ?? 0}</strong>
+            <strong>{logs.length}</strong>
             <span>{t("clan.archive")}</span>
           </div>
           <div className={styles.stat}>
-            <strong>{shared}</strong>
-            <span>{t("clan.shared")}</span>
+            <strong>{mine}</strong>
+            <span>{t("clan.mine")}</span>
           </div>
           <div className={styles.stat}>
             <strong>{state?.mates.length ?? 0}</strong>
@@ -272,59 +212,34 @@ const Clan = ({ view, onView }: Props) => {
       {shown.length === 0 && <p className={styles.empty}>{t("clan.empty")}</p>}
 
       <div className={styles.list}>
-        {shown.map((fight) => {
-          const outcome = result(fight.players);
-          const length = duration(fight.duration);
+        {shown.map((log) => {
+          const own = sameNick(log.nickname, state?.nickname ?? "");
 
           return (
-            <div key={fight.key} className={styles.fight}>
-              <div className={styles.fightHead}>
-                <span className={styles.fightType}>{typeLabel(fight.type)}</span>
-                <span className={styles.fightMeta}>{mapLabel(fight.map)}</span>
-                <span className={styles.fightMeta}>{when(fight.date)}</span>
-                {length && <span className={styles.fightMeta}>{length}</span>}
-                {outcome && (
-                  <span className={classNames(styles.fightMeta, styles[outcome.key])}>
-                    {outcome.label}
+            <button
+              key={log.logId}
+              type="button"
+              className={classNames(styles.link, { [styles.linkMine]: own })}
+              onClick={() => openLog(log)}
+            >
+              <span className={styles.linkNick}>{log.nickname}</span>
+              <span className={styles.linkTitle}>
+                {log.title || log.logId}
+              </span>
+              <span className={styles.linkTypes}>
+                {log.types.map((type) => (
+                  <span key={type.key}>
+                    {t(`logTypes.${type.key}`, { defaultValue: type.label || type.key })}
                   </span>
-                )}
-              </div>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>{t("clan.player")}</th>
-                    <th>{t("table.damage")}</th>
-                    <th>{t("table.kills")}</th>
-                    <th>{t("table.ps")}</th>
-                    <th>{t("table.weapon")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fight.players.map((player) => (
-                    <tr key={`${player.nickname}:${player.battle_id}:${player.date}`}>
-                      <td className={styles.name}>{player.nickname}</td>
-                      <td className={styles.number}>
-                        {player.damage.toLocaleString(locale)}
-                      </td>
-                      <td className={styles.number}>
-                        {player.death < 0
-                          ? player.kill
-                          : `${player.kill}/${player.death}`}
-                      </td>
-                      <td className={styles.number}>
-                        {player.ur ? player.ur.toLocaleString(locale) : "—"}
-                      </td>
-                      <td className={styles.weapon}>{player.weapon || "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </span>
+              <span className={styles.linkDate}>{when(log)}</span>
+            </button>
           );
         })}
       </div>
 
-      {visible < fights.length && (
+      {visible < logs.length && (
         <button
           type="button"
           className={classNames(styles.secondary, styles.more)}

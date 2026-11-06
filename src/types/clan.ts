@@ -1,8 +1,24 @@
-import type { CrossoutBattle } from "./crossout";
-
 export interface ClanMate {
   nickname: string;
   profileId: string;
+}
+
+export interface ClanLogType {
+  key: string;
+  label: string;
+  count: number;
+}
+
+/** A stats link shared with the clan. Opens the same log screen as a pasted link. */
+export interface ClanLog {
+  logId: string;
+  nickname: string;
+  title: string;
+  types: ClanLogType[];
+  /** Site upload date as local-midnight unix milliseconds. 0 when unknown. */
+  uploadedAt: number;
+  /** When this install first saved the log, in unix milliseconds. */
+  savedAt: number;
 }
 
 export interface ClanRelayStatus {
@@ -29,7 +45,7 @@ export interface ClanState {
   profileId: string;
   nickname: string;
   mates: ClanMate[];
-  battles: CrossoutBattle[];
+  logs: ClanLog[];
   status: ClanSyncStatus;
   detail: ClanSyncDetail;
   /** Unexpected failure text. Empty when `detail` covers the situation. */
