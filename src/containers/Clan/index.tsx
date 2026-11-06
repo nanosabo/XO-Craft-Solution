@@ -39,6 +39,7 @@ const Clan = ({ view, onView }: Props) => {
   const [state, setState] = useState<ClanState | null>(null);
   const [profile, setProfile] = useState("");
   const [code, setCode] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [visible, setVisible] = useState(PAGE);
   const edited = useRef(false);
   const isRu = Boolean(i18n.language?.startsWith("ru"));
@@ -177,7 +178,13 @@ const Clan = ({ view, onView }: Props) => {
   };
 
   const sync = () => {
-    void window.electronAPI.clanSync({ profile, code }).then(setState);
+    void (async () => {
+      if (apiKey.trim()) {
+        await window.electronAPI.crossoutSetApiKey(apiKey.trim());
+      }
+
+      setState(await window.electronAPI.clanSync({ profile, code }));
+    })();
   };
 
   return (
@@ -222,6 +229,16 @@ const Clan = ({ view, onView }: Props) => {
           >
             {state?.status === "syncing" ? t("clan.syncing") : t("clan.save")}
           </button>
+          <label className={classNames(styles.field, styles.keyField)}>
+            <span>{t("clan.apiKey")}</span>
+            <Input
+              type="password"
+              value={apiKey}
+              placeholder={t("clan.apiKeyPlaceholder")}
+              autoComplete="off"
+              onChange={(event) => setApiKey(event.target.value)}
+            />
+          </label>
         </div>
 
         <div className={styles.statusRow}>

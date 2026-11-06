@@ -277,6 +277,8 @@
     "profilePlaceholder": "https://crossout-info.com/pers/…",
     "code": "Код клана",
     "codePlaceholder": "Общая фраза, её знают только свои",
+    "apiKey": "Свой API-ключ crossout-info",
+    "apiKeyPlaceholder": "Нужен, чтобы в архив ушли ваши бои, а не чужие",
     "save": "Синхронизировать",
     "syncing": "Синхронизация…",
     "needCode": "Введите код клана",

@@ -277,6 +277,8 @@
     "profilePlaceholder": "https://crossout-info.com/pers/…",
     "code": "Clan code",
     "codePlaceholder": "A shared phrase only your clan knows",
+    "apiKey": "Your crossout-info API key",
+    "apiKeyPlaceholder": "Required so the archive gets your battles",
     "save": "Sync",
     "syncing": "Syncing…",
     "needCode": "Enter the clan code",
