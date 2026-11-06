@@ -12,6 +12,8 @@ import {
   type CrossoutFetchBattlesParams,
   type CrossoutLogCell,
   type CrossoutLogRow,
+  type CrossoutLogStat,
+  type CrossoutLogStatRow,
   type CrossoutLogSummaryResult,
   type CrossoutLogTableResult,
   type CrossoutUploadLogParams,
@@ -556,10 +558,24 @@ interface RawLogRow {
   battle?: unknown;
 }
 
+interface RawLogStatRow {
+  kind?: unknown;
+  name?: unknown;
+  weapon?: unknown;
+  team?: unknown;
+  cells?: unknown;
+}
+
+interface RawLogStat {
+  headers?: unknown;
+  rows?: unknown;
+}
+
 interface RawLogTable {
   forbidden?: unknown;
   date?: unknown;
   rows?: unknown;
+  stats?: unknown;
 }
 
 const LOG_SUMMARY_SCRIPT = `(() => {
@@ -595,10 +611,61 @@ const LOG_TABLE_SCRIPT = `(() => {
   const bodyText = document.body ? document.body.innerText.trim() : "";
   if (bodyText === "Forbidden") return { forbidden: true };
 
-  const table = document.querySelector("table.maps");
-  if (!table) return { forbidden: false, date: "", rows: [] };
+  const cellText = (span) => {
+    const parts = Array.from(span.children).filter((child) => child.tagName === "SPAN");
+    if (parts.length > 1) {
+      return parts
+        .map((part) => (part.innerText || part.textContent || "").replace(/\\s+/g, " ").trim())
+        .filter(Boolean)
+        .join(" ");
+    }
+    return (span.innerText || span.textContent || "").replace(/\\s+/g, " ").trim();
+  };
 
-  const rows = Array.from(table.rows).map((row) => {
+  const statsNode = document.querySelector("div.stat");
+  let stats = null;
+  if (statsNode) {
+    const headerNode = Array.from(statsNode.children).find((child) => child.classList.contains("sticDiv"));
+    const headers = headerNode
+      ? Array.from(headerNode.children)
+          .filter((child) => child.tagName === "SPAN")
+          .map(cellText)
+      : [];
+    const statRows = [];
+    let currentTeam = "";
+    for (const row of Array.from(statsNode.children)) {
+      const body = row.querySelector(".statBody");
+      const isPlayer = Boolean(row.getAttribute("data-nickprofile"));
+      const isWeapon = row.getAttribute("data-edite") === "getWeaponData";
+      if (!isPlayer && !isWeapon) continue;
+      const bodyRow = body ? body.querySelector(".row") : null;
+      const spans = bodyRow
+        ? Array.from(bodyRow.children).filter((child) => child.tagName === "SPAN")
+        : [];
+      const cells = spans
+        .filter((span) => !span.className.includes("imgweap"))
+        .map(cellText);
+      if (isPlayer) {
+        const teamMatch = body ? body.className.match(/red|green/) : null;
+        currentTeam = teamMatch ? teamMatch[0] : "";
+      }
+      statRows.push({
+        kind: isPlayer ? "player" : "weapon",
+        name: isPlayer
+          ? (row.getAttribute("data-nick") || cells[0] || "")
+          : (row.getAttribute("data-weaponfind") || cells[0] || ""),
+        weapon: isWeapon
+          ? (row.getAttribute("data-weaponfind") || cells[0] || "")
+          : "",
+        team: currentTeam,
+        cells
+      });
+    }
+    stats = { headers, rows: statRows };
+  }
+
+  const table = document.querySelector("table.maps");
+  const rows = table ? Array.from(table.rows).map((row) => {
     const cells = Array.from(row.cells).map((cell) => {
       const img = cell.querySelector("img");
       return {
@@ -627,7 +694,7 @@ const LOG_TABLE_SCRIPT = `(() => {
           }
         : null
     };
-  }).filter((row) => row.cells.length > 0).slice(0, 3000);
+  }).filter((row) => row.cells.length > 0).slice(0, 3000) : [];
 
   const dateNode = document.querySelector(".grays.bold400.roboto");
   const dateMatch = dateNode ? (dateNode.textContent || "").match(/\\d{2}\\.\\d{2}\\.\\d{4}/) : null;
@@ -635,7 +702,8 @@ const LOG_TABLE_SCRIPT = `(() => {
   return {
     forbidden: false,
     date: dateMatch ? dateMatch[0] : "",
-    rows
+    rows,
+    stats
   };
 })()`;
 
@@ -682,6 +750,41 @@ const normalizeLogRow = (value: unknown): CrossoutLogRow | null => {
         }
       : null,
   };
+};
+
+const normalizeLogStatRow = (value: unknown): CrossoutLogStatRow | null => {
+  if (!value || typeof value !== "object") return null;
+
+  const raw = value as RawLogStatRow;
+  const kind = raw.kind === "weapon" ? "weapon" : "player";
+  const rawCells = Array.isArray(raw.cells) ? raw.cells : [];
+  const cells = rawCells.map(asString);
+  const name = asString(raw.name).trim() || cells[0] || "";
+
+  if (!name && cells.length === 0) return null;
+
+  return {
+    kind,
+    name,
+    weapon: asString(raw.weapon).trim(),
+    team: asString(raw.team).trim(),
+    cells,
+  };
+};
+
+const normalizeLogStat = (value: unknown): CrossoutLogStat | null => {
+  if (!value || typeof value !== "object") return null;
+
+  const raw = value as RawLogStat;
+  const headers = (Array.isArray(raw.headers) ? raw.headers : []).map(asString);
+  const rawRows = Array.isArray(raw.rows) ? raw.rows : [];
+  const rows = rawRows
+    .map(normalizeLogStatRow)
+    .filter((row): row is CrossoutLogStatRow => row !== null);
+
+  if (headers.length === 0 && rows.length === 0) return null;
+
+  return { headers, rows };
 };
 
 export const loadCrossoutLog = async (
@@ -799,6 +902,7 @@ export const loadCrossoutLogTable = async (
         table: {
           type: slug,
           date: asString(page.value.date),
+          stats: normalizeLogStat(page.value.stats),
           rows,
         },
       };

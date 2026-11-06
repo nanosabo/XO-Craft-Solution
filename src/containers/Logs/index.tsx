@@ -275,6 +275,36 @@ const Logs = () => {
     return labels[normalized] ?? text;
   };
 
+  const logStatsLabel = (text: string) => {
+    const normalized = text.trim().toLowerCase();
+    const labels: Record<string, string> = {
+      "игрок / вооружение": t("logStats.player"),
+      "player / weapon": t("logStats.player"),
+      "player / armament": t("logStats.player"),
+      рейтинг: t("logStats.rating"),
+      rating: t("logStats.rating"),
+      винрейт: t("logStats.winrate"),
+      winrate: t("logStats.winrate"),
+      "win rate": t("logStats.winrate"),
+      урон: t("logStats.damage"),
+      damage: t("logStats.damage"),
+      отстрел: t("logStats.parts"),
+      parts: t("logStats.parts"),
+      получено: t("logStats.received"),
+      received: t("logStats.received"),
+      фраг: t("logStats.frags"),
+      frag: t("logStats.frags"),
+      frags: t("logStats.frags"),
+      kills: t("logStats.frags"),
+      умер: t("logStats.deaths"),
+      deaths: t("logStats.deaths"),
+      очки: t("logStats.score"),
+      score: t("logStats.score"),
+    };
+
+    return labels[normalized] ?? text;
+  };
+
   const errorText = (error: LogsError) => {
     if (
       error.code &&
@@ -660,6 +690,83 @@ const Logs = () => {
 
           {logTable && !logTableLoading && logTable.rows.length === 0 && (
             <p className={styles.empty}>{t("log.tableEmpty")}</p>
+          )}
+
+          {logTable?.stats && logTable.stats.rows.length > 0 && (
+            <div className={styles.logStats}>
+              <h3 className={styles.logStatsTitle}>{t("logStats.title")}</h3>
+
+              <div className={styles.logTableWrap}>
+                <table className={styles.logStatsTable}>
+                  {logTable.stats.headers.length > 0 && (
+                    <thead>
+                      <tr>
+                        {logTable.stats.headers.map((header, index) => (
+                          <th
+                            key={`stat-head-${index}`}
+                            className={
+                              index === 0
+                                ? styles.logStatsName
+                                : styles.logStatsCenter
+                            }
+                          >
+                            {logStatsLabel(header)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                  )}
+
+                  <tbody>
+                    {logTable.stats.rows.map((row, rowIndex) => {
+                      const teamClass =
+                        row.team === "red"
+                          ? styles.teamRed
+                          : row.team === "green"
+                            ? styles.teamGreen
+                            : undefined;
+
+                      return (
+                        <tr
+                          key={`stat-row-${rowIndex}`}
+                          className={classNames(teamClass, {
+                            [styles.logStatsPlayer]:
+                              row.kind === "player",
+                            [styles.logStatsWeaponRow]:
+                              row.kind === "weapon",
+                          })}
+                        >
+                          {row.cells.map((cell, cellIndex) => (
+                            <td
+                              key={`stat-cell-${rowIndex}-${cellIndex}`}
+                              className={
+                                cellIndex === 0
+                                  ? styles.logStatsName
+                                  : styles.logStatsCenter
+                              }
+                              title={
+                                cellIndex === 0 && row.kind === "weapon"
+                                  ? row.weapon || cell
+                                  : undefined
+                              }
+                            >
+                              {cellIndex === 0 &&
+                              row.kind === "weapon" ? (
+                                <span className={styles.logStatsWeaponName}>
+                                  {row.weapon || cell}
+                                </span>
+                              ) : (
+                                cell
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
 
           {logTable && logTable.rows.length > 0 && (

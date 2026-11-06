@@ -502,3 +502,66 @@
     margin-left: 16px;
   }
 }
+
+.logStats {
+  margin-top: 16px;
+}
+
+.logStatsTitle {
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.logStatsTable {
+  width: 100%;
+  border-collapse: collapse;
+  @include caption;
+
+  th,
+  td {
+    padding: 7px 10px;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    color: $default;
+    font-weight: 500;
+    background: rgba($secondary, 0.98);
+  }
+
+  td {
+    color: rgba($white, 0.85);
+  }
+
+  tr + tr td {
+    border-top: 1px solid rgba($white, 0.04);
+  }
+}
+
+.logStatsName {
+  text-align: left;
+}
+
+.logStatsCenter {
+  text-align: center;
+}
+
+.logStatsPlayer td {
+  color: $white;
+  font-weight: 500;
+}
+
+.logStatsWeaponRow td {
+  color: rgba($white, 0.7);
+  font-size: 12px;
+}
+
+.logStatsWeaponName {
+  display: inline-block;
+  margin-left: 12px;
+  font-style: italic;
+}

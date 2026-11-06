@@ -45,6 +45,18 @@
     "map": "Map",
     "time": "Battle time"
   },
+  "logStats": {
+    "title": "Battle log statistics",
+    "player": "Player / Weapon",
+    "rating": "Rating",
+    "winrate": "Winrate",
+    "damage": "Damage",
+    "parts": "Parts",
+    "received": "Received",
+    "frags": "Kills",
+    "deaths": "Deaths",
+    "score": "Score"
+  },
   "logTypes": {
     "kv": "Clan battles",
     "prt": "Confrontation",

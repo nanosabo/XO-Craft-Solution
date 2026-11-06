@@ -202,10 +202,26 @@ export interface CrossoutLogRow {
   battle: CrossoutLogBattleHeader | null;
 }
 
+export interface CrossoutLogStatRow {
+  kind: "player" | "weapon";
+  name: string;
+  weapon: string;
+  team: string;
+  /** Values aligned with `CrossoutLogStat.headers`. */
+  cells: string[];
+}
+
+export interface CrossoutLogStat {
+  headers: string[];
+  rows: CrossoutLogStatRow[];
+}
+
 export interface CrossoutLogTable {
   type: string;
   /** Upload date shown on the site, in DD.MM.YYYY format. */
   date: string;
+  /** Aggregate "battle log statistics" table shown above the battle list. */
+  stats: CrossoutLogStat | null;
   rows: CrossoutLogRow[];
 }
 
