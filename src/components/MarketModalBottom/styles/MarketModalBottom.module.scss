@@ -164,7 +164,7 @@
 
   .resource_type_item {
     width: 100%;
-    padding: 6px 4px 3px;
+    padding: 4px;
     border-radius: 6px;
     background-color: $bg;
     color: $white;
@@ -232,7 +232,6 @@
 
     svg,
     img {
-      margin-top: -4px;
       width: 22px;
       height: 22px;
       color: $yellow;
@@ -241,7 +240,7 @@
 }
 
 .part_badge {
-  padding: 3px 6px 0px 6px;
+  padding: 2px 6px;
   width: auto;
   position: absolute;
   bottom: 9px;
@@ -260,7 +259,7 @@
 }
 
 .switch_button {
-  padding: 6px 12px 4px;
+  padding: 5px 12px;
   font-size: 14px;
   font-weight: 200;
   line-height: 100%;

@@ -1,9 +1,15 @@
+// Capitals sit high in the em box and the font adds a large line gap,
+// so centered labels and digits miss the middle. These overrides
+// balance the line box around the glyph center.
 @font-face {
   font-family: 'TT Commons';
   src: local('TT Commons Bold'), local('TTCommons-Bold'),
       url('@styles/../fonts/TTCommons/TTCommons-Bold.woff') format('woff');
   font-weight: bold;
   font-style: normal;
+  ascent-override: 77%;
+  descent-override: 23%;
+  line-gap-override: 0%;
 }
 
 @font-face {
@@ -12,6 +18,9 @@
       url('@styles/../fonts/TTCommons/TTCommons-Regular.woff') format('woff');
   font-weight: normal;
   font-style: normal;
+  ascent-override: 77%;
+  descent-override: 23%;
+  line-gap-override: 0%;
 }
 
 @font-face {
@@ -20,4 +29,7 @@
       url('@styles/../fonts/TTCommons/TTCommons-Medium.woff') format('woff');
   font-weight: 500;
   font-style: normal;
+  ascent-override: 77%;
+  descent-override: 23%;
+  line-gap-override: 0%;
 }

@@ -1172,12 +1172,20 @@
 }
 
 .helpPlatform {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   height: 36px;
   color: $default;
   background: rgba($white, 0.03);
   border: 1px solid rgba($white, 0.08);
   border-radius: 10px;
   @include body;
+
+  svg {
+    flex: none;
+  }
 
   &:hover {
     color: $white;

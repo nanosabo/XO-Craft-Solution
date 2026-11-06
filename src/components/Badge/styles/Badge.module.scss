@@ -2,7 +2,7 @@
 
 .badge {
   width: 100%;
-  padding: 3px 8px 0px 8px;
+  padding: 2px 8px;
   background-color: #13300d;
   border: 1px solid #7af239;
   display: flex;
@@ -37,7 +37,6 @@
     gap: 4px;
 
     img {
-      margin-top: -5px;
       width: 16px;
       height: auto;
     }

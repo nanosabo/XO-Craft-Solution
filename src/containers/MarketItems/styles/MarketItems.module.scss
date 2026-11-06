@@ -52,7 +52,7 @@ $market-columns: 240px // Название
 }
 
 .market__header {
-  padding: 14px 16px 12px;
+  padding: 13px 16px;
   border-radius: 8px;
   background: $secondary;
   border: 1px solid rgba($white, 0.1);
@@ -71,7 +71,6 @@ $market-columns: 240px // Название
   color: $white;
 
   img {
-    margin-top: -4px;
     width: 16px;
     height: auto;
   }
