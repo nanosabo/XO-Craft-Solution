@@ -1,6 +1,6 @@
 {
   "title": "Battle stats",
-  "subtitle": "Upload combat.log and review your Crossout battle stats",
+  "subtitle": "Upload combat.log or open a ready crossout-info link",
   "apiKey": {
     "title": "crossout-info API key",
     "description": "The key is stored in the app data folder and never committed to the source code.",
@@ -14,13 +14,95 @@
   },
   "upload": {
     "title": "Log upload",
-    "subtitle": "Choose the combat.log file from the Crossout folder",
+    "subtitle": "A combat.log file or a link to a log that is already online",
+    "sourceFile": "File",
+    "sourceFileHint": "combat.log from this computer",
+    "sourceLink": "Site link",
+    "sourceLinkHint": "A log page on crossout-info",
     "pick": "Choose file",
+    "pickHint": "combat.log uploads as soon as you choose it",
+    "pickOther": "Choose another file",
+    "selectedHint": "Click to choose another file",
+    "latestTitle": "Latest log",
+    "latestLoading": "Looking for the latest combat.log…",
+    "latestMissing": "The Crossout logs folder was not found. Set it in Settings and the latest combat.log will be picked up automatically.",
+    "latestMissingCustom": "There is no combat.log in the selected folder. Check the path in Settings, or choose the file yourself.",
+    "openSettings": "Open settings",
+    "latestUpload": "Upload the latest log",
+    "guideTitle": "How to find",
+    "guideFile": "COMBAT.LOG",
+    "guideStep1": "Click the “Choose file” button",
+    "guideStep2": "Open the folder",
+    "guidePath": "C:/Users/{Username}/AppData/Local/Targem/Crossout/logs/{DATE}",
+    "guideStep3": "Select",
+    "guideStep3b": "and click “Open”",
+    "guideStep4": "Wait until processing finishes",
+    "help": {
+      "open": "No file, what now?",
+      "title": "combat.log is missing",
+      "hint": "The file appears only after logging is enabled and a battle is played to the end.",
+      "close": "Close",
+      "launcher": "Launcher",
+      "steam": "Steam",
+      "back": "Back",
+      "next": "Next",
+      "done": "Got it",
+      "copy": "Copy",
+      "copied": "Copied",
+      "command": "--cvar cl_combatLog 1",
+      "progress": "Step {{current}} of {{total}}",
+      "note": "The old key was +set cl_combatLog 1. crossout-info now expects the new one.",
+      "launcherSteps": [
+        {
+          "title": "Shortcut properties",
+          "text": "Right-click the shortcut you use to start Crossout and open Properties."
+        },
+        {
+          "title": "Target field",
+          "text": "At the very end of the line, add a space and then the key.",
+          "command": true
+        },
+        {
+          "title": "Play a battle",
+          "text": "Start the game with that shortcut and play until the victory or defeat screen. Leaving early does not save the record."
+        },
+        {
+          "title": "Find the file",
+          "text": "combat.log appears in C:/Users/{Username}/AppData/Local/Targem/Crossout/logs/{DATE}. Use the file from the newest folder."
+        }
+      ],
+      "steamSteps": [
+        {
+          "title": "Open properties",
+          "text": "In the Steam library, right-click Crossout and choose Properties."
+        },
+        {
+          "title": "Launch options",
+          "text": "Paste the key into Launch Options. Keep any options that are already there and add this one after a space.",
+          "command": true
+        },
+        {
+          "title": "Play a battle",
+          "text": "Close the properties and start the game from Steam. Finish the battle, otherwise the file will not appear."
+        },
+        {
+          "title": "Find the file",
+          "text": "combat.log appears in C:/Users/{Username}/AppData/Local/Targem/Crossout/logs/{DATE}. Use the file from the newest folder."
+        }
+      ]
+    },
     "noFile": "No file selected",
-    "nickname": "Nickname",
-    "nicknamePlaceholder": "Optional, taken from the log",
     "upload": "Upload log",
     "uploading": "Uploading...",
+    "wrongFile": "This is not combat.log. Choose combat.log from the Crossout logs folder.",
+    "uploadingHint": "Uploading the file",
+    "progress": "{{percent}}% · {{transferred}} of {{total}}",
+    "speed": "{{speed}}/s",
+    "processing": "Processing the file",
+    "processingHint": "The log is on the server, preparing the stats",
+    "linkPlaceholder": "https://crossout-info.com/log/…",
+    "openLink": "Show stats",
+    "linkError": "Paste a link like crossout-info.com/log/…",
     "success": "Log uploaded",
     "openLog": "Open the log on crossout-info",
     "error": "Could not upload the log"
@@ -147,6 +229,7 @@
     "network": "Could not reach crossout-info.com.",
     "server": "crossout-info returned an error.",
     "no-file": "No log file selected.",
+    "wrong-file": "This is not combat.log. Choose the battle log file.",
     "file-not-found": "The log file was not found.",
     "not-a-file": "The selected path is not a file.",
     "file-too-large": "The log file is too large.",

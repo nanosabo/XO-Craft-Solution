@@ -2,6 +2,7 @@ import { app } from "electron";
 import axios from "axios";
 import fs from "node:fs";
 import path from "node:path";
+import { Transform } from "node:stream";
 import FormData from "form-data";
 import {
   CROSSOUT_BATTLE_TYPES,
@@ -19,6 +20,7 @@ import {
   type CrossoutLogTableResult,
   type CrossoutUploadLogParams,
   type CrossoutUploadLogResult,
+  type CrossoutUploadProgress,
 } from "../src/types/crossout";
 import {
   extractCrossoutPage,
@@ -213,6 +215,63 @@ const uploadFailure = (
   error: message,
   errorCode: code,
 });
+
+const createUploadTracker = (
+  total: number,
+  onProgress?: (progress: CrossoutUploadProgress) => void,
+) => {
+  let transferred = 0;
+  let lastBytes = 0;
+  let lastAt = Date.now();
+  let bytesPerSecond = 0;
+  let lastEmit = 0;
+
+  const emit = (
+    phase: CrossoutUploadProgress["phase"],
+    force = false,
+  ) => {
+    if (!onProgress) return;
+
+    const now = Date.now();
+
+    if (!force && phase === "uploading" && now - lastEmit < 120) return;
+
+    const elapsed = (now - lastAt) / 1000;
+
+    if (elapsed >= 0.2 && transferred !== lastBytes) {
+      bytesPerSecond = Math.max(0, (transferred - lastBytes) / elapsed);
+      lastBytes = transferred;
+      lastAt = now;
+    }
+
+    lastEmit = now;
+
+    onProgress({
+      phase,
+      percent:
+        phase === "processing"
+          ? 100
+          : total > 0
+            ? Math.min(99, Math.round((transferred / total) * 100))
+            : 0,
+      transferred: phase === "processing" ? total : transferred,
+      total,
+      bytesPerSecond: Math.round(bytesPerSecond),
+    });
+  };
+
+  return {
+    start: () => emit("uploading", true),
+    chunk: (size: number) => {
+      transferred += size;
+      emit("uploading");
+    },
+    done: () => {
+      transferred = total;
+      emit("processing", true);
+    },
+  };
+};
 
 const logSummaryFailure = (
   code: CrossoutErrorCode,
@@ -547,11 +606,19 @@ const timezoneOffset = (): string => {
 export const uploadCrossoutLog = async (
   params: CrossoutUploadLogParams,
   language: CrossoutLanguage = "ru",
+  onProgress?: (progress: CrossoutUploadProgress) => void,
 ): Promise<CrossoutUploadLogResult> => {
   const filePath = params.filePath.trim();
 
   if (!filePath) {
     return uploadFailure("no-file", "Не выбран файл лога.");
+  }
+
+  if (path.basename(filePath).toLowerCase() !== "combat.log") {
+    return uploadFailure(
+      "wrong-file",
+      "Выбран не тот файл. Нужен combat.log.",
+    );
   }
 
   try {
@@ -590,15 +657,47 @@ export const uploadCrossoutLog = async (
 
     form.append("file", file, {
       filename: "combat.log",
+      knownLength: file.length,
+      contentType: "text/plain",
     });
+
+    let total = file.length;
+
+    try {
+      total = form.getLengthSync();
+    } catch {
+      total = file.length;
+    }
+
+    const tracker = createUploadTracker(total, onProgress);
+    // Count bytes as axios reads the multipart body, then mark the log as
+    // processing once that body has been handed to the socket.
+    const body = new Transform({
+      transform(chunk, _encoding, callback) {
+        const size = Buffer.isBuffer(chunk)
+          ? chunk.length
+          : Buffer.byteLength(String(chunk));
+
+        tracker.chunk(size);
+        callback(null, chunk);
+      },
+      flush(callback) {
+        tracker.done();
+        callback();
+      },
+    });
+
+    tracker.start();
+    form.pipe(body);
 
     try {
       const response = await axios.post<string>(
         `${baseUrl}/public/autoUploadLog.php?${query.toString()}`,
-        form,
+        body,
         {
           headers: {
             ...form.getHeaders(),
+            "Content-Length": String(total),
             Accept: "text/plain",
             "User-Agent": USER_AGENT,
           },
@@ -626,6 +725,8 @@ export const uploadCrossoutLog = async (
 
       return { ok: true, logId, logUrl: `${baseUrl}/log/${logId}` };
     } catch (error) {
+      body.destroy();
+      form.destroy();
       lastError = error;
 
       if (!shouldTryNextHost(error)) break;

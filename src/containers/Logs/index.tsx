@@ -1,138 +1,178 @@
 import classNames from "classnames";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { logWarning } from "@src/helpers/errorLog";
+import formatBytes from "@src/helpers/formatBytes";
 import useScrollFade from "@src/hooks/useScrollFade";
+import { selectSettingsState } from "@src/store/slices/settings.slice";
+import { useAppSelector } from "@src/store/store";
 import {
-  CROSSOUT_BATTLE_TYPES,
-  CROSSOUT_MAPS,
-  type CrossoutBattle,
-  type CrossoutBattleType,
   type CrossoutErrorCode,
+  type CrossoutDetectedLog,
   type CrossoutLogHistoryEntry,
+  type CrossoutUploadProgress,
 } from "@src/types/crossout";
 import Input from "@src/ui/Input";
-import Select from "@src/ui/Select";
+import LogHelpModal from "./LogHelpModal";
 import styles from "./styles/Logs.module.scss";
-
-const MAX_RANGE_DAYS = 7;
-
-const pad = (value: number) => String(value).padStart(2, "0");
-
-const toIsoDate = (date: Date): string =>
-  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-
-const toApiDate = (iso: string): string => {
-  const [year, month, day] = iso.split("-");
-
-  return `${day}.${month}.${year}`;
-};
-
-const parseIsoDate = (iso: string): Date | null => {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-
-  if (!match) return null;
-
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
-  }
-
-  return date;
-};
-
-const rangeInDays = (from: Date, to: Date): number =>
-  Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
-
-const today = new Date();
-const DEFAULT_TO = toIsoDate(today);
-const DEFAULT_FROM = toIsoDate(
-  new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6),
-);
 
 const fileName = (filePath: string): string =>
   filePath.split(/[\\/]/).pop() || filePath;
 
-const normalizeMap = (value: string): string =>
-  value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+const isCombatLogName = (filePath: string): boolean =>
+  fileName(filePath).toLowerCase() === "combat.log";
+
+const parentDir = (filePath: string): string => {
+  const parts = filePath.split(/[\\/]/);
+
+  parts.pop();
+
+  return parts.join(filePath.includes("\\") ? "\\" : "/") || filePath;
+};
+
+const shortenPath = (value: string): string => {
+  if (value.length <= 72) return value;
+
+  return `${value.slice(0, 32)}…${value.slice(-32)}`;
+};
+
+const LOG_LINK =
+  /(?:https?:\/\/)?(?:www\.)?(?:en\.)?crossout-info\.com\/log\/([A-Za-z0-9_-]{4,64})(?:\/([A-Za-z0-9_-]{1,32}))?/i;
+
+const BARE_LOG_ID = /^[A-Za-z0-9_-]{4,64}$/;
+
+const parseLogLink = (
+  value: string,
+): { logId: string; type: string | null } | null => {
+  const trimmed = value.trim();
+  const match = LOG_LINK.exec(trimmed);
+
+  if (match) {
+    const type = match[2]?.toLowerCase() ?? "";
+    const slug = /^[a-z0-9_-]{1,32}$/.test(type) ? type : null;
+
+    return { logId: match[1], type: slug };
+  }
+
+  if (BARE_LOG_ID.test(trimmed)) return { logId: trimmed, type: null };
+
+  return null;
+};
+
+const clampPercent = (percent: number): number =>
+  Math.min(100, Math.max(0, Math.round(percent)));
+
+const FileGlyph = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M7.5 3.5h6.8L19 8.1V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 6 20V5a1.5 1.5 0 0 1 1.5-1.5Z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+    />
+    <path
+      d="M14 3.8V8.2h4.3"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9 12.5h6M9 16h6"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const LinkGlyph = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M10 13.5a4.2 4.2 0 0 0 6.3.4l2.2-2.2a4.2 4.2 0 0 0-6-6L11 7.2"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M14 10.5a4.2 4.2 0 0 0-6.3-.4L5.5 12.3a4.2 4.2 0 0 0 6 6L13 16.8"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 type LogsError = {
   code?: CrossoutErrorCode | null;
   message?: string | null;
-  fallbackKey?:
-    | "stats.error"
-    | "stats.dateError"
-    | "stats.rangeError"
-    | "upload.error"
-    | "log.error";
+  fallbackKey?: "upload.error" | "upload.wrongFile";
 };
 
 const Logs = () => {
   const { t, i18n } = useTranslation("logsPage");
   const navigate = useNavigate();
+  const logsPath = useAppSelector(selectSettingsState).crossoutLogsPath;
   const isRu = Boolean(i18n.language?.startsWith("ru"));
   const numberLocale = isRu ? "ru-RU" : "en-US";
   const contentRef = useRef<HTMLDivElement>(null);
   const fade = useScrollFade(contentRef);
 
-  const [hasKey, setHasKey] = useState<boolean | null>(null);
-  const [showKeyForm, setShowKeyForm] = useState(false);
-  const [keyValue, setKeyValue] = useState("");
-  const [keySaving, setKeySaving] = useState(false);
-  const [keyStatus, setKeyStatus] = useState<"idle" | "saved" | "invalid">(
-    "idle",
-  );
-
+  const [source, setSource] = useState<"file" | "link">("file");
   const [filePath, setFilePath] = useState<string | null>(null);
-  const [nickname, setNickname] = useState("");
+  const [latestLog, setLatestLog] = useState<
+    CrossoutDetectedLog | null | undefined
+  >(undefined);
+  const [logLink, setLogLink] = useState("");
+  const [linkError, setLinkError] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] =
+    useState<CrossoutUploadProgress | null>(null);
   const [uploadError, setUploadError] = useState<LogsError | null>(null);
+  const uploadingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const [history, setHistory] = useState<CrossoutLogHistoryEntry[] | null>(
     null,
   );
   const [historyError, setHistoryError] = useState(false);
 
-  const [battleType, setBattleType] = useState<CrossoutBattleType>("PVP");
-  const [from, setFrom] = useState(DEFAULT_FROM);
-  const [to, setTo] = useState(DEFAULT_TO);
-  const [excludeMap, setExcludeMap] = useState("");
-  const [fetching, setFetching] = useState(false);
-  const [fetched, setFetched] = useState(false);
-  const [fetchError, setFetchError] = useState<LogsError | null>(null);
-  const [battles, setBattles] = useState<CrossoutBattle[]>([]);
-
   useEffect(() => {
     let cancelled = false;
 
     window.electronAPI
-      .crossoutHasApiKey()
-      .then((value) => {
-        if (cancelled) return;
-
-        setHasKey(value);
-        setShowKeyForm(!value);
+      .crossoutFindLatestLog(logsPath)
+      .then((found) => {
+        if (!cancelled) setLatestLog(found);
       })
       .catch((error) => {
         if (cancelled) return;
 
-        logWarning("crossout-key", error);
-        setHasKey(false);
-        setShowKeyForm(true);
+        logWarning("crossout-log-find", error);
+        setLatestLog(null);
       });
 
     return () => {
       cancelled = true;
     };
+  }, [logsPath]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return window.electronAPI.onCrossoutUploadProgress((progress) => {
+      if (!uploadingRef.current) return;
+
+      setUploadProgress(progress);
+    });
   }, []);
 
   useEffect(() => {
@@ -158,63 +198,6 @@ const Logs = () => {
     };
   }, []);
 
-  const typeOptions = useMemo(
-    () =>
-      CROSSOUT_BATTLE_TYPES.map((option) => ({
-        value: option.value,
-        label: t(`types.${option.value}`),
-      })),
-    [t],
-  );
-
-  const mapOptions = useMemo(
-    () => [
-      { value: "", label: t("stats.anyMap") },
-      ...CROSSOUT_MAPS.map((option) => ({
-        value: option.value,
-        label: isRu ? option.ru : option.en,
-      })),
-    ],
-    [t, isRu],
-  );
-
-  const sortedBattles = useMemo(
-    () => [...battles].sort((a, b) => b.date - a.date),
-    [battles],
-  );
-
-  const summary = useMemo(() => {
-    if (battles.length === 0) return null;
-
-    const total = battles.length;
-    const sum = (pick: (battle: CrossoutBattle) => number) =>
-      battles.reduce((acc, battle) => acc + pick(battle), 0);
-    const wins = battles.filter((battle) => battle.win === 1).length;
-
-    return {
-      total,
-      winrate: Math.round((wins / total) * 100),
-      damage: Math.round(sum((battle) => battle.damage) / total),
-      important: Math.round(sum((battle) => battle.important) / total),
-      score: Math.round(sum((battle) => battle.score) / total),
-      kills: sum((battle) => battle.kill),
-      deaths: sum((battle) => battle.death),
-      time: sum((battle) => battle.timebattle),
-    };
-  }, [battles]);
-
-  const formatNumber = (value: number) => value.toLocaleString(numberLocale);
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const rest = Math.floor(seconds % 60);
-
-    return hours > 0
-      ? `${hours}:${pad(minutes)}:${pad(rest)}`
-      : `${minutes}:${pad(rest)}`;
-  };
-
   const formatDate = (unix: number) =>
     new Date(unix * 1000).toLocaleString(numberLocale, {
       day: "2-digit",
@@ -223,29 +206,6 @@ const Logs = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
-
-  const typeLabel = (type: string) => {
-    const key = type.toUpperCase();
-    const known = CROSSOUT_BATTLE_TYPES.some((option) => option.value === key);
-
-    return known ? t(`types.${key}`) : type;
-  };
-
-  const mapLabel = (map: string) => {
-    if (!map) return "";
-
-    const normalized = normalizeMap(map);
-    const option = CROSSOUT_MAPS.find(
-      (item) =>
-        item.value === normalized ||
-        normalizeMap(item.ru) === normalized ||
-        normalizeMap(item.en) === normalized,
-    );
-
-    if (!option) return map;
-
-    return isRu ? option.ru : option.en;
-  };
 
   const logTypeLabel = (key: string, fallback: string) => {
     const slug = key.toLowerCase();
@@ -267,34 +227,7 @@ const Logs = () => {
 
     return error.fallbackKey
       ? t(error.fallbackKey)
-      : error.message || t("stats.error");
-  };
-
-  const saveKey = async () => {
-    const value = keyValue.trim();
-
-    if (!value) return;
-
-    setKeySaving(true);
-    setKeyStatus("idle");
-
-    try {
-      const ok = await window.electronAPI.crossoutSetApiKey(value);
-
-      if (ok) {
-        setHasKey(true);
-        setShowKeyForm(false);
-        setKeyValue("");
-        setKeyStatus("saved");
-      } else {
-        setKeyStatus("invalid");
-      }
-    } catch (error) {
-      logWarning("crossout-key", error);
-      setKeyStatus("invalid");
-    } finally {
-      setKeySaving(false);
-    }
+      : error.message || t("upload.error");
   };
 
   const removeHistory = async (id: string) => {
@@ -308,30 +241,27 @@ const Logs = () => {
     }
   };
 
-  const pickFile = async () => {
-    try {
-      const selected = await window.electronAPI.crossoutPickLog();
+  const upload = async (selectedPath: string) => {
+    if (!selectedPath || uploadingRef.current) return;
 
-      if (!selected) return;
-
-      setFilePath(selected);
-      setUploadError(null);
-    } catch (error) {
-      logWarning("crossout-upload", error);
-    }
-  };
-
-  const upload = async () => {
-    if (!filePath) return;
-
+    uploadingRef.current = true;
     setUploading(true);
     setUploadError(null);
+    setUploadProgress({
+      phase: "uploading",
+      percent: 0,
+      transferred: 0,
+      total: 0,
+      bytesPerSecond: 0,
+    });
 
     try {
       const result = await window.electronAPI.crossoutUploadLog({
-        nickname: nickname.trim(),
-        filePath,
+        nickname: "",
+        filePath: selectedPath,
       });
+
+      if (!mountedRef.current) return;
 
       if (result.ok) {
         navigate(`/logs/${result.logId}`);
@@ -344,60 +274,58 @@ const Logs = () => {
       }
     } catch (error) {
       logWarning("crossout-upload", error);
-      setUploadError({ fallbackKey: "upload.error" });
+
+      if (mountedRef.current) {
+        setUploadError({ fallbackKey: "upload.error" });
+      }
     } finally {
-      setUploading(false);
+      uploadingRef.current = false;
+
+      if (mountedRef.current) {
+        setUploading(false);
+        setUploadProgress(null);
+      }
     }
   };
 
-  const fetchBattles = async () => {
-    const fromDate = parseIsoDate(from);
-    const toDate = parseIsoDate(to);
-
-    if (!fromDate || !toDate) {
-      setFetchError({ fallbackKey: "stats.dateError" });
-      return;
-    }
-
-    if (
-      toDate.getTime() < fromDate.getTime() ||
-      rangeInDays(fromDate, toDate) > MAX_RANGE_DAYS
-    ) {
-      setFetchError({ fallbackKey: "stats.rangeError" });
-      return;
-    }
-
-    setFetching(true);
-    setFetchError(null);
+  const pickFile = async () => {
+    if (uploadingRef.current) return;
 
     try {
-      const result = await window.electronAPI.crossoutFetchBattles({
-        type: battleType,
-        from: toApiDate(from),
-        to: toApiDate(to),
-        excludeMap: excludeMap || undefined,
-      });
+      const selected = await window.electronAPI.crossoutPickLog();
 
-      if (result.error) {
-        setBattles([]);
-        setFetchError({
-          code: result.errorCode,
-          message: result.error,
-          fallbackKey: "stats.error",
-        });
-      } else {
-        setBattles(result.battles);
+      if (!selected) return;
+
+      setFilePath(selected);
+
+      if (!isCombatLogName(selected)) {
+        setUploadError({ fallbackKey: "upload.wrongFile" });
+        setUploadProgress(null);
+        return;
       }
 
-      setFetched(true);
+      setUploadError(null);
+      void upload(selected);
     } catch (error) {
-      logWarning("crossout-battles", error);
-      setBattles([]);
-      setFetchError({ fallbackKey: "stats.error" });
-      setFetched(true);
-    } finally {
-      setFetching(false);
+      logWarning("crossout-upload", error);
     }
+  };
+
+  const openLink = () => {
+    const parsed = parseLogLink(logLink);
+
+    if (!parsed) {
+      setLinkError(true);
+      return;
+    }
+
+    setLinkError(false);
+
+    const query = parsed.type
+      ? `?type=${encodeURIComponent(parsed.type)}`
+      : "";
+
+    navigate(`/logs/${encodeURIComponent(parsed.logId)}${query}`);
   };
 
   return (
@@ -413,108 +341,263 @@ const Logs = () => {
         <p>{t("subtitle")}</p>
       </div>
 
-      {(hasKey === false || showKeyForm) && (
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2>{t("apiKey.title")}</h2>
-            <p>{t("apiKey.description")}</p>
-          </div>
-
-          <div className={styles.keyRow}>
-            <Input
-              type="password"
-              value={keyValue}
-              onChange={(event) => setKeyValue(event.target.value)}
-              placeholder={t("apiKey.placeholder")}
-              aria-label={t("apiKey.placeholder")}
-            />
-
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={saveKey}
-              disabled={keySaving || !keyValue.trim()}
-            >
-              {t("apiKey.save")}
-            </button>
-
-            {hasKey && (
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => {
-                  setShowKeyForm(false);
-                  setKeyStatus("idle");
-                  setKeyValue("");
-                }}
-              >
-                {t("apiKey.cancel")}
-              </button>
-            )}
-          </div>
-
-        </section>
-      )}
-
-      {keyStatus === "saved" && (
-        <p className={styles.success}>{t("apiKey.saved")}</p>
-      )}
-      {keyStatus === "invalid" && (
-        <p className={styles.error}>{t("apiKey.invalid")}</p>
-      )}
-
-      {hasKey && !showKeyForm && (
-        <div className={styles.keyConfigured}>
-          <span>{t("apiKey.configured")}</span>
-          <button
-            type="button"
-            className={styles.linkButton}
-            onClick={() => setShowKeyForm(true)}
-          >
-            {t("apiKey.change")}
-          </button>
-        </div>
-      )}
-
-      <section className={styles.card}>
+      <div className={styles.workspace}>
+      <section className={classNames(styles.card, styles.uploadCard)} aria-busy={uploading}>
         <div className={styles.cardHeader}>
           <h2>{t("upload.title")}</h2>
           <p>{t("upload.subtitle")}</p>
         </div>
 
-        <div className={styles.uploadRow}>
-          <button
-            type="button"
-            className={styles.fileButton}
-            onClick={pickFile}
-            title={filePath ?? t("upload.pick")}
-          >
-            {filePath ? fileName(filePath) : t("upload.pick")}
-          </button>
+        {!uploading && (
+          <div className={styles.sourceSwitch} role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={source === "file"}
+              className={classNames(styles.sourceOption, {
+                [styles.sourceOptionActive]: source === "file",
+              })}
+              onClick={() => setSource("file")}
+            >
+              <span className={styles.sourceIcon}>
+                <FileGlyph />
+              </span>
+              <span className={styles.sourceCopy}>
+                <strong>{t("upload.sourceFile")}</strong>
+                <span>{t("upload.sourceFileHint")}</span>
+              </span>
+            </button>
 
-          <Input
-            value={nickname}
-            onChange={(event) => setNickname(event.target.value)}
-            placeholder={t("upload.nicknamePlaceholder")}
-            aria-label={t("upload.nickname")}
-          />
+            <button
+              type="button"
+              role="tab"
+              aria-selected={source === "link"}
+              className={classNames(styles.sourceOption, {
+                [styles.sourceOptionActive]: source === "link",
+              })}
+              onClick={() => setSource("link")}
+            >
+              <span className={styles.sourceIcon}>
+                <LinkGlyph />
+              </span>
+              <span className={styles.sourceCopy}>
+                <strong>{t("upload.sourceLink")}</strong>
+                <span>{t("upload.sourceLinkHint")}</span>
+              </span>
+            </button>
+          </div>
+        )}
 
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={upload}
-            disabled={uploading || !filePath}
+        {!uploading && source === "file" && (
+            <div
+              className={classNames(styles.latest, {
+                [styles.latestPlain]: !latestLog,
+              })}
+            >
+              {latestLog === undefined && (
+                <p className={styles.latestStatus}>{t("upload.latestLoading")}</p>
+              )}
+
+              {latestLog === null && (
+                <div className={styles.latestMissing}>
+                  <p>
+                    {logsPath
+                      ? t("upload.latestMissingCustom")
+                      : t("upload.latestMissing")}
+                  </p>
+                  <button
+                    type="button"
+                    className={classNames(
+                      styles.secondaryButton,
+                      styles.latestButton,
+                    )}
+                    onClick={() => navigate("/settings")}
+                  >
+                    {t("upload.openSettings")}
+                  </button>
+                </div>
+              )}
+
+              {latestLog && (
+                <>
+                  <span className={styles.latestEyebrow}>
+                    {t("upload.latestTitle")}
+                  </span>
+                  <strong className={styles.latestName}>
+                    {latestLog.session.toLowerCase() === "logs"
+                      ? "combat.log"
+                      : latestLog.session}
+                  </strong>
+                  <span className={styles.latestMeta}>
+                    {formatDate(latestLog.modifiedAt / 1000)}
+                  </span>
+                  <span
+                    className={styles.latestPath}
+                    title={latestLog.filePath}
+                  >
+                    {shortenPath(parentDir(latestLog.filePath))}
+                  </span>
+                  <button
+                    type="button"
+                    className={classNames(styles.primaryButton, styles.latestButton)}
+                    onClick={() => {
+                      setFilePath(latestLog.filePath);
+                      setUploadError(null);
+                      void upload(latestLog.filePath);
+                    }}
+                  >
+                    {t("upload.latestUpload")}
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                className={classNames(
+                  latestLog
+                    ? styles.secondaryButton
+                    : styles.pickButton,
+                  latestLog && styles.latestButton,
+                  !latestLog && filePath && styles.pickButtonSelected,
+                )}
+                onClick={() => void pickFile()}
+                title={filePath ?? t("upload.pick")}
+              >
+                {latestLog ? (
+                  t("upload.pickOther")
+                ) : (
+                  <>
+                    <span className={styles.pickIcon}>
+                      <FileGlyph />
+                    </span>
+                    <span className={styles.pickCopy}>
+                      <strong>
+                        {filePath ? fileName(filePath) : t("upload.pick")}
+                      </strong>
+                      <span>
+                        {filePath
+                          ? t("upload.selectedHint")
+                          : t("upload.pickHint")}
+                      </span>
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+        )}
+
+        {!uploading && source === "link" && (
+          <form
+            className={styles.linkRow}
+            onSubmit={(event) => {
+              event.preventDefault();
+              openLink();
+            }}
           >
-            {uploading ? t("upload.uploading") : t("upload.upload")}
-          </button>
-        </div>
+            <Input
+              value={logLink}
+              onChange={(event) => {
+                setLogLink(event.target.value);
+                setLinkError(false);
+              }}
+              placeholder={t("upload.linkPlaceholder")}
+              aria-label={t("upload.sourceLink")}
+              spellCheck={false}
+            />
+
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={!logLink.trim()}
+            >
+              {t("upload.openLink")}
+            </button>
+          </form>
+        )}
+
+        {uploadProgress && (
+          <div
+            className={classNames(styles.statusBlock, styles.statusBlockOnly)}
+            role="status"
+            aria-live="polite"
+          >
+            {uploadProgress.phase === "processing" ? (
+              <div className={styles.processing}>
+                <span className={styles.spinner} aria-hidden="true" />
+                <div>
+                  <strong>{t("upload.processing")}</strong>
+                  <p>{t("upload.processingHint")}</p>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.progressBlock}>
+                <div className={styles.progressHead}>
+                  <span>{t("upload.uploadingHint")}</span>
+                  <span>{clampPercent(uploadProgress.percent)}%</span>
+                </div>
+                <div className={styles.progressTrack}>
+                  <div
+                    className={styles.progressFill}
+                    style={{
+                      width: `${clampPercent(uploadProgress.percent)}%`,
+                    }}
+                  />
+                </div>
+                <div className={styles.progressMeta}>
+                  <span>
+                    {t("upload.progress", {
+                      percent: clampPercent(uploadProgress.percent),
+                      transferred: formatBytes(uploadProgress.transferred),
+                      total: formatBytes(uploadProgress.total),
+                    })}
+                  </span>
+                  <span>
+                    {t("upload.speed", {
+                      speed: formatBytes(uploadProgress.bytesPerSecond),
+                    })}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {uploadError && (
           <p className={styles.error}>{errorText(uploadError)}</p>
         )}
+        {source === "link" && linkError && (
+          <p className={styles.error}>{t("upload.linkError")}</p>
+        )}
       </section>
 
-      <section className={styles.card}>
+      <section className={styles.guide}>
+        <h2>
+          {t("upload.guideTitle")}{" "}
+          <span>{t("upload.guideFile")}</span>
+        </h2>
+        <ol>
+          <li>{t("upload.guideStep1")}</li>
+          <li>
+            {t("upload.guideStep2")}{" "}
+            <span className={styles.guidePath}>{t("upload.guidePath")}</span>
+          </li>
+          <li>
+            {t("upload.guideStep3")}{" "}
+            <span className={styles.guideFileName}>combat.log</span>{" "}
+            {t("upload.guideStep3b")}
+          </li>
+          <li>{t("upload.guideStep4")}</li>
+        </ol>
+        <button
+          type="button"
+          className={classNames(styles.secondaryButton, styles.guideHelp)}
+          onClick={() => setHelpOpen(true)}
+        >
+          {t("upload.help.open")}
+        </button>
+      </section>
+
+      <section className={classNames(styles.card, styles.historyCard)}>
         <div className={styles.cardHeader}>
           <h2>{t("history.title")}</h2>
           <p>{t("history.subtitle")}</p>
@@ -572,161 +655,11 @@ const Logs = () => {
           </ul>
         )}
       </section>
-
-      <section className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h2>{t("stats.title")}</h2>
-          <p>{t("stats.subtitle")}</p>
-        </div>
-
-        <div className={styles.filters}>
-          <label className={styles.field}>
-            <span>{t("stats.type")}</span>
-            <Select
-              options={typeOptions}
-              defaultValue={battleType}
-              onChange={(value) => setBattleType(value as CrossoutBattleType)}
-            />
-          </label>
-
-          <label className={styles.field}>
-            <span>{t("stats.from")}</span>
-            <input
-              className={styles.date}
-              type="date"
-              value={from}
-              max={to}
-              onChange={(event) => setFrom(event.target.value)}
-            />
-          </label>
-
-          <label className={styles.field}>
-            <span>{t("stats.to")}</span>
-            <input
-              className={styles.date}
-              type="date"
-              value={to}
-              min={from}
-              max={DEFAULT_TO}
-              onChange={(event) => setTo(event.target.value)}
-            />
-          </label>
-
-          <label className={classNames(styles.field, styles.mapField)}>
-            <span>{t("stats.excludeMap")}</span>
-            <Select
-              options={mapOptions}
-              defaultValue=""
-              onChange={setExcludeMap}
-            />
-          </label>
-
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={fetchBattles}
-            disabled={fetching || hasKey === false}
-          >
-            {fetching ? t("stats.fetching") : t("stats.fetch")}
-          </button>
-        </div>
-
-        {fetchError && <p className={styles.error}>{errorText(fetchError)}</p>}
-
-        {summary && (
-          <div className={styles.summary}>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.battles")}</span>
-              <strong>{formatNumber(summary.total)}</strong>
-            </div>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.winrate")}</span>
-              <strong>{summary.winrate}%</strong>
-            </div>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.damage")}</span>
-              <strong>{formatNumber(summary.damage)}</strong>
-            </div>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.important")}</span>
-              <strong>{formatNumber(summary.important)}</strong>
-            </div>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.score")}</span>
-              <strong>{formatNumber(summary.score)}</strong>
-            </div>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.kills")}</span>
-              <strong>{formatNumber(summary.kills)}</strong>
-            </div>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.deaths")}</span>
-              <strong>{formatNumber(summary.deaths)}</strong>
-            </div>
-            <div className={styles.summaryCard}>
-              <span>{t("summary.time")}</span>
-              <strong>{formatDuration(summary.time)}</strong>
-            </div>
-          </div>
-        )}
-
-        {fetched && !fetching && !fetchError && battles.length === 0 && (
-          <p className={styles.empty}>{t("stats.empty")}</p>
-        )}
-
-        {sortedBattles.length > 0 && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>{t("table.date")}</th>
-                  <th>{t("table.type")}</th>
-                  <th>{t("table.map")}</th>
-                  <th>{t("table.result")}</th>
-                  <th>{t("table.damage")}</th>
-                  <th>{t("table.important")}</th>
-                  <th>{t("table.kills")}</th>
-                  <th>{t("table.score")}</th>
-                  <th>{t("table.ps")}</th>
-                  <th>{t("table.duration")}</th>
-                  <th>{t("table.weapon")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedBattles.map((battle) => (
-                  <tr key={`${battle.battle_id}-${battle.date}-${battle.teams}`}>
-                    <td>{formatDate(battle.date)}</td>
-                    <td>{typeLabel(battle.type)}</td>
-                    <td className={styles.mapCell} title={battle.map}>
-                      {mapLabel(battle.map)}
-                    </td>
-                    <td
-                      className={classNames(
-                        battle.win === 1 ? styles.win : styles.loss,
-                      )}
-                    >
-                      {battle.win === 1 ? t("table.win") : t("table.loss")}
-                    </td>
-                    <td>{formatNumber(battle.damage)}</td>
-                    <td>{formatNumber(battle.important)}</td>
-                    <td>
-                      {battle.kill}/{battle.death}
-                    </td>
-                    <td>{formatNumber(battle.score)}</td>
-                    <td>{formatNumber(battle.ur)}</td>
-                    <td>{formatDuration(battle.timebattle)}</td>
-                    <td className={styles.weaponCell} title={battle.weapon}>
-                      {battle.weapon}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      </div>
+      <LogHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 };
+
 
 export default Logs;

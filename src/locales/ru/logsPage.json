@@ -1,6 +1,6 @@
 {
   "title": "Боевая статистика",
-  "subtitle": "Загрузите combat.log и смотрите статистику боёв Crossout",
+  "subtitle": "Загрузите combat.log или откройте готовую ссылку с crossout-info",
   "apiKey": {
     "title": "API-ключ crossout-info",
     "description": "Ключ хранится в папке приложения и не попадает в исходный код.",
@@ -14,13 +14,95 @@
   },
   "upload": {
     "title": "Загрузка лога",
-    "subtitle": "Выберите файл combat.log из папки Crossout",
+    "subtitle": "Файл combat.log или ссылка на уже загруженный лог",
+    "sourceFile": "Файл",
+    "sourceFileHint": "combat.log с компьютера",
+    "sourceLink": "Ссылка с сайта",
+    "sourceLinkHint": "Страница лога на crossout-info",
     "pick": "Выбрать файл",
+    "pickHint": "combat.log загрузится сразу после выбора",
+    "pickOther": "Выбрать другой файл",
+    "selectedHint": "Нажмите, чтобы выбрать другой файл",
+    "latestTitle": "Последний лог",
+    "latestLoading": "Ищем последний combat.log…",
+    "latestMissing": "Не удалось найти папку с логами Crossout. Укажите её в настройках — последний combat.log подставится сам.",
+    "latestMissingCustom": "В указанной папке нет combat.log. Проверьте путь в настройках или выберите файл вручную.",
+    "openSettings": "Открыть настройки",
+    "latestUpload": "Загрузить последний лог",
+    "guideTitle": "Как найти файл",
+    "guideFile": "COMBAT.LOG",
+    "guideStep1": "Нажмите кнопку «Выбрать файл»",
+    "guideStep2": "Перейдите в папку",
+    "guidePath": "C:/Пользователь/{Имя пользователя}/AppData/Local/Targem/Crossout/logs/{ДАТА}",
+    "guideStep3": "Выберите файл",
+    "guideStep3b": "и нажмите «Открыть»",
+    "guideStep4": "Ожидайте завершение обработки",
+    "help": {
+      "open": "Нет файла, что делать?",
+      "title": "Нет файла combat.log",
+      "hint": "Файл появляется только после включённых логов и сыгранного до конца боя.",
+      "close": "Закрыть",
+      "launcher": "Лаунчер",
+      "steam": "Steam",
+      "back": "Назад",
+      "next": "Дальше",
+      "done": "Понятно",
+      "copy": "Копировать",
+      "copied": "Скопировано",
+      "command": "--cvar cl_combatLog 1",
+      "progress": "Шаг {{current}} из {{total}}",
+      "note": "Раньше писали +set cl_combatLog 1. Сейчас на crossout-info нужен новый ключ.",
+      "launcherSteps": [
+        {
+          "title": "Свойства ярлыка",
+          "text": "Нажмите правой кнопкой по ярлыку, которым запускаете Crossout, и откройте «Свойства»."
+        },
+        {
+          "title": "Поле «Объект»",
+          "text": "В самый конец строки, через пробел, допишите ключ.",
+          "command": true
+        },
+        {
+          "title": "Сыграйте бой",
+          "text": "Запустите игру этим ярлыком и доиграйте бой до экрана победы или поражения. Если выйти раньше, запись не сохранится."
+        },
+        {
+          "title": "Найдите файл",
+          "text": "combat.log появится в папке C:/Пользователь/{Имя пользователя}/AppData/Local/Targem/Crossout/logs/{ДАТА}. Берите файл из самой новой папки."
+        }
+      ],
+      "steamSteps": [
+        {
+          "title": "Откройте свойства",
+          "text": "В библиотеке Steam нажмите правой кнопкой по Crossout и выберите «Свойства»."
+        },
+        {
+          "title": "Параметры запуска",
+          "text": "В поле «Параметры запуска» вставьте ключ. Другие параметры, если они уже есть, не удаляйте — допишите ключ через пробел.",
+          "command": true
+        },
+        {
+          "title": "Сыграйте бой",
+          "text": "Закройте свойства и запустите игру через Steam. Доиграйте бой до конца, иначе файл не появится."
+        },
+        {
+          "title": "Найдите файл",
+          "text": "combat.log появится в папке C:/Пользователь/{Имя пользователя}/AppData/Local/Targem/Crossout/logs/{ДАТА}. Берите файл из самой новой папки."
+        }
+      ]
+    },
     "noFile": "Файл не выбран",
-    "nickname": "Никнейм",
-    "nicknamePlaceholder": "Необязательно, берётся из лога",
     "upload": "Загрузить лог",
     "uploading": "Загружаем...",
+    "wrongFile": "Это не combat.log. В папке логов Crossout выберите файл combat.log.",
+    "uploadingHint": "Загружаем файл",
+    "progress": "{{percent}}% · {{transferred}} из {{total}}",
+    "speed": "{{speed}}/с",
+    "processing": "Обрабатываем файл",
+    "processingHint": "Лог уже на сервере, готовим статистику",
+    "linkPlaceholder": "https://crossout-info.com/log/…",
+    "openLink": "Показать статистику",
+    "linkError": "Нужна ссылка вида crossout-info.com/log/…",
     "success": "Лог загружен",
     "openLog": "Открыть лог на crossout-info",
     "error": "Не удалось загрузить лог"
@@ -147,6 +229,7 @@
     "network": "Не удалось связаться с crossout-info.com.",
     "server": "Сервис crossout-info вернул ошибку.",
     "no-file": "Не выбран файл лога.",
+    "wrong-file": "Это не combat.log. Выберите файл боевого лога.",
     "file-not-found": "Файл лога не найден.",
     "not-a-file": "Указанный путь не является файлом.",
     "file-too-large": "Файл лога слишком большой.",

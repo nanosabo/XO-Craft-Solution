@@ -140,6 +140,7 @@ export type CrossoutErrorCode =
   | "network"
   | "server"
   | "no-file"
+  | "wrong-file"
   | "file-not-found"
   | "not-a-file"
   | "file-too-large"
@@ -158,6 +159,24 @@ export interface CrossoutBattlesResult {
 export interface CrossoutUploadLogParams {
   nickname: string;
   filePath: string;
+}
+
+/** Newest combat.log found in the local Crossout logs folder. */
+export interface CrossoutDetectedLog {
+  filePath: string;
+  /** Parent session folder, usually a date. */
+  session: string;
+  /** File modification time in milliseconds. */
+  modifiedAt: number;
+}
+
+/** Byte progress of a combat.log upload, then the server-side parse. */
+export interface CrossoutUploadProgress {
+  phase: "uploading" | "processing";
+  percent: number;
+  transferred: number;
+  total: number;
+  bytesPerSecond: number;
 }
 
 export type CrossoutUploadLogResult =

@@ -23,6 +23,8 @@ export interface SettingsState {
   analog: AnalogTolerances;
   notifications: MarketNotificationSettings;
   autoUpdate: boolean;
+  /** Folder that contains combat.log, or the log file itself. */
+  crossoutLogsPath: string | null;
 }
 
 export const SETTINGS_STORAGE_KEY = "settings";
@@ -43,6 +45,7 @@ export const createDefaultSettings = (): SettingsState => ({
     customSoundName: null,
   },
   autoUpdate: true,
+  crossoutLogsPath: null,
 });
 
 const loadSettings = (): SettingsState => {
@@ -73,9 +76,15 @@ const loadSettings = (): SettingsState => {
       notifications.signal = "coins";
     }
 
+    const logsPath =
+      typeof parsed.crossoutLogsPath === "string"
+        ? parsed.crossoutLogsPath.trim()
+        : "";
+
     return {
       ...defaults,
       ...parsed,
+      crossoutLogsPath: logsPath || null,
       inventory:
         parsed.inventory && typeof parsed.inventory === "object"
           ? parsed.inventory
@@ -155,6 +164,12 @@ export const settingsSlice = createSlice({
       state.autoUpdate = action.payload;
       saveSettings(state);
     },
+    setCrossoutLogsPath(state, action: PayloadAction<string | null>) {
+      const value = action.payload?.trim() ?? "";
+
+      state.crossoutLogsPath = value || null;
+      saveSettings(state);
+    },
     resetSettings() {
       const defaults = createDefaultSettings();
       saveSettings(defaults);
@@ -172,6 +187,7 @@ export const {
   resetAnalogTolerances,
   setNotificationSettings,
   setAutoUpdate,
+  setCrossoutLogsPath,
   resetSettings,
 } = settingsSlice.actions;
 

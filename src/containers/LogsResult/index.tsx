@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { logWarning } from "@src/helpers/errorLog";
 import useScrollFade from "@src/hooks/useScrollFade";
 import {
@@ -98,7 +98,9 @@ const StarRating = ({ value }: { value: number }) => {
 
 const LogsResult = () => {
   const { logId = "" } = useParams<{ logId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const preferredType = (searchParams.get("type") ?? "").trim().toLowerCase();
   const { t, i18n } = useTranslation("logsPage");
   const isRu = Boolean(i18n.language?.startsWith("ru"));
   const contentRef = useRef<HTMLDivElement>(null);
@@ -171,7 +173,10 @@ const LogsResult = () => {
               logWarning("crossout-history", historyError);
             });
 
-          const firstType = result.summary.types[0];
+          const matchedType = result.summary.types.find(
+            (type) => type.key.toLowerCase() === preferredType,
+          );
+          const firstType = matchedType ?? result.summary.types[0];
 
           if (firstType) {
             void loadLogType(logId, firstType.key, firstType.count);
@@ -198,7 +203,7 @@ const LogsResult = () => {
     return () => {
       cancelled = true;
     };
-  }, [logId, loadLogType]);
+  }, [logId, loadLogType, preferredType]);
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -361,7 +366,13 @@ const LogsResult = () => {
         {error && <p className={styles.error}>{errorText(error)}</p>}
 
         {loading && !error && (
-          <p className={styles.empty}>{t("result.loading")}</p>
+          <div className={styles.processing} role="status" aria-live="polite">
+            <span className={styles.spinner} aria-hidden="true" />
+            <div>
+              <strong>{t("log.loading")}</strong>
+              <p>{t("result.loading")}</p>
+            </div>
+          </div>
         )}
 
         {summary && summary.types.length > 0 && (
@@ -389,7 +400,12 @@ const LogsResult = () => {
         )}
 
         {logTableLoading && (
-          <p className={styles.empty}>{t("log.tableLoading")}</p>
+          <div className={styles.processing} role="status" aria-live="polite">
+            <span className={styles.spinner} aria-hidden="true" />
+            <div>
+              <strong>{t("log.tableLoading")}</strong>
+            </div>
+          </div>
         )}
 
         {logTableError && (

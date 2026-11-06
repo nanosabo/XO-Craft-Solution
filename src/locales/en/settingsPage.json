@@ -9,7 +9,16 @@
   },
   "general": {
     "title": "General settings",
-    "subtitle": "Interface language, updates and app data.",
+    "subtitle": "Interface language, Crossout logs, updates and app data.",
+    "logs": {
+      "title": "Crossout logs",
+      "subtitle": "The folder that contains combat.log. Use it when the app cannot find the logs on its own.",
+      "path": "Logs folder",
+      "empty": "No folder selected. It is usually .../Targem/Crossout/logs.",
+      "pick": "Choose folder",
+      "change": "Change folder",
+      "clear": "Clear"
+    },
     "language": {
       "title": "Interface language",
       "subtitle": "Applies to every section of the app.",

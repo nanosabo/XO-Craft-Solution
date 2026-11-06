@@ -7,8 +7,10 @@ import type {
   UpdateState,
 } from "@src/store/slices/updater.slice";
 import type {
+  CrossoutDetectedLog,
   CrossoutFetchBattlesParams,
   CrossoutUploadLogParams,
+  CrossoutUploadProgress,
 } from "@src/types/crossout";
 
 // --------- Expose some API to the Renderer process ---------
@@ -62,6 +64,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("crossout-fetch-battles", params),
   crossoutUploadLog: (params: CrossoutUploadLogParams) =>
     ipcRenderer.invoke("crossout-upload-log", params),
+  onCrossoutUploadProgress: (
+    listener: (progress: CrossoutUploadProgress) => void,
+  ) => {
+    const wrapped = (
+      _: Electron.IpcRendererEvent,
+      progress: CrossoutUploadProgress,
+    ) => {
+      listener(progress);
+    };
+
+    ipcRenderer.on("crossout-upload-progress", wrapped);
+
+    return () =>
+      ipcRenderer.removeListener("crossout-upload-progress", wrapped);
+  },
   crossoutLoadLog: (logId: string) =>
     ipcRenderer.invoke("crossout-load-log", logId),
   crossoutLoadLogTable: (logId: string, type: string, expectedBattles?: number) =>
@@ -78,6 +95,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
   crossoutHistoryRemove: (logId: string) =>
     ipcRenderer.invoke("crossout-history-remove", logId),
   crossoutPickLog: () => ipcRenderer.invoke("crossout-pick-log"),
+  crossoutFindLatestLog: (customPath?: string | null) =>
+    ipcRenderer.invoke(
+      "crossout-find-latest-log",
+      customPath ?? null,
+    ) as Promise<CrossoutDetectedLog | null>,
+  crossoutPickLogsFolder: () =>
+    ipcRenderer.invoke("crossout-pick-logs-folder") as Promise<string | null>,
 });
 
 // `exposeInMainWorld` can't detect attributes and methods of `prototype`, manually patching it.

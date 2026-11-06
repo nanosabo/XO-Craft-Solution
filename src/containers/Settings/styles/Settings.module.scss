@@ -266,6 +266,7 @@
     display: block;
     margin-top: 3px;
     color: $default;
+    overflow-wrap: anywhere;
     @include caption;
     line-height: 1.35;
   }
@@ -275,6 +276,13 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .switch {

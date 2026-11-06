@@ -62,6 +62,7 @@ import {
   saveCrossoutHistory,
 } from "./crossoutHistory";
 import { closeCrossoutBrowser } from "./crossoutBrowser";
+import { findLatestCombatLog } from "./crossoutLogFind";
 import locales from "./locales.json";
 import axios from "axios";
 
@@ -408,8 +409,12 @@ ipcMain.handle(
 
 ipcMain.handle(
   "crossout-upload-log",
-  (_, params: CrossoutUploadLogParams) => {
-    return uploadCrossoutLog(params, lang);
+  (event, params: CrossoutUploadLogParams) => {
+    return uploadCrossoutLog(params, lang, (progress) => {
+      if (event.sender.isDestroyed()) return;
+
+      event.sender.send("crossout-upload-progress", progress);
+    });
   },
 );
 
@@ -442,6 +447,31 @@ ipcMain.handle(
 
 ipcMain.handle("crossout-history-remove", (_, logId: string) => {
   return removeCrossoutHistory(String(logId ?? ""));
+});
+
+ipcMain.handle("crossout-find-latest-log", (_, customPath?: string) => {
+  return findLatestCombatLog({
+    home: app.getPath("home"),
+    documents: app.getPath("documents"),
+    localAppData: process.env.LOCALAPPDATA,
+    winePrefix: process.env.WINEPREFIX,
+    customLogsPath: typeof customPath === "string" ? customPath : null,
+  });
+});
+
+ipcMain.handle("crossout-pick-logs-folder", async () => {
+  const options: OpenDialogOptions = {
+    title: locales[lang].crossout.logs,
+    properties: ["openDirectory"],
+  };
+
+  const result = win
+    ? await dialog.showOpenDialog(win, options)
+    : await dialog.showOpenDialog(options);
+
+  if (result.canceled || result.filePaths.length === 0) return null;
+
+  return result.filePaths[0];
 });
 
 ipcMain.handle("crossout-pick-log", async () => {

@@ -87,6 +87,11 @@ interface Window {
     crossoutUploadLog(
       params: import("@src/types/crossout").CrossoutUploadLogParams,
     ): Promise<import("@src/types/crossout").CrossoutUploadLogResult>;
+    onCrossoutUploadProgress(
+      listener: (
+        progress: import("@src/types/crossout").CrossoutUploadProgress,
+      ) => void,
+    ): () => void;
     crossoutLoadLog(
       logId: string,
     ): Promise<import("@src/types/crossout").CrossoutLogSummaryResult>;
@@ -105,5 +110,9 @@ interface Window {
       logId: string,
     ): Promise<import("@src/types/crossout").CrossoutLogHistoryEntry[]>;
     crossoutPickLog(): Promise<string | null>;
+    crossoutFindLatestLog(
+      customPath?: string | null,
+    ): Promise<import("@src/types/crossout").CrossoutDetectedLog | null>;
+    crossoutPickLogsFolder(): Promise<string | null>;
   };
 }

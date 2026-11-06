@@ -14,6 +14,7 @@
     },
     "crossout": {
       "pick": "Choose a Crossout combat log",
+      "logs": "Choose the Crossout logs folder",
       "filter": "Crossout logs",
       "all": "All files"
     }
@@ -33,6 +34,7 @@
     },
     "crossout": {
       "pick": "Выберите боевой лог Crossout",
+      "logs": "Выберите папку с логами Crossout",
       "filter": "Логи Crossout",
       "all": "Все файлы"
     }
