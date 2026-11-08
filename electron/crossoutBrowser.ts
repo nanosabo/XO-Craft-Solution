@@ -133,35 +133,39 @@ const isChallenge = (page: CrossoutPage): boolean => {
   );
 };
 
+const sameNavigation = (current: string, url: string): boolean => {
+  try {
+    const currentUrl = new URL(current);
+    const targetUrl = new URL(url);
+
+    return (
+      currentUrl.origin === targetUrl.origin &&
+      currentUrl.pathname.replace(/\/+$/, "") ===
+        targetUrl.pathname.replace(/\/+$/, "")
+    );
+  } catch {
+    return false;
+  }
+};
+
 const waitForPage = async (
   win: BrowserWindow,
   url: string,
+  getFailure: () => Error | null,
 ): Promise<CrossoutPage> => {
   const startedAt = Date.now();
   let last: PageState = { title: "", text: "", ready: false };
   let lastLength = -1;
   let stableCount = 0;
 
-  const samePage = (current: string): boolean => {
-    try {
-      const currentUrl = new URL(current);
-      const targetUrl = new URL(url);
-
-      return (
-        currentUrl.origin === targetUrl.origin &&
-        currentUrl.pathname.replace(/\/+$/, "") ===
-          targetUrl.pathname.replace(/\/+$/, "")
-      );
-    } catch {
-      return false;
-    }
-  };
-
   while (Date.now() - startedAt < LOAD_TIMEOUT) {
+    const failure = getFailure();
+
+    if (failure) throw failure;
     // A failed navigation leaves the previous page in the window. Do not read
     // it as the requested page: that would silently return data from another
     // host or another log.
-    if (samePage(win.webContents.getURL())) {
+    if (sameNavigation(win.webContents.getURL(), url)) {
       last = await readPage(win);
 
       const text = last.text.trim();
@@ -225,12 +229,42 @@ const load = async (url: string): Promise<CrossoutPage> => {
   // mirror stalls on large API responses) before starting the next one.
   win.webContents.stop();
 
-  // Do not await loadURL: it resolves only after the whole response has been
-  // received, and the English mirror can stall for tens of seconds on large
-  // API responses. The polling loop below decides when the page is usable.
-  void win.loadURL(url).catch(() => {});
+  // A dead host (ERR_ADDRESS_UNREACHABLE and the like) rejects loadURL at
+  // once. Swallowing that rejection left the poll waiting out the full
+  // timeout on the previous page, so the English mirror was never tried.
+  let failure: Error | null = null;
 
-  return waitForPage(win, url);
+  const onFail = (
+    _event: Electron.Event,
+    errorCode: number,
+    _description: string,
+    validatedURL: string,
+    isMainFrame: boolean,
+  ) => {
+    // -3 is ERR_ABORTED, raised by stop() when the previous navigation is
+    // cancelled. Subframes fail independently of the document we asked for.
+    if (!isMainFrame || errorCode === -3) return;
+    if (!sameNavigation(validatedURL, url)) return;
+
+    failure = new Error(`Не удалось открыть ${url}`);
+  };
+
+  win.webContents.on("did-fail-load", onFail);
+
+  const pending = win.loadURL(url).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (message.includes("ERR_ABORTED")) return;
+
+    failure = error instanceof Error ? error : new Error(message);
+  });
+
+  try {
+    return await waitForPage(win, url, () => failure);
+  } finally {
+    win.webContents.removeListener("did-fail-load", onFail);
+    void pending;
+  }
 };
 
 const enqueue = <T>(task: () => Promise<T>): Promise<T> => {
