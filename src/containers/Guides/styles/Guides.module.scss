@@ -1,0 +1,319 @@
+@import "@styles/theme";
+
+.layout {
+  display: flex;
+  flex: 1;
+  gap: 18px;
+  min-height: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 228px;
+  min-height: 0;
+  margin-bottom: 10px;
+  padding: 10px;
+  overflow-y: auto;
+  background: rgba(22, 25, 27, 0.75);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 14px;
+}
+
+.sidebarTabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebarItem {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
+  width: 100%;
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: $default;
+  text-align: left;
+  transition:
+    color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+
+  &:hover {
+    color: $white;
+    background-color: rgba($white, 0.03);
+  }
+}
+
+.sidebarItemActive {
+  color: $white;
+  background: linear-gradient(
+    90deg,
+    rgba($primary, 0.2) 0%,
+    rgba($primary, 0.04) 100%
+  );
+  border-color: rgba($primary, 0.35);
+
+  .sidebarIcon svg path[fill] {
+    fill: currentColor;
+  }
+}
+
+.sidebarIcon {
+  width: 16px;
+  height: 40px;
+
+  svg {
+    display: block;
+    margin-top: 12px;
+    color: inherit;
+  }
+}
+
+.sidebarLabel {
+  height: 40px;
+  overflow: hidden;
+  line-height: 40px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  @include subtitle2;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.screens {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 6px;
+}
+
+.screen {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 8px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px 0 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: $default;
+  text-align: left;
+
+  &:hover {
+    color: $white;
+    background-color: rgba($white, 0.03);
+  }
+}
+
+.screenActive {
+  color: $white;
+  background: rgba($primary, 0.16);
+  border-color: rgba($primary, 0.28);
+}
+
+.screenIndex {
+  height: 36px;
+  color: $primary;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 36px;
+  text-align: center;
+}
+
+.screenLabel {
+  height: 36px;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 36px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 8px;
+
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  -webkit-mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position:
+    0 -60px,
+    0 0;
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  mask-repeat: no-repeat;
+  mask-position:
+    0 -60px,
+    0 0;
+  mask-composite: intersect;
+  transition:
+    -webkit-mask-position 0.2s ease-in-out,
+    mask-position 0.2s ease-in-out;
+
+  &.fadeTop {
+    -webkit-mask-position:
+      0 0,
+      0 0;
+    mask-position:
+      0 0,
+      0 0;
+  }
+
+  &.fadeBottom {
+    -webkit-mask-position:
+      0 -60px,
+      0 -60px;
+    mask-position:
+      0 -60px,
+      0 -60px;
+  }
+
+  &.fadeTop.fadeBottom {
+    -webkit-mask-position:
+      0 0,
+      0 -60px;
+    mask-position:
+      0 0,
+      0 -60px;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 4px solid rgba($primary, 0.5);
+    border-radius: 8px;
+  }
+}
+
+.inner {
+  padding-bottom: 28px;
+}
+
+.articleHead {
+  margin-bottom: 16px;
+
+  h2 {
+    color: $white;
+    @include h2;
+  }
+
+  p {
+    margin-top: 8px;
+    color: $default;
+    @include body;
+    line-height: 1.5;
+  }
+}
+
+.open {
+  display: inline-block;
+  height: 36px;
+  margin-top: 12px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: rgba($primary, 0.16);
+  color: $primary;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 36px;
+
+  &:hover {
+    background: rgba($primary, 0.24);
+    color: $white;
+  }
+}
+
+.shot {
+  margin: 0 0 22px;
+  overflow: hidden;
+  background: rgba(17, 19, 22, 0.9);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 12px;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    padding: 10px 14px 12px;
+    color: $default;
+    @include body;
+    line-height: 1.45;
+  }
+}
+
+.section {
+  & + & {
+    margin-top: 22px;
+  }
+
+  h3 {
+    color: $white;
+    @include subtitle;
+    font-weight: 600;
+  }
+
+  p {
+    margin-top: 8px;
+    color: $default;
+    @include body;
+    line-height: 1.5;
+  }
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  counter-reset: guide;
+
+  li {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    column-gap: 10px;
+    color: $default;
+    counter-increment: guide;
+    @include body;
+    line-height: 1.5;
+
+    &::before {
+      content: counter(guide);
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      background: rgba($primary, 0.12);
+      color: $primary;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 24px;
+      text-align: center;
+    }
+  }
+}

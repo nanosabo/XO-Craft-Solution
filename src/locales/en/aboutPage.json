@@ -9,6 +9,36 @@
     "platforms": "Windows · Linux",
     "languages": "Русский · English"
   },
+  "support": {
+    "kicker": "Support",
+    "title": "If the app has been useful",
+    "text": "I'm grateful to anyone who supports the project in any way. The app is free and stays free — a purchase through the link, a donation, or simply paying attention already helps.",
+    "gaijin": {
+      "title": "Gaijin store",
+      "text": "3% off the whole Crossout catalog, plus the SABOTAGE sticker. A purchase through this link supports the author.",
+      "action": "Open the store",
+      "sticker": "SABOTAGE sticker"
+    },
+    "mono": {
+      "mark": "₴",
+      "title": "Monobank",
+      "text": "A jar, if you'd rather support development directly.",
+      "action": "Open the jar"
+    }
+  },
+  "services": {
+    "title": "The services behind the app",
+    "text": "Market prices and battle stats come from these projects. If they help you too, they can use support of their own.",
+    "action": "Support",
+    "core": {
+      "host": "crossoutcore.ru",
+      "role": "Market"
+    },
+    "info": {
+      "host": "crossout-info.com",
+      "role": "Stats"
+    }
+  },
   "features": {
     "title": "Features",
     "subtitle": "Everything you need to plan crafts and trading in one window.",

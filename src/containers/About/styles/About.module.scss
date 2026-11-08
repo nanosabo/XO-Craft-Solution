@@ -166,6 +166,324 @@
   }
 }
 
+.support {
+  position: relative;
+  margin-top: 22px;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid rgba($yellow, 0.28);
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      90% 160% at 0% 0%,
+      rgba($yellow, 0.16) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      80% 140% at 100% 110%,
+      rgba($primary, 0.22) 0%,
+      transparent 48%
+    ),
+    rgba(22, 25, 27, 0.94);
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 28px;
+    left: 28px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba($yellow, 0.85),
+      rgba($primary, 0.9),
+      transparent
+    );
+  }
+}
+
+.supportHead {
+  position: relative;
+  max-width: 760px;
+
+  h2 {
+    margin-top: 10px;
+    color: $white;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  p {
+    margin-top: 8px;
+    color: rgba($white, 0.72);
+    @include body;
+    line-height: 1.5;
+  }
+}
+
+.kicker {
+  display: inline-block;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid rgba($yellow, 0.45);
+  border-radius: 999px;
+  background: rgba($yellow, 0.12);
+  color: $yellow;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 22px;
+  text-transform: uppercase;
+}
+
+.ways {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.way {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 176px;
+  padding: 16px 16px 14px;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 14px;
+  background: rgba(17, 19, 22, 0.62);
+  color: $default;
+  text-align: left;
+  transition:
+    border-color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
+
+  &:hover {
+    border-color: rgba($primary, 0.5);
+    background: rgba($primary, 0.08);
+  }
+}
+
+.wayFeatured {
+  border-color: rgba($yellow, 0.32);
+  background:
+    linear-gradient(180deg, rgba($yellow, 0.1) 0%, transparent 46%),
+    rgba(17, 19, 22, 0.72);
+
+  &:hover {
+    border-color: rgba($yellow, 0.62);
+    background:
+      linear-gradient(180deg, rgba($yellow, 0.16) 0%, transparent 50%),
+      rgba($primary, 0.08);
+  }
+
+  .wayMark {
+    color: $yellow;
+  }
+}
+
+.wayTop {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+}
+
+.wayMark {
+  height: 40px;
+  color: $white;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 40px;
+  letter-spacing: -0.03em;
+}
+
+.wayTitle {
+  height: 40px;
+  overflow: hidden;
+  color: $white;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 40px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wayText {
+  margin-top: 8px;
+  color: rgba($white, 0.68);
+  @include body;
+  line-height: 1.45;
+}
+
+.wayFoot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.sticker {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba($yellow, 0.35);
+  border-radius: 8px;
+  background: rgba($yellow, 0.1);
+  color: $yellow;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 28px;
+  white-space: nowrap;
+}
+
+.wayAction {
+  display: grid;
+  grid-column: 2;
+  grid-template-columns: auto 16px;
+  column-gap: 6px;
+  height: 30px;
+  color: $white;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 30px;
+  white-space: nowrap;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    margin-top: 7px;
+  }
+}
+
+.services {
+  position: relative;
+  margin-top: 12px;
+  padding: 14px 16px 16px;
+  overflow: hidden;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      80% 180% at 100% 0%,
+      rgba($primary, 0.12) 0%,
+      transparent 55%
+    ),
+    rgba(26, 29, 32, 0.78);
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 22px;
+    left: 22px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba($primary, 0.75),
+      transparent
+    );
+  }
+}
+
+.servicesHead {
+  h2 {
+    color: $white;
+    @include subtitle2;
+    font-weight: 600;
+  }
+
+  p {
+    margin-top: 4px;
+    max-width: 720px;
+    color: $default;
+    @include caption;
+    line-height: 1.45;
+  }
+}
+
+.serviceList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.service {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  width: 100%;
+  height: 64px;
+  padding: 0 14px;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 12px;
+  background: rgba($white, 0.025);
+  color: $default;
+  text-align: left;
+  transition:
+    border-color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
+
+  &:hover {
+    border-color: rgba($primary, 0.45);
+    background: rgba($primary, 0.08);
+
+    .serviceGo {
+      color: $white;
+    }
+  }
+}
+
+.serviceName {
+  min-width: 0;
+  padding-top: 12px;
+
+  strong,
+  span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    height: 22px;
+    color: $white;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 22px;
+  }
+
+  span {
+    height: 18px;
+    color: $default;
+    font-size: 13px;
+    line-height: 18px;
+  }
+}
+
+.serviceGo {
+  display: grid;
+  grid-template-columns: auto 14px;
+  column-gap: 6px;
+  height: 64px;
+  color: $primary;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 64px;
+  white-space: nowrap;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    margin-top: 25px;
+  }
+}
+
 .section {
   margin-top: 22px;
 }

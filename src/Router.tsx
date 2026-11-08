@@ -6,6 +6,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SolvedPage from "./pages/SolvedPage";
 import MarketPage from "./pages/MarketPage";
 import AboutPage from "./pages/AboutPage";
+import GuidesPage from "./pages/GuidesPage";
 import LogsPage from "./pages/LogsPage";
 import LogsResultPage from "./pages/LogsResultPage";
 
@@ -28,6 +29,7 @@ const Router = () => {
         <Route path="/market" element={<MarketPage />} />
         <Route path="/logs" element={<LogsPage />} />
         <Route path="/logs/:logId" element={<LogsResultPage />} />
+        <Route path="/guides" element={<GuidesPage />} />
         <Route path="/about" element={<AboutPage />} />
       </Routes>
     </AnimatePresence>

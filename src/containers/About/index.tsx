@@ -61,11 +61,39 @@ const features = [
 
 const notes = ["local", "market", "free"];
 
+const authorSupport = [
+  {
+    key: "gaijin",
+    url: "https://store.gaijin.net/catalog.php?category=Crossout&partner=SABOTAGE&partner_val=rwdcmjgd",
+  },
+  {
+    key: "mono",
+    url: "https://send.monobank.ua/jar/4CErJGG8WM",
+  },
+] as const;
+
+const serviceSupport = [
+  {
+    key: "core",
+    url: "https://crossoutcore.ru/boost/",
+  },
+  {
+    key: "info",
+    url: "https://crossout-info.com/subscribe",
+  },
+] as const;
+
 const About = () => {
   const { t } = useTranslation("aboutPage");
   const version = useAppVersion();
   const contentRef = useRef<HTMLDivElement>(null);
   const fade = useScrollFade(contentRef);
+
+  const openExternal = (url: string) => {
+    void window.electronAPI
+      .openExternal(url)
+      .catch((error) => logWarning("open-external", error));
+  };
 
   return (
     <div className={styles.layout}>
@@ -99,6 +127,77 @@ const About = () => {
             </div>
           </section>
 
+          <section className={styles.support}>
+            <header className={styles.supportHead}>
+              <span className={styles.kicker}>{t("support.kicker")}</span>
+              <h2>{t("support.title")}</h2>
+              <p>{t("support.text")}</p>
+            </header>
+
+            <div className={styles.ways}>
+              {authorSupport.map(({ key, url }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={classNames(styles.way, {
+                    [styles.wayFeatured]: key === "gaijin",
+                  })}
+                  onClick={() => openExternal(url)}
+                >
+                  <span className={styles.wayTop}>
+                    <span className={styles.wayMark}>
+                      {key === "gaijin" ? "3%" : t("support.mono.mark")}
+                    </span>
+                    <span className={styles.wayTitle}>
+                      {t(`support.${key}.title`)}
+                    </span>
+                  </span>
+                  <span className={styles.wayText}>
+                    {t(`support.${key}.text`)}
+                  </span>
+                  <span className={styles.wayFoot}>
+                    {key === "gaijin" && (
+                      <span className={styles.sticker}>
+                        {t("support.gaijin.sticker")}
+                      </span>
+                    )}
+                    <span className={styles.wayAction}>
+                      {t(`support.${key}.action`)}
+                      <ExternalIcon />
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className={styles.services}>
+            <header className={styles.servicesHead}>
+              <h2>{t("services.title")}</h2>
+              <p>{t("services.text")}</p>
+            </header>
+
+            <div className={styles.serviceList}>
+              {serviceSupport.map(({ key, url }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={styles.service}
+                  onClick={() => openExternal(url)}
+                >
+                  <span className={styles.serviceName}>
+                    <strong>{t(`services.${key}.host`)}</strong>
+                    <span>{t(`services.${key}.role`)}</span>
+                  </span>
+                  <span className={styles.serviceGo}>
+                    {t("services.action")}
+                    <ExternalIcon />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           <section className={styles.section}>
             <header className={styles.sectionHeader}>
               <h2>{t("features.title")}</h2>
@@ -129,11 +228,7 @@ const About = () => {
                     key={key}
                     type="button"
                     className={styles.linkButton}
-                    onClick={() =>
-                      void window.electronAPI
-                        .openExternal(url)
-                        .catch((error) => logWarning("open-external", error))
-                    }
+                    onClick={() => openExternal(url)}
                   >
                     {t(`links.${key}`)}
                     <ExternalIcon />

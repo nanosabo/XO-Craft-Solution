@@ -3,6 +3,7 @@ export { default as HideIcon } from "./HideIcon";
 export { default as HomeIcon } from "./HomeIcon";
 export { default as SettingsIcon } from "./SettingsIcon";
 export { default as InfoIcon } from "./InfoIcon";
+export { default as GuideIcon } from "./GuideIcon";
 export { default as DiscordIcon } from "./DiscordIcon";
 export { default as HeaderDiscordIcon } from "./HeaderDiscordIcon";
 export { default as HistoryIcon } from "./HistoryIcon";

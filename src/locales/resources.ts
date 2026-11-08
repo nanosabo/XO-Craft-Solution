@@ -19,6 +19,9 @@ import settingsPageEn from "./en/settingsPage.json";
 import aboutPageRu from "./ru/aboutPage.json";
 import aboutPageEn from "./en/aboutPage.json";
 
+import guidesPageRu from "./ru/guidesPage.json";
+import guidesPageEn from "./en/guidesPage.json";
+
 import updaterRu from "./ru/updater.json";
 import updaterEn from "./en/updater.json";
 
@@ -34,6 +37,7 @@ export const resources = {
     marketPage: marketPageEn,
     settingsPage: settingsPageEn,
     aboutPage: aboutPageEn,
+    guidesPage: guidesPageEn,
     updater: updaterEn,
     logsPage: logsPageEn,
   },
@@ -45,6 +49,7 @@ export const resources = {
     marketPage: marketPageRu,
     settingsPage: settingsPageRu,
     aboutPage: aboutPageRu,
+    guidesPage: guidesPageRu,
     updater: updaterRu,
     logsPage: logsPageRu,
   },

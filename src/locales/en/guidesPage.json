@@ -1,0 +1,199 @@
+{
+  "title": "Guides",
+  "subtitle": "Each tab, screen by screen: what to do there and what happens next.",
+  "open": "Open this screen",
+  "craft": {
+    "title": "Craft",
+    "screens": {
+      "form": {
+        "title": "Limits",
+        "lead": "The first screen sets the limits. The calculation looks for armor with the highest durability that still fits the tonnage, the power score cap and the part count.",
+        "caption": "The limits screen: vehicle parameters on the left, the parts filter on the right.",
+        "sections": [
+          {
+            "title": "What to enter",
+            "paragraphs": [
+              "Take the numbers from the vehicle you already have: the frame, weapons, movement parts and modules are mounted. The calculation adds armor on top of that. It does not start from an empty cabin."
+            ],
+            "steps": [
+              "Current durability, weight, tonnage and part count are what is already on the vehicle.",
+              "Max parts count is 80 for a regular build and 180 for a Leviathan.",
+              "Current PS is the power score right now. Max PS is the ceiling of the result. 0 means there is no ceiling.",
+              "Min part HP drops parts that are too fragile.",
+              "Durability cabin +10% turns on the cabin bonus. The «Grizzly» co-driver adds 5% to durability."
+            ]
+          },
+          {
+            "title": "The filter",
+            "paragraphs": [
+              "The list on the right is the set of limits. Required parts must be included. Forbidden parts must not be used. Plus and minus set the count, and the trash icon removes a row."
+            ],
+            "steps": [
+              "If inventory is enabled in Settings, the calculation will not suggest more copies than you own. A quantity of 0 means the part is not used.",
+              "Get Solution opens the second screen with the picked parts. After that, a blue clock button appears in the header and brings this result back."
+            ]
+          }
+        ]
+      },
+      "result": {
+        "title": "Result",
+        "lead": "The second screen is the parts that were picked. This mode is for getting the most durability possible within the tonnage, power score and part count you set.",
+        "caption": "",
+        "sections": [
+          {
+            "title": "What the calculation shows",
+            "paragraphs": [
+              "The top row is the totals: mass, power score, durability and part count. Below is the armor worth mounting. The durability is the maximum that still fits your limits. The vehicle stays inside the tonnage, the power score cap and the part limit."
+            ],
+            "steps": [
+              "The weight of the parts already mounted counts against the tonnage, so the new armor is taken from what is left.",
+              "If Max PS is 0, there is no power score cap and the calculation is limited by tonnage and part count.",
+              "Required parts from the filter are already included. Forbidden parts never appear in the list."
+            ]
+          },
+          {
+            "title": "The previous calculation",
+            "paragraphs": [
+              "The blue clock button in the header's right group is Previous solution. It appears after a successful calculation and opens this screen again without running the search once more."
+            ],
+            "steps": [
+              "From Craft, Market or Stats, the button returns the last result.",
+              "On the result screen itself the button does nothing: you are already looking at it.",
+              "A new calculation with different numbers replaces the previous one. The button then leads to the new result."
+            ]
+          },
+          {
+            "title": "When a part is missing",
+            "paragraphs": [
+              "Hover a row and choose Similar. A replacement stays in the same category and inside the tolerances from Settings. Exclude from solution drops a part, and Recalculate builds the list again. A removed part can be put back."
+            ],
+            "steps": []
+          }
+        ]
+      }
+    }
+  },
+  "market": {
+    "title": "Market",
+    "screens": {
+      "list": {
+        "title": "List",
+        "lead": "The first screen is prices, demand and profit from the public market. A Crossout account is not required.",
+        "caption": "The market list as a table: prices, lots, spread and profit.",
+        "sections": [
+          {
+            "title": "Narrowing the list",
+            "paragraphs": [
+              "Search, category and rarity keep the parts you need. The view switch changes cards and the table. Sort covers sell price, buy price, orders, resale profit, crafting profit and ROI. Watchlist keeps only the parts you follow. Clear filters brings the full list back."
+            ],
+            "steps": [
+              "Sell and Buy are the current prices. Sell Orders and Buy Orders are how many lots are on the market.",
+              "Spread is the resale profit after the fee. ROI is the return of that trade.",
+              "Crafting is the production cost. Profit is the gain from crafting and selling.",
+              "A row opens the part window. That is the second screen of this guide."
+            ]
+          }
+        ]
+      },
+      "item": {
+        "title": "Item",
+        "lead": "The second screen is the part window. It shows whether crafting or buying is cheaper, and what the part is made of.",
+        "caption": "",
+        "sections": [
+          {
+            "title": "The window",
+            "paragraphs": [
+              "The top shows the name, the picture and the Craft or buy badge. Next to it are the saving and the ROI. When buying is cheaper than production, the badge says to buy."
+            ],
+            "steps": [
+              "Craft item shows the official recipe and its components. From there you can craft everything or buy the ingredients.",
+              "Price chart is the history of the sell price, the buy price and the lot counts.",
+              "Watching sets a rule on a price or a lot count: any change, below a value, or above a value. The alert sound is set in the market settings.",
+              "The ban icon marks the part as not craftable when it cannot be produced right now."
+            ]
+          }
+        ]
+      },
+      "recipe": {
+        "title": "Custom recipe",
+        "lead": "The third screen is the Custom recipe tab inside the part window. It replaces the official recipe when the game data and the current promotion do not match.",
+        "caption": "",
+        "sections": [
+          {
+            "title": "When to use it",
+            "paragraphs": [
+              "The official recipe is calculated from the regular data. A custom recipe is for the cases where that number is wrong."
+            ],
+            "steps": [
+              "A promotion is running, and the ingredients or the output count differ from the usual recipe.",
+              "There is no official recipe, but the part can still be crafted.",
+              "A recipe exists in the data, but it does not match what the promotion gives right now."
+            ]
+          },
+          {
+            "title": "How to save it",
+            "paragraphs": [
+              "On the Custom recipe tab you add the ingredients. Craft fee is the production charge. Result amount is how many parts one craft produces. Save stores the recipe on this computer."
+            ],
+            "steps": [
+              "After saving, the card calculates the production cost and Craft or buy from your recipe.",
+              "The recipe can be opened again to edit or delete it. It is not sent to other computers."
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "stats": {
+    "title": "Stats",
+    "screens": {
+      "open": {
+        "title": "Upload",
+        "lead": "The first screen opens a battle log. A combat.log file or a link to a log that is already online is enough.",
+        "caption": "",
+        "sections": [
+          {
+            "title": "A file",
+            "paragraphs": [
+              "The File tab has two ways in. If the Crossout logs folder is set in Settings, the app finds the newest combat.log — click Upload the latest log. Choose file opens any combat.log, and the upload starts as soon as you pick it."
+            ],
+            "steps": [
+              "If the folder was not found, the card has Open settings. After the path is set, the latest file is picked up on its own.",
+              "If there is no file at all, use No file, what now? Logging is turned on with the launch option --cvar cl_combatLog 1, in the launcher shortcut or in Steam launch options. Play the battle to the end.",
+              "combat.log is in C:/Users/{name}/AppData/Local/Targem/Crossout/logs/{date}. Take the file from the newest folder."
+            ]
+          },
+          {
+            "title": "A link and history",
+            "paragraphs": [
+              "The Site link tab does not ask you to type anything. Copy a link and press Ctrl+V while this page is open. A crossout-info log link works, and so does an app address like https://nanosabo.github.io/xocs-imgs/log/?id=… and an xocraft:// link."
+            ],
+            "steps": [
+              "Earlier logs stay in Upload history and are stored only on this computer. A log you opened recently is shown again without picking the file.",
+              "The list can be narrowed by date. One entry can be removed, or the whole list can be cleared. The app asks for confirmation first.",
+              "Removing an entry does not touch the log on crossout-info."
+            ]
+          }
+        ]
+      },
+      "log": {
+        "title": "Log",
+        "lead": "The second screen is the battle table of the opened log. You get here after uploading a file, pasting a link, or picking an entry in history.",
+        "caption": "",
+        "sections": [
+          {
+            "title": "How to read it",
+            "paragraphs": [
+              "The top row is the battle type and how many records it has. Back to history returns to the list. Open on crossout-info opens this log on the site."
+            ],
+            "steps": [
+              "By time sets the start and the end of a range. Apply builds the table for that range. Whole log brings the full table back.",
+              "Search looks up a nickname or a weapon. On the battles view it looks up a map. Allies only keeps your team.",
+              "Copy links puts the app link and the site link on the clipboard. Copy screenshot puts a picture of the table there."
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
