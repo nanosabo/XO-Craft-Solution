@@ -23,7 +23,7 @@ const handleClick = {
 
 const WindowButton: FC<Props> = ({ type }) => {
   const className = classNames(styles.window_button, {
-    [styles.hide]: type === "hide",
+    [styles.close]: type === "close",
   });
 
   return (

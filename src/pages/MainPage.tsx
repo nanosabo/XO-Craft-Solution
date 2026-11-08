@@ -23,7 +23,7 @@ const MainPage = () => {
   });
 
   return (
-    <AnimatePageLayout>
+    <AnimatePageLayout fill>
       <FormProvider {...methods}>
         <MainPageHeader />
         <ColumnInputs />

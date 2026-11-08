@@ -1,24 +1,13 @@
-import NavLink from "@src/ui/NavLink";
-import {
-  HomeIcon,
-  InfoIcon,
-  LogsIcon,
-  MarketIcon,
-  SettingsIcon,
-} from "@src/ui/icons";
-import styles from "./styles/Navigation.module.scss";
 import { useTranslation } from "react-i18next";
+import NavLink from "@src/ui/NavLink";
+import { CraftIcon, InfoIcon, LogsIcon, MarketIcon } from "@src/ui/icons";
+import styles from "./styles/Navigation.module.scss";
 
 const links = [
   {
     href: "/",
-    icon: <HomeIcon />,
+    icon: <CraftIcon />,
     key: "main",
-  },
-  {
-    href: "/settings",
-    icon: <SettingsIcon />,
-    key: "settings",
   },
   {
     href: "/market",

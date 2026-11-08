@@ -9,9 +9,9 @@ const useLanguageControl = () => {
     i18n.changeLanguage(currentLanguage === "ru" ? "en" : "ru");
   };
 
-  const nextLang = currentLanguage === "ru" ? "ENG" : "RU";
+  const langLabel = currentLanguage === "ru" ? "RU" : "EN";
 
-  return { nextLang, handleChangeLanguage, currentLanguage };
+  return { langLabel, handleChangeLanguage, currentLanguage };
 };
 
 export default useLanguageControl;

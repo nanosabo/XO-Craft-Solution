@@ -1,21 +1,30 @@
-.window_actions {
+@import "@styles/theme";
+
+.drag {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
+  right: 120px;
+  height: 32px;
+  z-index: 0;
+  -webkit-app-region: drag;
+}
+
+.window_actions {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding: 24px 32px;
-  gap: 16px;
-  z-index: 1;
+  gap: 2px;
+  height: 42px;
+  padding: 4px;
+  background: rgba($white, 0.03);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 12px;
+}
 
-  &::before {
-    content: "";
-    width: 1080px;
-    position: absolute;
-    right: 100%;
-    top: 0;
-    height: 31px;
-    -webkit-app-region: drag;
-  }
+:global(body:has([data-header-controls])) .window_actions {
+  display: none;
 }

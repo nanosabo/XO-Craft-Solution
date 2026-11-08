@@ -1,18 +1,50 @@
 @import "@styles/theme";
 
 .window_button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: $default;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  transition:
+    background-color 0.2s ease-in-out,
+    scale 0.1s ease-in-out;
+
   svg path {
-    transition: fill 0.2s ease-in-out, stroke 0.2s ease-in-out;
+    transition:
+      fill 0.2s ease-in-out,
+      stroke 0.2s ease-in-out;
   }
 
   &:hover {
+    color: $white;
+    background-color: rgba($white, 0.06);
+
     svg path {
       fill: $white;
       stroke: $white;
     }
   }
+
+  &:active {
+    scale: 0.96;
+  }
 }
 
-.hide {
-  padding-bottom: 2px;
+.close:hover {
+  color: #ff5d5d;
+  background-color: rgba(210, 59, 59, 0.22);
+
+  svg path {
+    fill: #ff5d5d;
+    stroke: #ff5d5d;
+  }
 }

@@ -1,18 +1,21 @@
 @import "@styles/theme";
 
 .navlink {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
   color: $default;
+  line-height: 34px;
   white-space: nowrap;
   text-decoration: none;
-
-  transition: color 0.2s ease-in-out;
+  @include caption;
 
   svg {
-    margin-bottom: 7px;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    vertical-align: -3px;
 
     path[fill] {
       transition: fill 0.2s ease-in-out;
@@ -23,73 +26,33 @@
     }
   }
 
-  @include body;
+  transition:
+    color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
 
-  &::after {
-    content: "";
-    position: absolute;
-    top: -300%;
-    left: 50%;
-    translate: -50% 0;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 0 50px 50px 50px;
-    border-color: transparent transparent rgba($primary, 0.3) transparent;
-    z-index: -1;
-    opacity: 0;
-
-    transition: opacity 0.5s ease-in-out;
-
-    filter: blur(15px);
+  &:hover {
+    color: $white;
+    background: rgba($white, 0.05);
   }
 
   &.active,
   &:hover {
-    color: $white;
+    svg path[fill] {
+      fill: currentColor;
+    }
 
-    svg {
-      path[fill] {
-        fill: $white;
-      }
-
-      path[stroke] {
-        stroke: $white;
-      }
+    svg path[stroke] {
+      stroke: currentColor;
     }
   }
 
   &.active {
-    position: relative;
-
-    &::after {
-      opacity: 1;
-      animation: 5s flicker 0.5s linear infinite;
-    }
+    color: $white;
+    background: rgba($primary, 0.2);
 
     &:hover {
       cursor: default;
+      background: rgba($primary, 0.2);
     }
-  }
-}
-
-@keyframes flicker {
-  0%,
-  19.999%,
-  22%,
-  62.999%,
-  64%,
-  64.999%,
-  70%,
-  100% {
-    opacity: 0.99;
-  }
-  20%,
-  21.999%,
-  63%,
-  63.999%,
-  65%,
-  69.999% {
-    opacity: 0.8;
   }
 }

@@ -1,17 +1,17 @@
-.header span {
+.bar {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  margin: 24px 0;
-  padding: 0 44px;
-}
-
-.bar {
-  justify-content: flex-start;
-  gap: 24px;
+  gap: 18px;
   width: 100%;
   min-width: 0;
+  margin: 14px 0 28px;
+  padding: 0 16px 0 44px;
+  -webkit-app-region: drag;
 
-  > svg {
-    flex-shrink: 0;
+  a,
+  button {
+    -webkit-app-region: no-drag;
   }
 }

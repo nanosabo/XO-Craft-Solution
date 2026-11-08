@@ -2,19 +2,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  background-color: #282a2d;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background-color: transparent;
   border-radius: 8px;
 
-  transition: background-color 0.2s ease-in-out, scale 0.1s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    scale 0.1s ease-in-out;
 
   &:hover:not(:disabled) {
-    background-color: #1e2023;
+    background-color: rgba(255, 255, 255, 0.06);
   }
 
   &:active:not(:disabled) {
-    scale: 0.95;
+    scale: 0.96;
   }
 
   &:disabled {

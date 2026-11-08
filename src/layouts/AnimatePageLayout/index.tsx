@@ -17,7 +17,12 @@ const AnimatePageLayout: FC<PropsWithChildren<Props>> = ({ children, fill }) => 
       style={{
         width: 1072,
         ...(fill
-          ? { height: "100%", display: "flex", flexDirection: "column" }
+            ? {
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+            }
           : null),
       }}
     >

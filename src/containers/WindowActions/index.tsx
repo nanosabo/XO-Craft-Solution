@@ -3,10 +3,13 @@ import styles from "./styles/WindowActions.module.scss";
 
 const WindowActions = () => {
   return (
-    <div className={styles.window_actions}>
-      <WindowButton type="hide" />
-      <WindowButton type="close" />
-    </div>
+    <>
+      <div className={styles.drag} />
+      <div className={styles.window_actions}>
+        <WindowButton type="hide" />
+        <WindowButton type="close" />
+      </div>
+    </>
   );
 };
 

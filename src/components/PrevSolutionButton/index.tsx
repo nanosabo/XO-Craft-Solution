@@ -3,7 +3,7 @@ import { useAppSelector } from "@src/store/store";
 import SquareButton from "@src/ui/SquareButton";
 import { useNavigate } from "react-router-dom";
 import styles from "./styles/PrevSolutionButton.module.scss";
-import { TimeIcon } from "@src/ui/icons";
+import { HistoryIcon } from "@src/ui/icons";
 import { useTranslation } from "react-i18next";
 
 const PrevSolutionButton = () => {
@@ -27,7 +27,7 @@ const PrevSolutionButton = () => {
       disabled={isDisabled}
       title={t("prev")}
     >
-      <TimeIcon />
+      <HistoryIcon />
     </SquareButton>
   );
 };

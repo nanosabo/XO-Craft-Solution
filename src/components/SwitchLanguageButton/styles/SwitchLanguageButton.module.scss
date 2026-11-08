@@ -1,10 +1,28 @@
 @import "@styles/theme";
 
 .root {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  @include caption;
+  width: 36px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
   color: $white;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 34px;
+  letter-spacing: 0.04em;
+  text-align: center;
+
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover:not(:disabled) {
+    background-color: rgba($white, 0.06);
+  }
+
+  &:active:not(:disabled) {
+    scale: 0.96;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
 }

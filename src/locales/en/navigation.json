@@ -1,8 +1,8 @@
 {
-  "main": "Main",
+  "main": "Craft",
   "settings": "Settings",
   "market": "Market",
-  "logs": "Battles",
+  "logs": "Stats",
   "about": "About App",
   "lang": "Change language",
   "prev": "Previous solution"

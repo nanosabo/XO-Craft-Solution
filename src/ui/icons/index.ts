@@ -4,6 +4,8 @@ export { default as HomeIcon } from "./HomeIcon";
 export { default as SettingsIcon } from "./SettingsIcon";
 export { default as InfoIcon } from "./InfoIcon";
 export { default as DiscordIcon } from "./DiscordIcon";
+export { default as HeaderDiscordIcon } from "./HeaderDiscordIcon";
+export { default as HistoryIcon } from "./HistoryIcon";
 export { default as SearchIcon } from "./SearchIcon";
 export { default as TimeIcon } from "./TimeIcon";
 export { default as TrashIcon } from "./TrashIcon";

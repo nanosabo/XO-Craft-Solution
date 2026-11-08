@@ -1,11 +1,18 @@
 @import "@styles/theme";
 
+.required_wrapper {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .required_wrapper:has(.required div:nth-child(5)) {
   -webkit-mask-image:
     linear-gradient(to bottom, transparent 10px, #000 60px),
     linear-gradient(270deg, #000 10px, transparent 10px);
   -webkit-mask-position-y: -50px;
-  -webkit-mask-size: 100% 420px;
+  -webkit-mask-size: 100% calc(100% + 60px);
   -webkit-mask-repeat: no-repeat;
 
   transition: -webkit-mask-position-y 0.15s linear;
@@ -19,10 +26,10 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  flex-grow: 3;
+  flex: 1;
   overflow: auto;
   gap: 12px;
-  max-height: 296px;
+  min-height: 0;
   padding-right: 12px;
   padding-bottom: 20px;
 

@@ -12,14 +12,14 @@ $market-columns: 240px // Название
 
 .wrapper {
   width: calc(100% + 16px);
-  height: 491px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 8px;
   margin-top: 12px;
 
   &:has(.market__wrapper) {
     margin-top: 0;
-    height: 437px;
   }
 
   &::-webkit-scrollbar {
@@ -40,7 +40,9 @@ $market-columns: 240px // Название
 
 .market {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  min-height: 0;
   margin-top: 12px;
 
   &__header,

@@ -19,7 +19,7 @@ const MarketPage = () => {
   }, [navigate, status]);
 
   return (
-    <AnimatePageLayout>
+    <AnimatePageLayout fill>
       <MarketFilters />
       <MarketItems />
       <MarketModal />

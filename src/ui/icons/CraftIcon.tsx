@@ -6,21 +6,25 @@ const CraftIcon = () => {
       viewBox="0 0 16 16"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
     >
       <path
-        d="M8 2L14 5.2L8 8.4L2 5.2L8 2Z"
+        d="M8 2.2L13.2 5L8 7.8L2.8 5L8 2.2Z"
         stroke="currentColor"
+        strokeWidth="1.4"
         strokeLinejoin="round"
       />
       <path
-        d="M2 8L8 11.2L14 8"
+        d="M2.8 8L8 10.8L13.2 8"
         stroke="currentColor"
+        strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M2 10.8L8 14L14 10.8"
+        d="M2.8 10.9L8 13.7L13.2 10.9"
         stroke="currentColor"
+        strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

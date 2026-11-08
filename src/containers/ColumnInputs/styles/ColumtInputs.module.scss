@@ -2,14 +2,18 @@
 
 .wrapper {
   display: grid;
+  flex: 1;
   grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   grid-column-gap: 32px;
+  min-height: 0;
 }
 
 .block {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-height: 0;
 }
 
 .searched {

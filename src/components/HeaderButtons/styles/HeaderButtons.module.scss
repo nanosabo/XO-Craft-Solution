@@ -1,6 +1,73 @@
+@import "@styles/theme";
+
 .buttons {
   display: flex;
   flex-shrink: 0;
-  gap: 16px;
-  margin-right: 128px;
+  align-items: center;
+  gap: 2px;
+  height: 42px;
+  margin-left: auto;
+  padding: 4px;
+  background: rgba($white, 0.03);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 12px;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: $default;
+
+  svg path {
+    transition: fill 0.2s ease-in-out;
+  }
+
+  &:hover,
+  &.active {
+    color: $white;
+
+    svg path[fill] {
+      fill: currentColor;
+    }
+  }
+
+  &:hover:not(.active) {
+    background-color: rgba($white, 0.06);
+  }
+
+  &.active {
+    background-color: rgba($primary, 0.2);
+    cursor: default;
+  }
+}
+
+.discord {
+  color: $default;
+
+  &:hover:not(:disabled) {
+    color: $white;
+  }
+}
+
+.divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: rgba($white, 0.14);
 }

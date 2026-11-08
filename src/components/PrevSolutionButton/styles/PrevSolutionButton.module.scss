@@ -1,9 +1,10 @@
 @import "@styles/theme";
 
-.root {
-  background-color: $primary;
+button.root {
+  color: $primary;
 
   &:hover:not(:disabled) {
-    background-color: rgba($primary, 0.8);
+    color: $primary;
+    background-color: rgba($primary, 0.16);
   }
 }

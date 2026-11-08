@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { logWarning } from "@src/helpers/errorLog";
+import styles from "./styles/AppLogo.module.scss";
 
 const AppLogo = () => {
   const [ver, setVer] = useState("2.0");
@@ -12,7 +13,7 @@ const AppLogo = () => {
   }, []);
 
   return (
-    <>
+    <div className={styles.brand}>
       <svg
         width="162"
         height="48"
@@ -134,19 +135,8 @@ const AppLogo = () => {
         />
       </svg>
 
-      <span
-        style={{
-          position: "absolute",
-          top: 16,
-          left: 50,
-          fontSize: 12,
-          fontWeight: 500,
-          color: "#0077FF",
-        }}
-      >
-        {ver}
-      </span>
-    </>
+      <span className={styles.version}>{ver}</span>
+    </div>
   );
 };
 

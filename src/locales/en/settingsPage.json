@@ -27,7 +27,7 @@
     },
     "startScreen": {
       "title": "Start screen",
-      "subtitle": "What opens after loading. Craft is the main page, Stats is Battles.",
+      "subtitle": "What opens after loading. Craft is the build screen, Stats is battle logs.",
       "craft": "Craft",
       "market": "Market",
       "stats": "Stats"
