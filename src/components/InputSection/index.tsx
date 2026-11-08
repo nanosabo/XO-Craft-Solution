@@ -26,6 +26,7 @@ const InputSection: FC<InputSectionProps> = ({
   ...props
 }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
   const Icon = InputIcons[icon];
 
   const tooltipVisibilityTimerRef = useRef<null | NodeJS.Timeout>(null);
@@ -53,12 +54,13 @@ const InputSection: FC<InputSectionProps> = ({
   };
 
   return (
-    <div className={styles.input_section}>
+    <div className={styles.input_section} ref={sectionRef}>
       <Tooltip
         title={tooltipTitle}
         subtitle={toolTipSubtitle}
         image={tooltipImage}
         visible={isTooltipVisible}
+        anchorRef={sectionRef}
       />
       <div className={styles.header}>
         <Icon />
