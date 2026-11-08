@@ -10,6 +10,7 @@ import {
 } from "@src/store/slices/solveInputs.slice";
 import RequiredParts from "./RequiredParts";
 import { useFormContext } from "react-hook-form";
+import { contentLanguage } from "@src/helpers/contentLanguage";
 import { VehicleFormData } from "@src/helpers/validation";
 
 const ColumnInputs = () => {
@@ -54,7 +55,7 @@ const ColumnInputs = () => {
               toolTipSubtitle={t(`inputs.${name}.tooltip.subtitle`)}
               tooltipImage={
                 inputs[name].image
-                  ? `tooltips/${i18n.language}/${name}.png`
+                  ? `tooltips/${contentLanguage(i18n.language)}/${name}.png`
                   : undefined
               }
               error={

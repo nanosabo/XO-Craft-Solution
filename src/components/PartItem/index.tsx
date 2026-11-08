@@ -2,6 +2,7 @@ import React, { FC, memo, useState } from "react";
 import styles from "./styles/PartItem.module.scss";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
+import { contentLanguage } from "@src/helpers/contentLanguage";
 import { BackArrowIcon, RefreshIcon, TrashIcon } from "@src/ui/icons";
 import { useAppDispatch } from "@src/store/store";
 import { excludePart, returnPart } from "@src/store/slices/requiredParts.slice";
@@ -58,7 +59,8 @@ const PartItem: FC<Props> = memo(
       onRestoreOriginal?.();
     };
 
-    const partName = i18n.language === "ru" ? name : eng_name;
+    const partName =
+      contentLanguage(i18n.language) === "ru" ? name : eng_name;
     const btnTitle = isForbidden ? "return" : "exclude";
 
     return (

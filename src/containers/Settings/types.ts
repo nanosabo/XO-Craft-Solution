@@ -1,3 +1,5 @@
+import { contentLanguage } from "@src/helpers/contentLanguage";
+
 export type SettingsTab = "general" | "inventory" | "analog" | "market";
 
 export interface Part {
@@ -13,7 +15,8 @@ export interface Part {
 }
 
 export const getPartName = (part: Part, language: string) => {
-  const localized = language.startsWith("ru") ? part.name : part.eng_name;
+  const localized =
+    contentLanguage(language) === "ru" ? part.name : part.eng_name;
   return localized || part.name || part.eng_name || part.id;
 };
 

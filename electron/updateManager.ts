@@ -31,7 +31,7 @@ export interface UpdateActionResult {
 
 interface UpdaterOptions {
   getWindow: () => BrowserWindow | null;
-  getLanguage: () => "ru" | "en";
+  getLanguage: () => "ru" | "en" | "uk";
   notify: (title: string, body: string) => void;
 }
 

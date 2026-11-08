@@ -1,28 +1,96 @@
 @import "@styles/theme";
 
 .root {
-  width: 36px;
+  position: relative;
+  -webkit-app-region: no-drag;
+}
+
+.trigger {
+  display: grid;
+  grid-template-columns: 1fr 8px;
+  column-gap: 2px;
+  width: 46px;
   height: 34px;
-  padding: 0;
+  padding: 0 6px;
   border-radius: 8px;
   color: $white;
+  text-align: center;
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover,
+  &.open {
+    background-color: rgba($white, 0.06);
+  }
+}
+
+.code {
+  height: 34px;
   font-size: 12px;
   font-weight: 600;
   line-height: 34px;
   letter-spacing: 0.04em;
-  text-align: center;
+}
 
-  transition: background-color 0.2s ease-in-out;
+.caret {
+  align-self: center;
+  width: 0;
+  height: 0;
+  border-right: 3px solid transparent;
+  border-bottom: 0;
+  border-left: 3px solid transparent;
+  border-top: 4px solid currentColor;
+}
 
-  &:hover:not(:disabled) {
-    background-color: rgba($white, 0.06);
+.menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 5;
+  min-width: 168px;
+  padding: 6px;
+  background: rgba(22, 25, 27, 0.98);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+}
+
+.option {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 8px;
+  width: 100%;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: $default;
+  text-align: left;
+
+  &:hover {
+    background: rgba($white, 0.05);
+    color: $white;
   }
+}
 
-  &:active:not(:disabled) {
-    scale: 0.96;
-  }
+.active {
+  background: rgba($primary, 0.18);
+  color: $white;
+}
 
-  &:disabled {
-    cursor: default;
-  }
+.optionCode {
+  height: 34px;
+  color: $primary;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 34px;
+  letter-spacing: 0.04em;
+}
+
+.optionName {
+  height: 34px;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 34px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

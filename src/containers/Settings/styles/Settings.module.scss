@@ -330,6 +330,7 @@
 
 .segmented {
   display: flex;
+  flex-wrap: wrap;
   gap: 3px;
   padding: 3px;
   background: rgba($input, 0.75);
@@ -338,8 +339,9 @@
 }
 
 .segment {
-  min-width: 76px;
-  padding: 6px 12px;
+  height: 32px;
+  padding: 0 12px;
+  line-height: 32px;
   border-radius: 6px;
   color: $default;
   @include caption;

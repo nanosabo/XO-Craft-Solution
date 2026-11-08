@@ -1,12 +1,13 @@
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
+import type { UiLanguage } from "@src/helpers/contentLanguage";
 import SettingRow from "../components/SettingRow";
 import SettingsSection from "../components/SettingsSection";
 import styles from "../styles/Settings.module.scss";
 
 interface Props {
-  language: "ru" | "en";
-  onChange: (language: "ru" | "en") => void;
+  language: UiLanguage;
+  onChange: (language: UiLanguage) => void;
 }
 
 const LanguageSection: FC<Props> = ({ language, onChange }) => {
@@ -27,6 +28,15 @@ const LanguageSection: FC<Props> = ({ language, onChange }) => {
             onClick={() => onChange("ru")}
           >
             {t("general.language.ru")}
+          </button>
+          <button
+            type="button"
+            className={`${styles.segment} ${
+              language === "uk" ? styles.segmentActive : ""
+            }`}
+            onClick={() => onChange("uk")}
+          >
+            {t("general.language.uk")}
           </button>
           <button
             type="button"

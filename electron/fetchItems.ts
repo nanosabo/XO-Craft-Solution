@@ -6,7 +6,7 @@ import type { IData, ICategory, IRarity } from "@src/store/slices/market.slice";
 import { getFallbackActionId } from "./actionIds";
 import api, { isUsingMirror } from "./api";
 import { fetchUpdate } from "./fetchUpdate";
-import { getLanguage } from "./main";
+import { getContentLanguage } from "./main";
 import type { IItem } from "./craftItemsCalc";
 
 const USER_AGENT =
@@ -65,7 +65,7 @@ const getCachePath = (): string | null => {
   try {
     return path.join(
       app.getPath("userData"),
-      `${CATALOG_CACHE_PREFIX}-${getLanguage()}.json`,
+      `${CATALOG_CACHE_PREFIX}-${getContentLanguage()}.json`,
     );
   } catch {
     return null;
@@ -96,7 +96,7 @@ const saveCatalogCache = (catalog: MarketCatalog) => {
 };
 
 const fetchCatalogFromNetwork = async (): Promise<MarketCatalog> => {
-  const suffix = getLanguage() === "en" ? "_en.json" : ".json";
+  const suffix = getContentLanguage() === "en" ? "_en.json" : ".json";
 
   for (const base of CATALOG_URLS) {
     try {
@@ -148,7 +148,7 @@ const parseInitialData = (payload: string): MarketResponse | null => {
 };
 
 const fetchFromSite = async (): Promise<MarketResponse | null> => {
-  const lang = getLanguage();
+  const lang = getContentLanguage();
   const url = `${lang === "en" ? "en" : ""}/market/`;
 
   const response = await api.get(url, {

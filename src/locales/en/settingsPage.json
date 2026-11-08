@@ -21,8 +21,9 @@
     },
     "language": {
       "title": "Interface language",
-      "subtitle": "Applies to every section of the app.",
+      "subtitle": "The interface uses the selected language. In Ukrainian, part names, market items and weapon names stay in Russian.",
       "ru": "Русский",
+      "uk": "Українська",
       "en": "English"
     },
     "startScreen": {

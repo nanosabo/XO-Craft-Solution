@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import classNames from "classnames";
 import PageTitle from "@src/components/PageTitle";
+import { contentLanguage } from "@src/helpers/contentLanguage";
 import useScrollFade from "@src/hooks/useScrollFade";
 import { CraftIcon, LogsIcon, MarketIcon } from "@src/ui/icons";
 import craftFormRu from "@src/assets/guides/ru/craft-form.jpg";
@@ -90,7 +91,7 @@ const Guides = () => {
       returnObjects: true,
     }),
   );
-  const lang = i18n.language.toLowerCase().startsWith("ru") ? "ru" : "en";
+  const lang = contentLanguage(i18n.language);
   const shot =
     shots[`${guide}.${currentScreen.key}` as `${GuideKey}.${ScreenKey}`]?.[
       lang

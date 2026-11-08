@@ -7,7 +7,7 @@
     "description": "A desktop app for planning crafts with your inventory, analog parts and market prices in mind. Every calculation runs locally — no game connection required.",
     "author": "Author: SABOTAGE",
     "platforms": "Windows · Linux",
-    "languages": "Русский · English"
+    "languages": "Русский · Українська · English"
   },
   "support": {
     "kicker": "Support",
@@ -64,7 +64,7 @@
     },
     "updates": {
       "title": "Updates & languages",
-      "text": "Checks GitHub for new versions automatically and supports Russian and English."
+      "text": "Checks GitHub for new versions automatically and supports Russian, Ukrainian and English."
     }
   },
   "links": {

@@ -10,6 +10,7 @@ import { CloseIcon } from "@src/ui/icons";
 import { getAnalogMatches, formatDelta } from "../Settings/analog/helpers";
 import PartImage from "../Settings/components/PartImage";
 import PartStats from "../Settings/components/PartStats";
+import { contentLanguage } from "@src/helpers/contentLanguage";
 import { getPartName, Part } from "../Settings/types";
 import useParts from "../Settings/useParts";
 import styles from "./styles/AnalogModal.module.scss";
@@ -94,7 +95,7 @@ const AnalogModal: FC<Props> = ({
   }, [onClose]);
 
   const sourceName =
-    i18n.language.startsWith("ru") ? source.name : source.eng_name;
+    contentLanguage(i18n.language) === "ru" ? source.name : source.eng_name;
 
   return createPortal(
     <motion.div

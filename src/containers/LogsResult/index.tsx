@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { buildAppLogLink } from "@src/helpers/appLogLink";
+import { contentLanguage } from "@src/helpers/contentLanguage";
 import { logWarning } from "@src/helpers/errorLog";
 import Switch from "@src/containers/Settings/components/Switch";
 import {
@@ -278,7 +279,7 @@ const LogsResult = () => {
   const navigate = useNavigate();
   const preferredType = (searchParams.get("type") ?? "").trim().toLowerCase();
   const { t, i18n } = useTranslation("logsPage");
-  const isRu = Boolean(i18n.language?.startsWith("ru"));
+  const isRu = contentLanguage(i18n.language) === "ru";
   const [summary, setSummary] = useState<CrossoutLogSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ResultError | null>(null);

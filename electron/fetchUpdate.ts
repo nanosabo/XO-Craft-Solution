@@ -1,6 +1,6 @@
 import { IData } from "@src/store/slices/market.slice";
 import { getFallbackActionId, postServerAction } from "./actionIds";
-import { getLanguage } from "./main";
+import { getContentLanguage } from "./main";
 
 export interface IUpdate {
   updated: boolean;
@@ -14,7 +14,7 @@ export const fetchUpdate = async (
   knownActionId?: string,
 ) => {
   try {
-    const lang = getLanguage();
+    const lang = getContentLanguage();
     const url = `${lang === "en" ? "en" : ""}/market/`;
 
     const response = await postServerAction(

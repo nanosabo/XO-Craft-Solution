@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { parseAppLogLink } from "@src/helpers/appLogLink";
+import { normalizeUiLanguage } from "@src/helpers/contentLanguage";
 import { logWarning } from "@src/helpers/errorLog";
 import formatBytes from "@src/helpers/formatBytes";
 import useScrollFade from "@src/hooks/useScrollFade";
@@ -134,8 +135,9 @@ const Logs = () => {
   const { t, i18n } = useTranslation("logsPage");
   const navigate = useNavigate();
   const logsPath = useAppSelector(selectSettingsState).crossoutLogsPath;
-  const isRu = Boolean(i18n.language?.startsWith("ru"));
-  const numberLocale = isRu ? "ru-RU" : "en-US";
+  const uiLanguage = normalizeUiLanguage(i18n.language);
+  const numberLocale =
+    uiLanguage === "uk" ? "uk-UA" : uiLanguage === "en" ? "en-US" : "ru-RU";
   const contentRef = useRef<HTMLDivElement>(null);
   const fade = useScrollFade(contentRef);
 

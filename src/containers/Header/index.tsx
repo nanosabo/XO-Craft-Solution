@@ -14,6 +14,7 @@ import {
   setIsMirror,
   updateMarket,
 } from "@src/store/slices/market.slice";
+import { contentLanguage } from "@src/helpers/contentLanguage";
 import i18n from "../../i18n";
 import useAutoUpdate from "@src/hooks/useAutoUpdate";
 import useMarketNotifications from "@src/hooks/useMarketNotifications";
@@ -35,7 +36,14 @@ const Header = () => {
       dispatch(updateMarket(items));
     };
 
+    let namesLanguage = contentLanguage(i18n.language);
+
     const langListener = () => {
+      const next = contentLanguage(i18n.language);
+
+      if (next === namesLanguage) return;
+
+      namesLanguage = next;
       void dispatch(fetchData(null)).catch(() => undefined);
     };
 

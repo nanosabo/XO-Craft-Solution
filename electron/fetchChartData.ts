@@ -1,6 +1,6 @@
 import type { IData } from "@src/store/slices/market.slice";
 import { getFallbackActionId, postServerAction } from "./actionIds";
-import { getLanguage } from "./main";
+import { getContentLanguage } from "./main";
 
 export type TimeRange = "1h" | "6h" | "12h" | "1d" | "1w" | "1m" | "2m" | "6m";
 
@@ -43,7 +43,7 @@ const requestHistory = async (
   aggregationMinutes: number,
 ): Promise<IData[] | null> => {
   try {
-    const lang = getLanguage();
+    const lang = getContentLanguage();
     const url = `${lang === "en" ? "en" : ""}/market/`;
 
     const response = await postServerAction(
@@ -122,7 +122,8 @@ export function buildChartData(
   range: TimeRange,
   lang: string = "ru",
 ): ChartData {
-  const locale = lang === "ru" ? "ru-RU" : "en-US";
+  const locale =
+    lang === "uk" ? "uk-UA" : lang === "en" ? "en-US" : "ru-RU";
 
   if (!data.length) {
     return { t: [], s: [], b: [], so: [], bo: [] };

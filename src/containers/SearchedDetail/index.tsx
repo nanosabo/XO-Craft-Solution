@@ -4,6 +4,7 @@ import { FC } from "react";
 import styles from "./styles/SearchedDetail.module.scss";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
+import { contentLanguage } from "@src/helpers/contentLanguage";
 import { useAppDispatch } from "@src/store/store";
 import {
   decrementPartCount,
@@ -38,7 +39,7 @@ const SearchedDetail: FC<Props> = ({
 
   const handleDecrement = () => dispathch(decrementPartCount(id));
 
-  const partName = i18n.language === "ru" ? name : eng_name;
+  const partName = contentLanguage(i18n.language) === "ru" ? name : eng_name;
 
   return (
     <div

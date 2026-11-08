@@ -5,6 +5,7 @@ import {
   setAutoUpdate,
   setStartScreen,
 } from "@src/store/slices/settings.slice";
+import { normalizeUiLanguage, type UiLanguage } from "@src/helpers/contentLanguage";
 import useAppVersion from "./useAppVersion";
 import AboutSection from "./general/AboutSection";
 import DataSection from "./general/DataSection";
@@ -21,9 +22,9 @@ const GeneralSettings = () => {
     useAppSelector(selectSettingsState);
   const version = useAppVersion();
 
-  const language = i18n.language.startsWith("ru") ? "ru" : "en";
+  const language = normalizeUiLanguage(i18n.language);
 
-  const changeLanguage = (nextLanguage: "ru" | "en") => {
+  const changeLanguage = (nextLanguage: UiLanguage) => {
     if (nextLanguage === language) return;
     void i18n.changeLanguage(nextLanguage);
   };

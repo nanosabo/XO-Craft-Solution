@@ -20,6 +20,11 @@ import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
 import { isUsingMirror } from "./api";
+import {
+  contentLanguage,
+  normalizeUiLanguage,
+  type UiLanguage,
+} from "./language";
 import { IData, OwnRecipe } from "@src/store/slices/market.slice";
 import { getEnhancedAnalytics, IItem } from "./craftItemsCalc";
 import { getOneItem } from "./oneItemCalc";
@@ -186,7 +191,7 @@ interface Part {
   build_hp: number;
 }
 
-let lang: "ru" | "en" = "ru";
+let lang: UiLanguage = "ru";
 
 const PARTS_URL = "https://nanosabo.github.io/xocs-imgs/actual_parts.json";
 const partsCachePath = path.join(app.getPath("userData"), "actual_parts.json");
@@ -275,6 +280,8 @@ const ensureParts = (): Promise<Part[]> => {
 export const getLanguage = () => {
   return lang;
 };
+
+export const getContentLanguage = () => contentLanguage(lang);
 
 const statePath = path.join(app.getPath("userData"), "window-state.json");
 
@@ -587,14 +594,14 @@ ipcMain.handle("crossout-clear-api-key", () => {
 ipcMain.handle(
   "crossout-fetch-battles",
   (_, params: CrossoutFetchBattlesParams) => {
-    return fetchCrossoutBattles(params, lang);
+    return fetchCrossoutBattles(params, getContentLanguage());
   },
 );
 
 ipcMain.handle(
   "crossout-upload-log",
   (event, params: CrossoutUploadLogParams) => {
-    return uploadCrossoutLog(params, lang, (progress) => {
+    return uploadCrossoutLog(params, getContentLanguage(), (progress) => {
       if (event.sender.isDestroyed()) return;
 
       event.sender.send("crossout-upload-progress", progress);
@@ -603,7 +610,7 @@ ipcMain.handle(
 );
 
 ipcMain.handle("crossout-load-log", (_, logId: string) => {
-  return loadCrossoutLog(String(logId ?? ""), lang);
+  return loadCrossoutLog(String(logId ?? ""), getContentLanguage());
 });
 
 ipcMain.handle(
@@ -621,7 +628,7 @@ ipcMain.handle(
     return loadCrossoutLogTable(
       String(logId ?? ""),
       String(type ?? ""),
-      lang,
+      getContentLanguage(),
       Number(expectedBattles) || 0,
       Number.isFinite(from) && Number.isFinite(to)
         ? { from, to }
@@ -656,13 +663,13 @@ ipcMain.handle("crossout-history-clear", () => {
 });
 
 ipcMain.handle("crossout-stats-cache-get", (_, logId: string) => {
-  return getCrossoutStatsCache(String(logId ?? ""), lang);
+  return getCrossoutStatsCache(String(logId ?? ""), getContentLanguage());
 });
 
 ipcMain.handle(
   "crossout-stats-cache-save",
   (_, input: CrossoutStatsCacheInput) => {
-    saveCrossoutStatsCache(input, lang);
+    saveCrossoutStatsCache(input, getContentLanguage());
   },
 );
 
@@ -1051,11 +1058,7 @@ const onUpdate = async () => {
 };
 
 ipcMain.on("lang", (_, language) => {
-  lang = String(language ?? "")
-    .toLowerCase()
-    .startsWith("ru")
-    ? "ru"
-    : "en";
+  lang = normalizeUiLanguage(String(language ?? ""));
 });
 
 ipcMain.handle(
