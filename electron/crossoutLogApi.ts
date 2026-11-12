@@ -635,13 +635,20 @@ const buildStats = (
   names: DataAllCache,
   language: CrossoutLanguage,
   allies: Set<string>,
+  owner: string,
 ): CrossoutLogStat | null => {
   if (players.length === 0) return null;
 
+  const ownerKey = owner.trim().toLowerCase();
   const teamOf = (name: string): "green" | "red" =>
     allies.has(name.trim().toLowerCase()) ? "green" : "red";
 
   const ordered = [...players].sort((left, right) => {
+    const leftOwner = left.name.trim().toLowerCase() === ownerKey;
+    const rightOwner = right.name.trim().toLowerCase() === ownerKey;
+
+    if (leftOwner !== rightOwner) return leftOwner ? -1 : 1;
+
     const team = Number(teamOf(right.name) === "green") - Number(teamOf(left.name) === "green");
 
     return team || right.damage - left.damage;
@@ -997,6 +1004,7 @@ export const loadCrossoutLogTable = async (
           names,
           language,
           partyAllies(readPlayers(result.battles), nickname),
+          nickname,
         ),
         rows: buildRows(visible, names, language),
         nickname,

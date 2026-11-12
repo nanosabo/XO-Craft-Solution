@@ -936,8 +936,20 @@ const LogsResult = () => {
   const filteredStats = useMemo(() => {
     const rows = shownTable?.stats?.rows ?? [];
     const query = statsQuery.trim().toLowerCase();
+    const groups = groupStatRows(rows);
+    const nick = shownTable?.nickname || summary?.nickname || "";
+    const ownerIndex = nick
+      ? groups.findIndex(
+          (group) => group.player && sameName(group.player.name, nick),
+        )
+      : -1;
 
-    return groupStatRows(rows).flatMap((group) => {
+    if (ownerIndex > 0) {
+      const [owner] = groups.splice(ownerIndex, 1);
+      groups.unshift(owner);
+    }
+
+    return groups.flatMap((group) => {
       const team = group.player?.team || group.weapons[0]?.team || "";
 
       if (alliesOnly && allyTeam && team && team !== allyTeam) return [];
@@ -962,7 +974,7 @@ const LogsResult = () => {
 
       return group.player ? [group.player, ...weapons] : weapons;
     });
-  }, [alliesOnly, allyTeam, shownTable, statsQuery]);
+  }, [alliesOnly, allyTeam, shownTable, statsQuery, summary]);
 
   const filteredBattles = useMemo(() => {
     const rows = shownTable?.rows ?? [];
