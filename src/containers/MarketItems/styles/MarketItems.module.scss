@@ -11,10 +11,10 @@ $market-columns: 240px // Название
   110px; // Прибыль
 
 .wrapper {
-  width: calc(100% + 16px);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  margin-right: -16px;
   padding-right: 8px;
   margin-top: 12px;
 
