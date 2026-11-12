@@ -2,7 +2,6 @@ import { app, net } from "electron";
 import axios from "axios";
 import fs from "node:fs";
 import path from "node:path";
-import { Transform } from "node:stream";
 import FormData from "form-data";
 import {
   CROSSOUT_BATTLE_TYPES,
@@ -31,11 +30,30 @@ const PROBE_TIMEOUT = 4_000;
 
 let preferredHost = RU_HOST;
 let probeTask: Promise<void> | null = null;
+const unavailableHosts = new Set<string>();
+
+const hostOf = (url: string): string | null => {
+  if (url.startsWith(EN_HOST)) return EN_HOST;
+  if (url.startsWith(RU_HOST)) return RU_HOST;
+
+  return null;
+};
 
 /** Remember the host that actually answered, so the next request starts there. */
 export const noteCrossoutHost = (url: string): void => {
-  if (url.startsWith(EN_HOST)) preferredHost = EN_HOST;
-  else if (url.startsWith(RU_HOST)) preferredHost = RU_HOST;
+  const host = hostOf(url);
+
+  if (!host) return;
+
+  unavailableHosts.delete(host);
+  preferredHost = host;
+};
+
+/** Skip a host that timed out until one request to it succeeds. */
+const noteCrossoutHostDown = (url: string): void => {
+  const host = hostOf(url);
+
+  if (host) unavailableHosts.add(host);
 };
 
 /**
@@ -59,8 +77,14 @@ export const probeCrossoutHost = (): Promise<void> => {
         validateStatus: () => true,
       });
 
-      preferredHost = response.status >= 500 ? EN_HOST : RU_HOST;
+      if (response.status >= 500) {
+        noteCrossoutHostDown(RU_HOST);
+        preferredHost = EN_HOST;
+      } else {
+        preferredHost = RU_HOST;
+      }
     } catch {
+      noteCrossoutHostDown(RU_HOST);
       preferredHost = EN_HOST;
     }
   })();
@@ -71,7 +95,10 @@ export const probeCrossoutHost = (): Promise<void> => {
 export const getBaseUrls = async (): Promise<string[]> => {
   await probeCrossoutHost();
 
-  return preferredHost === EN_HOST ? [EN_HOST, RU_HOST] : [RU_HOST, EN_HOST];
+  const ordered = preferredHost === EN_HOST ? [EN_HOST, RU_HOST] : [RU_HOST, EN_HOST];
+  const alive = ordered.filter((host) => !unavailableHosts.has(host));
+
+  return alive.length > 0 ? alive : ordered;
 };
 
 const getWeaponTranslator = (
@@ -99,16 +126,27 @@ const API_USER_AGENT =
 const API_TIMEOUT = 45_000;
 
 export const fetchCrossoutText = async (url: string): Promise<string> => {
-  const response = await axios.get<string>(url, {
-    timeout: API_TIMEOUT,
-    responseType: "text",
-    headers: {
-      Accept: "application/json, text/plain, */*",
-      "User-Agent": API_USER_AGENT,
-    },
-  });
+  try {
+    const response = await axios.get<string>(url, {
+      timeout: API_TIMEOUT,
+      responseType: "text",
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "User-Agent": API_USER_AGENT,
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
 
-  return String(response.data ?? "");
+    return String(response.data ?? "");
+  } catch (error) {
+    if (axios.isAxiosError(error) && !error.response) {
+      noteCrossoutHostDown(url);
+    }
+
+    throw error;
+  }
 };
 /** Public crossout-info key. One place for every log and battle request. */
 const DEFAULT_API_KEY = "025ffb8e0248088848a57b8831c23987";
@@ -263,13 +301,11 @@ const createUploadTracker = (
   total: number,
   onProgress?: (progress: CrossoutUploadProgress) => void,
 ) => {
-  let transferred = 0;
-  let lastBytes = 0;
-  let lastAt = Date.now();
-  let bytesPerSecond = 0;
+  let lastRate = 0;
   let lastEmit = 0;
 
   const emit = (
+    loaded: number,
     phase: CrossoutUploadProgress["phase"],
     force = false,
   ) => {
@@ -279,40 +315,36 @@ const createUploadTracker = (
 
     if (!force && phase === "uploading" && now - lastEmit < 120) return;
 
-    const elapsed = (now - lastAt) / 1000;
-
-    if (elapsed >= 0.2 && transferred !== lastBytes) {
-      bytesPerSecond = Math.max(0, (transferred - lastBytes) / elapsed);
-      lastBytes = transferred;
-      lastAt = now;
-    }
-
     lastEmit = now;
+
+    const complete = phase === "processing";
 
     onProgress({
       phase,
-      percent:
-        phase === "processing"
-          ? 100
-          : total > 0
-            ? Math.min(99, Math.round((transferred / total) * 100))
-            : 0,
-      transferred: phase === "processing" ? total : transferred,
+      percent: complete
+        ? 100
+        : total > 0
+          ? Math.min(99, Math.round((loaded / total) * 100))
+          : 0,
+      transferred: complete ? total : loaded,
       total,
-      bytesPerSecond: Math.round(bytesPerSecond),
+      bytesPerSecond: Math.round(lastRate),
     });
   };
 
   return {
-    start: () => emit("uploading", true),
-    chunk: (size: number) => {
-      transferred += size;
-      emit("uploading");
+    start: () => emit(0, "uploading", true),
+    progress: (loaded: number, rate?: number) => {
+      if (typeof rate === "number" && rate > 0) lastRate = rate;
+
+      if (total > 0 && loaded >= total) {
+        emit(total, "processing", true);
+        return;
+      }
+
+      emit(loaded, "uploading");
     },
-    done: () => {
-      transferred = total;
-      emit("processing", true);
-    },
+    done: () => emit(total, "processing", true),
   };
 };
 
@@ -644,30 +676,13 @@ export const uploadCrossoutLog = async (
     }
 
     const tracker = createUploadTracker(total, onProgress);
-    // Count bytes as axios reads the multipart body, then mark the log as
-    // processing once that body has been handed to the socket.
-    const body = new Transform({
-      transform(chunk, _encoding, callback) {
-        const size = Buffer.isBuffer(chunk)
-          ? chunk.length
-          : Buffer.byteLength(String(chunk));
-
-        tracker.chunk(size);
-        callback(null, chunk);
-      },
-      flush(callback) {
-        tracker.done();
-        callback();
-      },
-    });
 
     tracker.start();
-    form.pipe(body);
 
     try {
       const response = await axios.post<string>(
         `${baseUrl}/public/autoUploadLog.php?${query.toString()}`,
-        body,
+        form,
         {
           headers: {
             ...form.getHeaders(),
@@ -678,8 +693,13 @@ export const uploadCrossoutLog = async (
           timeout: UPLOAD_TIMEOUT,
           maxBodyLength: Infinity,
           maxContentLength: Infinity,
+          onUploadProgress: (event) => {
+            tracker.progress(event.loaded, event.rate);
+          },
         },
       );
+
+      tracker.done();
 
       const logId = String(response.data ?? "").trim();
 
@@ -701,9 +721,12 @@ export const uploadCrossoutLog = async (
 
       return { ok: true, logId, logUrl: `${baseUrl}/log/${logId}` };
     } catch (error) {
-      body.destroy();
       form.destroy();
       lastError = error;
+
+      if (axios.isAxiosError(error) && !error.response) {
+        noteCrossoutHostDown(baseUrl);
+      }
 
       if (!shouldTryNextHost(error)) break;
     }

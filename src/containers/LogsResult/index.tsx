@@ -10,6 +10,7 @@ import {
   CROSSOUT_MAPS,
   type CrossoutErrorCode,
   type CrossoutLogCell,
+  type CrossoutLogRoundPlay,
   type CrossoutLogRow,
   type CrossoutLogStatRow,
   type CrossoutLogSummary,
@@ -214,11 +215,28 @@ const cachedTableReady = (
   const columnsMatch =
     !sample ||
     (winrate.includes("/") && parts.includes(".") && frags.includes("/"));
+  const battleRows = table.rows.filter((row) => row.battle);
+  const stamps = battleRows
+    .map((row) => row.battle?.at ?? 0)
+    .filter((at) => at > 0);
+  const repeated = stamps.reduce((best, at) => {
+    const count = stamps.filter((item) => item === at).length;
+
+    return Math.max(best, count);
+  }, 0);
+  const timeReady =
+    table.times.length < 2 ||
+    (repeated < 3 &&
+      battleRows.some(
+        (row) =>
+          (row.battle?.at ?? 0) > 0 && (row.battle?.plays?.length ?? 0) > 0,
+      ));
 
   return (
     columnsMatch &&
     battleTone &&
     nicksMarked &&
+    timeReady &&
     statWeapons.every((row) => Boolean(row.image)) &&
     battleWeapons.every((item) => Boolean(item.image))
   );
@@ -292,6 +310,186 @@ const groupStatRows = (rows: CrossoutLogStatRow[]): StatGroup[] => {
   }
 
   return groups;
+};
+
+const rateLabel = (part: number, total: number): string => {
+  if (total <= 0) return "0/0 0%";
+
+  return `${part}/${total} ${Math.round((part / total) * 100)}%`;
+};
+
+const averageInt = (total: number, rounds: number): string =>
+  rounds > 0 ? String(Math.round(total / rounds)) : "0";
+
+const averageFixed = (total: number, rounds: number): string =>
+  (rounds > 0 ? total / rounds : 0).toFixed(2);
+
+interface RangeTotals {
+  rounds: number;
+  wins: number;
+  damage: number;
+  kill: number;
+  death: number;
+  keys: string[];
+  images: string[];
+}
+
+const emptyTotals = (): RangeTotals => ({
+  rounds: 0,
+  wins: 0,
+  damage: 0,
+  kill: 0,
+  death: 0,
+  keys: [],
+  images: [],
+});
+
+const addPlay = (totals: RangeTotals, play: CrossoutLogRoundPlay) => {
+  totals.rounds += 1;
+  if (play.win) totals.wins += 1;
+  totals.damage += play.damage;
+  totals.kill += play.kill;
+  totals.death += play.death;
+
+  if (totals.keys.length === 0 && play.keys.length > 0) {
+    totals.keys = play.keys;
+    totals.images = play.images.filter(Boolean);
+  }
+};
+
+const rangeCells = (name: string, totals: RangeTotals): string[] => [
+  name,
+  "",
+  rateLabel(totals.wins, totals.rounds),
+  averageInt(totals.damage, totals.rounds),
+  "—",
+  "—",
+  `${totals.kill}/${averageFixed(totals.kill, totals.rounds)}`,
+  `${totals.death}/${averageFixed(totals.death, totals.rounds)}`,
+  "—",
+];
+
+/**
+ * Stats for the selected battle interval. Null means this table was saved
+ * before battles carried their start time, so the full table stays.
+ */
+const statsForRange = (
+  table: CrossoutLogTable,
+  from: number,
+  to: number,
+  catalog: CrossoutNameCatalog | null,
+  language: "ru" | "en",
+): CrossoutLogStatRow[] | null => {
+  const headers = table.rows.filter((row) => row.battle);
+  const dated = headers.some((row) => (row.battle?.at ?? 0) > 0);
+
+  if (!dated) return null;
+
+  const chosen = headers.filter((row) => {
+    const at = row.battle?.at ?? 0;
+
+    return at >= from && at <= to;
+  });
+  const plays = chosen.flatMap((row) => row.battle?.plays ?? []);
+
+  if (plays.length === 0) {
+    return chosen.every((row) => !row.battle?.plays) ? null : [];
+  }
+
+  const teams = new Map<string, string>();
+
+  for (const row of table.stats?.rows ?? []) {
+    if (row.kind === "player" && row.name) {
+      teams.set(row.name.trim().toLowerCase(), row.team);
+    }
+  }
+
+  const reverse = catalog
+    ? namesToKeys(catalog, "weapons")
+    : new Map<string, string>();
+  const players = new Map<
+    string,
+    { totals: RangeTotals; weapons: Map<string, RangeTotals> }
+  >();
+
+  for (const play of plays) {
+    const name = play.nick.trim();
+
+    if (!name) continue;
+
+    const key = name.toLowerCase();
+    let player = players.get(key);
+
+    if (!player) {
+      player = { totals: emptyTotals(), weapons: new Map() };
+      players.set(key, player);
+    }
+
+    addPlay(player.totals, play);
+
+    const weaponKey = play.weapon.trim();
+
+    if (!weaponKey) continue;
+
+    let weapon = player.weapons.get(weaponKey);
+
+    if (!weapon) {
+      weapon = emptyTotals();
+      player.weapons.set(weaponKey, weapon);
+    }
+
+    addPlay(weapon, play);
+  }
+
+  const rows: CrossoutLogStatRow[] = [];
+
+  for (const [key, player] of [...players.entries()].sort(
+    (left, right) => right[1].totals.damage - left[1].totals.damage,
+  )) {
+    const name =
+      plays.find((play) => play.nick.trim().toLowerCase() === key)?.nick.trim() ||
+      key;
+    const team = teams.get(key) ?? "";
+
+    rows.push({
+      kind: "player",
+      name,
+      weapon: "",
+      image: "",
+      images: [],
+      stars: null,
+      team,
+      damage: averageInt(player.totals.damage, player.totals.rounds),
+      delta: "",
+      deltaKind: null,
+      cells: rangeCells(name, player.totals),
+    });
+
+    for (const [weaponKey, totals] of [...player.weapons.entries()].sort(
+      (left, right) => right[1].damage - left[1].damage,
+    )) {
+      const label = catalog
+        ? weaponLabel(catalog, language, totals.keys, weaponKey, reverse)
+        : weaponKey;
+
+      rows.push({
+        kind: "weapon",
+        name: label,
+        weapon: label,
+        image: totals.images[0] ?? "",
+        images: totals.images,
+        keys: totals.keys,
+        stars: null,
+        team,
+        damage: averageInt(totals.damage, totals.rounds),
+        delta: "",
+        deltaKind: null,
+        cells: rangeCells(label, totals),
+      });
+    }
+  }
+
+  return rows;
 };
 
 const sameName = (left: string, right: string) => {
@@ -552,6 +750,8 @@ const LogsResult = () => {
 
     setLogType(slug);
 
+    let staleTable: CrossoutLogTable | null = null;
+
     if (!range) {
       try {
         const cached = await window.electronAPI.crossoutStatsCacheGet(id);
@@ -559,6 +759,8 @@ const LogsResult = () => {
         if (seq !== loadSeq.current) return;
 
         const table = cached ? cachedTable(cached.tables, slug) : null;
+
+        if (table?.rows.some((row) => row.battle)) staleTable = table;
 
         if (cachedTableReady(table)) {
           setLogTableError(null);
@@ -589,15 +791,23 @@ const LogsResult = () => {
       if (seq !== loadSeq.current) return;
 
       if (result.ok) {
-        applyLoadedTable(result.table, Boolean(range));
+        const battleCount = (value: CrossoutLogTable | null) =>
+          value?.rows.filter((row) => row.battle).length ?? 0;
+        const incomingBattles = battleCount(result.table) > 0;
+        const table =
+          staleTable && battleCount(result.table) < battleCount(staleTable)
+            ? staleTable
+            : result.table;
+
+        applyLoadedTable(table, Boolean(range));
 
         const current = summaryRef.current;
 
-        if (!range && current && current.logId === id) {
+        if (!range && current && current.logId === id && incomingBattles) {
           void window.electronAPI
             .crossoutStatsCacheSave({
               summary: current,
-              table: result.table,
+              table,
             })
             .catch((cacheError) => {
               logWarning("crossout-stats-cache", cacheError);
@@ -933,8 +1143,20 @@ const LogsResult = () => {
     return rows.find((row) => row.kind === "player" && row.team)?.team ?? "";
   }, [shownTable, summary]);
 
+  const rangedStats = useMemo(() => {
+    if (!timeFiltered || !shownTable) return null;
+
+    return statsForRange(
+      shownTable,
+      Math.min(timeFrom, timeTo),
+      Math.max(timeFrom, timeTo),
+      nameCatalog,
+      namesLanguage,
+    );
+  }, [nameCatalog, namesLanguage, shownTable, timeFiltered, timeFrom, timeTo]);
+
   const filteredStats = useMemo(() => {
-    const rows = shownTable?.stats?.rows ?? [];
+    const rows = rangedStats ?? shownTable?.stats?.rows ?? [];
     const query = statsQuery.trim().toLowerCase();
     const groups = groupStatRows(rows);
     const nick = shownTable?.nickname || summary?.nickname || "";
@@ -974,14 +1196,11 @@ const LogsResult = () => {
 
       return group.player ? [group.player, ...weapons] : weapons;
     });
-  }, [alliesOnly, allyTeam, shownTable, statsQuery, summary]);
+  }, [alliesOnly, allyTeam, rangedStats, shownTable, statsQuery, summary]);
 
   const filteredBattles = useMemo(() => {
     const rows = shownTable?.rows ?? [];
     const query = mapQuery.trim().toLowerCase();
-
-    if (!query) return rows;
-
     const preface: CrossoutLogRow[] = [];
     const groups: CrossoutLogRow[][] = [];
     let current: CrossoutLogRow[] | null = null;
@@ -997,23 +1216,39 @@ const LogsResult = () => {
       }
     }
 
-    const matched = groups.filter((group) =>
-      group.some((row) => {
-        const raw = row.battle?.map || row.map;
+    const from = Math.min(timeFrom, timeTo);
+    const to = Math.max(timeFrom, timeTo);
+    const dated = groups.some((group) => (group[0].battle?.at ?? 0) > 0);
+    const ranged =
+      timeFiltered && dated
+        ? groups.filter((group) => {
+            const at = group[0].battle?.at ?? 0;
 
-        if (!raw) return false;
+            return at >= from && at <= to;
+          })
+        : groups;
 
-        return (
-          raw.toLowerCase().includes(query) ||
-          mapLabel(raw).toLowerCase().includes(query)
+    if (timeFiltered && dated && ranged.length === 0) return [];
+
+    const matched = !query
+      ? ranged
+      : ranged.filter((group) =>
+          group.some((row) => {
+            const raw = row.battle?.map || row.map;
+
+            if (!raw) return false;
+
+            return (
+              raw.toLowerCase().includes(query) ||
+              mapLabel(raw).toLowerCase().includes(query)
+            );
+          }),
         );
-      }),
-    );
 
-    if (matched.length === 0) return [];
+    if (query && matched.length === 0) return [];
 
     return [...preface, ...matched.flat()];
-  }, [shownTable, mapLabel, mapQuery]);
+  }, [shownTable, mapLabel, mapQuery, timeFiltered, timeFrom, timeTo]);
 
   const battleColumns = useMemo(() => {
     const header = filteredBattles.find((row) => row.cls.includes("sticDiv"));
@@ -1106,17 +1341,10 @@ const LogsResult = () => {
     const full =
       from === timeOptions[0].at &&
       to === timeOptions[timeOptions.length - 1].at;
-    const type = summary.types.find((item) => item.key === logType);
 
     setTimeFrom(from);
     setTimeTo(to);
     setTimeFiltered(!full);
-    void loadLogType(
-      summary.logId,
-      logType,
-      full ? (type?.count ?? 0) : 0,
-      full ? null : { from, to },
-    );
   };
 
   const resetTimeFilter = () => {
@@ -1126,13 +1354,7 @@ const LogsResult = () => {
 
     setTimeFrom(timeOptions[0].at);
     setTimeTo(timeOptions[timeOptions.length - 1].at);
-
-    if (!timeFiltered) return;
-
-    const type = summary.types.find((item) => item.key === logType);
-
     setTimeFiltered(false);
-    void loadLogType(summary.logId, logType, type?.count ?? 0);
   };
 
   return (

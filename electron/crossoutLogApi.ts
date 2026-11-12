@@ -58,6 +58,8 @@ interface ApiRoundPlayer {
   kill: number;
   damage: number;
   death: number;
+  win: boolean;
+  party: number;
   color: "green" | "red" | "";
 }
 
@@ -222,6 +224,212 @@ const writeDataAll = (cache: DataAllCache) => {
   }
 };
 
+type JsonRead = { ok: true; value: unknown } | { ok: false };
+
+/**
+ * The English host closes long log responses before the JSON finishes.
+ * Keep every value that was closed, including the player aggregate, and drop
+ * only the cut-off tail.
+ */
+const salvageJson = (text: string): unknown | null => {
+  let index = 0;
+  const length = text.length;
+
+  const skipSpace = () => {
+    while (index < length && text[index] <= " ") index += 1;
+  };
+
+  const parseString = (): JsonRead => {
+    if (text[index] !== '"') return { ok: false };
+
+    index += 1;
+    let value = "";
+
+    while (index < length) {
+      const char = text[index];
+      index += 1;
+
+      if (char === '"') return { ok: true, value };
+
+      if (char !== "\\") {
+        value += char;
+        continue;
+      }
+
+      if (index >= length) return { ok: false };
+
+      const escaped = text[index];
+      index += 1;
+
+      if (escaped === "u") {
+        const hex = text.slice(index, index + 4);
+
+        if (!/^[0-9a-fA-F]{4}$/.test(hex)) return { ok: false };
+
+        index += 4;
+        value += String.fromCharCode(Number.parseInt(hex, 16));
+        continue;
+      }
+
+      const decoded: Record<string, string> = {
+        '"': '"',
+        "\\": "\\",
+        "/": "/",
+        b: "\b",
+        f: "\f",
+        n: "\n",
+        r: "\r",
+        t: "\t",
+      };
+
+      value += decoded[escaped] ?? escaped;
+    }
+
+    return { ok: false };
+  };
+
+  const parseNumber = (): JsonRead => {
+    const start = index;
+
+    if (text[index] === "-") index += 1;
+
+    if (index >= length || text[index] < "0" || text[index] > "9") {
+      return { ok: false };
+    }
+
+    while (index < length && text[index] >= "0" && text[index] <= "9") index += 1;
+
+    if (text[index] === ".") {
+      index += 1;
+      while (index < length && text[index] >= "0" && text[index] <= "9") index += 1;
+    }
+
+    if (text[index] === "e" || text[index] === "E") {
+      index += 1;
+      if (text[index] === "+" || text[index] === "-") index += 1;
+      while (index < length && text[index] >= "0" && text[index] <= "9") index += 1;
+    }
+
+    const raw = text.slice(start, index);
+    const value = Number(raw);
+
+    if (!raw || raw === "-" || !Number.isFinite(value)) return { ok: false };
+
+    return { ok: true, value };
+  };
+
+  const parseLiteral = (word: string, value: unknown): JsonRead => {
+    if (text.slice(index, index + word.length) !== word) return { ok: false };
+
+    index += word.length;
+
+    return { ok: true, value };
+  };
+
+  const parseValue = (): JsonRead => {
+    skipSpace();
+
+    if (index >= length) return { ok: false };
+
+    const char = text[index];
+
+    if (char === '"') return parseString();
+    if (char === "{") return parseObject();
+    if (char === "[") return parseArray();
+    if (char === "t") return parseLiteral("true", true);
+    if (char === "f") return parseLiteral("false", false);
+    if (char === "n") return parseLiteral("null", null);
+    if (char === "-" || (char >= "0" && char <= "9")) return parseNumber();
+
+    return { ok: false };
+  };
+
+  const parseObject = (): JsonRead => {
+    index += 1;
+    const value: Record<string, unknown> = {};
+
+    skipSpace();
+
+    if (text[index] === "}") {
+      index += 1;
+      return { ok: true, value };
+    }
+
+    while (index < length) {
+      skipSpace();
+      const key = parseString();
+
+      if (!key.ok || typeof key.value !== "string") return { ok: true, value };
+
+      skipSpace();
+
+      if (text[index] !== ":") return { ok: true, value };
+
+      index += 1;
+      const child = parseValue();
+
+      if (!child.ok) return { ok: true, value };
+
+      value[key.value] = child.value;
+      skipSpace();
+
+      if (text[index] === ",") {
+        index += 1;
+        continue;
+      }
+
+      if (text[index] === "}") {
+        index += 1;
+        return { ok: true, value };
+      }
+
+      return { ok: true, value };
+    }
+
+    return { ok: true, value };
+  };
+
+  const parseArray = (): JsonRead => {
+    index += 1;
+    const value: unknown[] = [];
+
+    skipSpace();
+
+    if (text[index] === "]") {
+      index += 1;
+      return { ok: true, value };
+    }
+
+    while (index < length) {
+      const child = parseValue();
+
+      if (!child.ok) return { ok: true, value };
+
+      value.push(child.value);
+      skipSpace();
+
+      if (text[index] === ",") {
+        index += 1;
+        continue;
+      }
+
+      if (text[index] === "]") {
+        index += 1;
+        return { ok: true, value };
+      }
+
+      return { ok: true, value };
+    }
+
+    return { ok: true, value };
+  };
+
+  skipSpace();
+  const parsed = parseValue();
+
+  return parsed.ok ? parsed.value : null;
+};
+
 const parseBody = (text: string): Record<string, unknown> => {
   const trimmed = text.trim();
 
@@ -247,10 +455,7 @@ const parseBody = (text: string): Record<string, unknown> => {
   try {
     data = JSON.parse(trimmed.slice(start, end + 1));
   } catch {
-    throw new LogApiError(
-      "unexpected-response",
-      "Сервис вернул неожиданный ответ.",
-    );
+    data = salvageJson(trimmed.slice(start));
   }
 
   const record = asRecord(data);
@@ -529,6 +734,7 @@ const readPlayer = (value: unknown): ApiRoundPlayer | null => {
   if (!record || !nick) return null;
 
   const color = record.class === "green" || record.class === "red" ? record.class : "";
+  const win = record.win;
 
   return {
     nick,
@@ -537,6 +743,8 @@ const readPlayer = (value: unknown): ApiRoundPlayer | null => {
     kill: asCount(record.kill),
     damage: asCount(record.damage),
     death: asCount(record.death),
+    win: win === true || win === 1 || win === "1" || win === "true",
+    party: asCount(record.party),
     color,
   };
 };
@@ -553,7 +761,9 @@ const readBattles = (
     for (const item of shared) {
       const record = asRecord(item);
       const id = asText(record?.id);
-      const date = asCount(record?.date);
+      // `date` is one stamp for a whole group of battles. The site list uses
+      // `time`, the start of that battle.
+      const date = asCount(record?.time) || asCount(record?.date);
 
       if (id && date > 0) dates.set(id, date);
     }
@@ -795,6 +1005,23 @@ const buildRows = (
       ? translateKey(names, language, "maps", battle.map)
       : "";
     const seconds = battle.rounds.reduce((sum, round) => sum + round.seconds, 0);
+    const plays = battle.rounds.flatMap((round) =>
+      [...round.left, ...round.right].map((player) => {
+        const keys = weaponKeys(player.weapon);
+
+        return {
+          nick: player.nick,
+          weapon: player.weapon,
+          keys,
+          images: (keys.length > 0 ? keys : []).map((key) => weaponImageSrc(key)),
+          damage: player.damage,
+          kill: player.kill,
+          death: player.death,
+          win: player.win,
+          party: player.party,
+        };
+      }),
+    );
 
     rows.push({
       cls: "",
@@ -805,6 +1032,8 @@ const buildRows = (
         map: mapName,
         mapKey: battle.map,
         duration: clock(seconds),
+        at: battle.date,
+        plays,
       },
       cells: [cell("", { colSpan: 9 })],
     });
@@ -962,6 +1191,7 @@ export const loadCrossoutLogTable = async (
   const names = await loadDataAll();
   let lastError: unknown = null;
   let best: CrossoutLogTable | null = null;
+  let partial: CrossoutLogTable | null = null;
 
   for (const baseUrl of await getBaseUrls()) {
     try {
@@ -977,15 +1207,6 @@ export const loadCrossoutLogTable = async (
 
       const log = asRecord(result.log);
       const battles = readBattles(result.map, log?.sharedBattle);
-
-      if (expectedBattles > 0 && !hasRange && battles.length < expectedBattles) {
-        lastError = new LogApiError(
-          "unexpected-response",
-          "Сервис вернул неполную таблицу боя.",
-        );
-        continue;
-      }
-
       const start = Math.min(from, to);
       const end = Math.max(from, to);
       const visible = battles.flatMap((battle, index) => {
@@ -1010,6 +1231,16 @@ export const loadCrossoutLogTable = async (
         nickname,
       };
 
+      if (expectedBattles > 0 && !hasRange && battles.length < expectedBattles) {
+        noteCrossoutHost(baseUrl);
+        partial = table;
+        lastError = new LogApiError(
+          "unexpected-response",
+          "Сервис вернул неполную таблицу боя.",
+        );
+        continue;
+      }
+
       noteCrossoutHost(baseUrl);
       best = table;
       break;
@@ -1019,6 +1250,7 @@ export const loadCrossoutLogTable = async (
   }
 
   if (best) return { ok: true, table: best };
+  if (partial?.stats) return { ok: true, table: partial };
 
   const failure = failureOf(lastError);
 

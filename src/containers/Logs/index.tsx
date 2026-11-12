@@ -629,44 +629,43 @@ const Logs = () => {
             role="status"
             aria-live="polite"
           >
-            {uploadProgress.phase === "processing" ? (
-              <div className={styles.processing}>
-                <span className={styles.spinner} aria-hidden="true" />
-                <div>
-                  <strong>{t("upload.processing")}</strong>
-                  <p>{t("upload.processingHint")}</p>
-                </div>
+            <div className={styles.progressBlock}>
+              <div className={styles.progressHead}>
+                <span>
+                  {uploadProgress.phase === "processing"
+                    ? t("upload.processing")
+                    : t("upload.uploadingHint")}
+                </span>
+                <span>{clampPercent(uploadProgress.percent)}%</span>
               </div>
-            ) : (
-              <div className={styles.progressBlock}>
-                <div className={styles.progressHead}>
-                  <span>{t("upload.uploadingHint")}</span>
-                  <span>{clampPercent(uploadProgress.percent)}%</span>
-                </div>
-                <div className={styles.progressTrack}>
-                  <div
-                    className={styles.progressFill}
-                    style={{
-                      width: `${clampPercent(uploadProgress.percent)}%`,
-                    }}
-                  />
-                </div>
-                <div className={styles.progressMeta}>
-                  <span>
-                    {t("upload.progress", {
-                      percent: clampPercent(uploadProgress.percent),
-                      transferred: formatBytes(uploadProgress.transferred),
-                      total: formatBytes(uploadProgress.total),
-                    })}
-                  </span>
-                  <span>
-                    {t("upload.speed", {
-                      speed: formatBytes(uploadProgress.bytesPerSecond),
-                    })}
-                  </span>
-                </div>
+              {uploadProgress.phase === "processing" && (
+                <p className={styles.progressHint}>
+                  {t("upload.processingHint")}
+                </p>
+              )}
+              <div className={styles.progressTrack}>
+                <div
+                  className={styles.progressFill}
+                  style={{
+                    width: `${clampPercent(uploadProgress.percent)}%`,
+                  }}
+                />
               </div>
-            )}
+              <div className={styles.progressMeta}>
+                <span>
+                  {t("upload.progress", {
+                    percent: clampPercent(uploadProgress.percent),
+                    transferred: formatBytes(uploadProgress.transferred),
+                    total: formatBytes(uploadProgress.total),
+                  })}
+                </span>
+                <span>
+                  {t("upload.speed", {
+                    speed: formatBytes(uploadProgress.bytesPerSecond),
+                  })}
+                </span>
+              </div>
+            </div>
           </div>
         )}
 

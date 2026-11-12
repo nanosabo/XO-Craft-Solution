@@ -230,12 +230,30 @@ export interface CrossoutLogCell {
   destroyed: boolean;
 }
 
+/** One player's result in a single round, used to rebuild a time range. */
+export interface CrossoutLogRoundPlay {
+  nick: string;
+  /** Weapon keys as returned by the API, comma-separated when several. */
+  weapon: string;
+  keys: string[];
+  images: string[];
+  damage: number;
+  kill: number;
+  death: number;
+  win: boolean;
+  party: number;
+}
+
 export interface CrossoutLogBattleHeader {
   index: number;
   map: string;
   /** Map key from the API. The visible name is looked up from it. */
   mapKey?: string;
   duration: string;
+  /** Battle start as a Unix timestamp in seconds. 0 when the log has no date. */
+  at?: number;
+  /** Round results for this battle. Absent on tables saved before time filtering. */
+  plays?: CrossoutLogRoundPlay[];
 }
 
 export interface CrossoutLogRow {

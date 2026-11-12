@@ -736,9 +736,21 @@
 }
 
 .progressHead {
+  align-items: baseline;
   color: $white;
-  @include caption;
+  @include subtitle2;
   font-weight: 600;
+
+  span:last-child {
+    @include caption;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.progressHint {
+  margin: -2px 0 0;
+  color: $default;
+  @include caption;
 }
 
 .progressTrack {
