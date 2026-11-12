@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld("ipcRenderer", withPrototype(ipcRenderer));
 
 contextBridge.exposeInMainWorld("electronAPI", {
   getVersion: () => ipcRenderer.invoke("get-app-version"),
+  getLaunchAtLogin: () => ipcRenderer.invoke("get-launch-at-login"),
+  setLaunchAtLogin: (enabled: boolean) =>
+    ipcRenderer.invoke("set-launch-at-login", enabled),
   getIsMirror: () => ipcRenderer.invoke("get-is-mirror"),
   getUpdateInfo: () => ipcRenderer.invoke("get-update-info"),
   getReleaseFeed: () => ipcRenderer.invoke("get-release-feed"),

@@ -12,6 +12,7 @@ import DataSection from "./general/DataSection";
 import LanguageSection from "./general/LanguageSection";
 import LogsPathSection from "./general/LogsPathSection";
 import StartScreenSection from "./general/StartScreenSection";
+import StartupSection from "./general/StartupSection";
 import UpdatesSection from "./general/UpdatesSection";
 import styles from "./styles/Settings.module.scss";
 
@@ -42,6 +43,8 @@ const GeneralSettings = () => {
         startScreen={startScreen}
         onChange={(screen) => dispatch(setStartScreen(screen))}
       />
+
+      <StartupSection />
 
       <LogsPathSection logsPath={crossoutLogsPath} />
 

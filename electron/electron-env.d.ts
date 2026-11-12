@@ -26,6 +26,10 @@ interface Window {
   ipcRenderer: import("electron").IpcRenderer;
   electronAPI: {
     getVersion(): Promise<string>;
+    getLaunchAtLogin(): Promise<{ enabled: boolean; available: boolean }>;
+    setLaunchAtLogin(
+      enabled: boolean,
+    ): Promise<{ enabled: boolean; available: boolean }>;
     getIsMirror(): Promise<boolean>;
     getUpdateInfo(): Promise<{
       version: string;

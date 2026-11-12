@@ -9,7 +9,7 @@
   },
   "general": {
     "title": "General settings",
-    "subtitle": "Interface language, start screen, Crossout logs, updates and app data.",
+    "subtitle": "Interface language, start screen, launch at startup, Crossout logs, updates and app data.",
     "logs": {
       "title": "Crossout logs",
       "subtitle": "The folder that contains combat.log. Use it when the app cannot find the logs on its own.",
@@ -32,6 +32,13 @@
       "craft": "Craft",
       "market": "Market",
       "stats": "Stats"
+    },
+    "startup": {
+      "title": "Startup",
+      "subtitle": "The app can open together with the system.",
+      "openAtLogin": "Launch at system startup",
+      "openAtLoginHint": "The app opens after you sign in.",
+      "unavailable": "Launch at startup only works in the installed version of the app."
     },
     "updates": {
       "title": "Updates",

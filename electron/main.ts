@@ -84,6 +84,7 @@ import {
   saveCrossoutStatsCache,
 } from "./crossoutStatsCache";
 import { findLatestCombatLog } from "./crossoutLogFind";
+import { getLaunchAtLogin, setLaunchAtLogin } from "./launchAtLogin";
 import {
   type AppLogLink,
   findAppLogLink,
@@ -447,6 +448,12 @@ ipcMain.on("openDiscordExternal", () => {
 ipcMain.handle("get-app-version", () => {
   return app.getVersion();
 });
+
+ipcMain.handle("get-launch-at-login", () => getLaunchAtLogin());
+
+ipcMain.handle("set-launch-at-login", (_, enabled: boolean) =>
+  setLaunchAtLogin(enabled === true),
+);
 
 ipcMain.handle("get-error-logs", () => {
   return getRecentLogs();
