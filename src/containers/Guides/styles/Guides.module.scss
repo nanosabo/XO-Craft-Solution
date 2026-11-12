@@ -229,24 +229,6 @@
   }
 }
 
-.open {
-  display: inline-block;
-  height: 36px;
-  margin-top: 12px;
-  padding: 0 14px;
-  border-radius: 8px;
-  background: rgba($primary, 0.16);
-  color: $primary;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 36px;
-
-  &:hover {
-    background: rgba($primary, 0.24);
-    color: $white;
-  }
-}
-
 .shot {
   margin: 0 0 22px;
   overflow: hidden;

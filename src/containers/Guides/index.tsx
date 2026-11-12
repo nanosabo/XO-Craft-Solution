@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import classNames from "classnames";
 import PageTitle from "@src/components/PageTitle";
@@ -14,27 +13,17 @@ const guides = [
   {
     key: "craft",
     icon: <CraftIcon />,
-    screens: [
-      { key: "form", href: "/" },
-      { key: "result", href: "/solved" },
-    ],
+    screens: [{ key: "form" }, { key: "result" }],
   },
   {
     key: "market",
     icon: <MarketIcon />,
-    screens: [
-      { key: "list", href: "/market" },
-      { key: "item", href: "/market" },
-      { key: "recipe", href: "/market" },
-    ],
+    screens: [{ key: "list" }, { key: "item" }, { key: "recipe" }],
   },
   {
     key: "stats",
     icon: <LogsIcon />,
-    screens: [
-      { key: "open", href: "/logs" },
-      { key: "log", href: "/logs" },
-    ],
+    screens: [{ key: "open" }, { key: "log" }],
   },
 ] as const;
 
@@ -170,9 +159,6 @@ const Guides = () => {
             <header className={styles.articleHead}>
               <h2>{t(`${guide}.screens.${currentScreen.key}.title`)}</h2>
               <p>{t(`${guide}.screens.${currentScreen.key}.lead`)}</p>
-              <Link className={styles.open} to={currentScreen.href}>
-                {t("open")}
-              </Link>
             </header>
 
             {shot && (
