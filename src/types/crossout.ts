@@ -204,6 +204,16 @@ export interface CrossoutLogWeaponImage {
   destroyed: boolean;
 }
 
+export interface CrossoutNameTables {
+  weapons: Record<string, string>;
+  maps: Record<string, string>;
+}
+
+export interface CrossoutNameCatalog {
+  ru: CrossoutNameTables;
+  en: CrossoutNameTables;
+}
+
 export interface CrossoutLogCell {
   text: string;
   colSpan: number;
@@ -215,18 +225,24 @@ export interface CrossoutLogCell {
   image: string;
   /** Every weapon icon in the cell, in the site order. */
   images: CrossoutLogWeaponImage[];
+  /** Weapon keys, in the same order as `images`. */
+  keys?: string[];
   destroyed: boolean;
 }
 
 export interface CrossoutLogBattleHeader {
   index: number;
   map: string;
+  /** Map key from the API. The visible name is looked up from it. */
+  mapKey?: string;
   duration: string;
 }
 
 export interface CrossoutLogRow {
   cells: CrossoutLogCell[];
   map: string;
+  /** Map key from the API. The visible name is looked up from it. */
+  mapKey?: string;
   cls: string;
   battle: CrossoutLogBattleHeader | null;
 }
@@ -239,6 +255,8 @@ export interface CrossoutLogStatRow {
   image: string;
   /** Every weapon icon on the row, in the site order. */
   images: string[];
+  /** Weapon keys, in the same order as `images`. */
+  keys?: string[];
   /** Star rating fill percentage (0-100) for weapon rows. */
   stars: number | null;
   team: string;
@@ -272,6 +290,8 @@ export interface CrossoutLogTable {
   /** Aggregate "battle log statistics" table shown above the battle list. */
   stats: CrossoutLogStat | null;
   rows: CrossoutLogRow[];
+  /** Log owner from the public API. Empty for older cached tables. */
+  nickname?: string;
 }
 
 export type CrossoutLogSummaryResult =

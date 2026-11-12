@@ -1,3 +1,7 @@
+/**
+ * Hidden crossout-info window. Log statistics go through HTTP.
+ * This stays for a later player-profile load and is not called yet.
+ */
 import { BrowserWindow, session } from "electron";
 
 const PARTITION = "persist:crossout-info";

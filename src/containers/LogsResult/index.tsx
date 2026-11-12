@@ -9,11 +9,13 @@ import Switch from "@src/containers/Settings/components/Switch";
 import {
   CROSSOUT_MAPS,
   type CrossoutErrorCode,
+  type CrossoutLogCell,
   type CrossoutLogRow,
   type CrossoutLogStatRow,
   type CrossoutLogSummary,
   type CrossoutLogTable,
   type CrossoutLogTime,
+  type CrossoutNameCatalog,
 } from "@src/types/crossout";
 import CrossoutLogo from "@src/components/CrossoutLogo";
 import Input from "@src/ui/Input";
@@ -26,12 +28,201 @@ const SITE_URL_EN = "https://en.crossout-info.com";
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
+const catalogName = (
+  catalog: CrossoutNameCatalog,
+  language: "ru" | "en",
+  group: "weapons" | "maps",
+  key: string,
+) => {
+  const primary = language === "en" ? catalog.en : catalog.ru;
+  const secondary = language === "en" ? catalog.ru : catalog.en;
+
+  return primary[group][key] || secondary[group][key] || "";
+};
+
+const namesToKeys = (
+  catalog: CrossoutNameCatalog,
+  group: "weapons" | "maps",
+) => {
+  const map = new Map<string, string>();
+
+  for (const language of ["ru", "en"] as const) {
+    for (const [key, name] of Object.entries(catalog[language][group])) {
+      if (name) map.set(name, key);
+    }
+  }
+
+  return map;
+};
+
+const weaponLabel = (
+  catalog: CrossoutNameCatalog,
+  language: "ru" | "en",
+  keys: string[] | undefined,
+  fallback: string,
+  reverse: Map<string, string>,
+) => {
+  if (keys?.length) {
+    return keys
+      .map((key) => catalogName(catalog, language, "weapons", key) || key)
+      .join(", ");
+  }
+
+  return fallback
+    .split(", ")
+    .map((part) => {
+      const key = reverse.get(part);
+
+      return key ? catalogName(catalog, language, "weapons", key) || part : part;
+    })
+    .join(", ");
+};
+
+const mapLabelFromCatalog = (
+  catalog: CrossoutNameCatalog,
+  language: "ru" | "en",
+  key: string | undefined,
+  fallback: string,
+  reverse: Map<string, string>,
+) => {
+  const resolved = key || reverse.get(fallback);
+
+  if (!resolved) return fallback;
+
+  return catalogName(catalog, language, "maps", resolved) || fallback;
+};
+
+const localizeCell = (
+  cell: CrossoutLogCell,
+  catalog: CrossoutNameCatalog,
+  language: "ru" | "en",
+  reverse: Map<string, string>,
+): CrossoutLogCell => {
+  if (!cell.weapon && !cell.keys?.length && !cell.images.length) return cell;
+
+  const label = weaponLabel(
+    catalog,
+    language,
+    cell.keys,
+    cell.weapon || cell.images.map((item) => item.name).filter(Boolean).join(", "),
+    reverse,
+  );
+
+  return {
+    ...cell,
+    weapon: label,
+    text: label,
+    images: cell.images.map((image, index) => ({
+      ...image,
+      name: cell.keys?.[index]
+        ? catalogName(catalog, language, "weapons", cell.keys[index]) || image.name
+        : weaponLabel(catalog, language, undefined, image.name, reverse),
+    })),
+  };
+};
+
+const localizeLogTable = (
+  table: CrossoutLogTable | null,
+  catalog: CrossoutNameCatalog | null,
+  language: "ru" | "en",
+): CrossoutLogTable | null => {
+  if (!table || !catalog) return table;
+
+  const weaponReverse = namesToKeys(catalog, "weapons");
+  const mapReverse = namesToKeys(catalog, "maps");
+
+  return {
+    ...table,
+    stats: table.stats
+      ? {
+          ...table.stats,
+          rows: table.stats.rows.map((row) => {
+            if (row.kind !== "weapon") return row;
+
+            const label = weaponLabel(
+              catalog,
+              language,
+              row.keys,
+              row.weapon || row.name,
+              weaponReverse,
+            );
+
+            return {
+              ...row,
+              name: label,
+              weapon: label,
+              cells: row.cells.map((item, index) => (index === 0 ? label : item)),
+            };
+          }),
+        }
+      : table.stats,
+    rows: table.rows.map((row) => {
+      const map = mapLabelFromCatalog(
+        catalog,
+        language,
+        row.mapKey || row.battle?.mapKey,
+        row.battle?.map || row.map,
+        mapReverse,
+      );
+
+      return {
+        ...row,
+        map,
+        battle: row.battle ? { ...row.battle, map } : row.battle,
+        cells: row.cells.map((cell) =>
+          localizeCell(cell, catalog, language, weaponReverse),
+        ),
+      };
+    }),
+  };
+};
+
 const cachedTable = (
   tables: CrossoutLogTable[],
   slug: string,
 ): CrossoutLogTable | null =>
   tables.find((item) => item.type.toLowerCase() === slug.toLowerCase()) ??
   null;
+
+/** Tables saved before weapon icons were added have to be loaded again. */
+const cachedTableReady = (
+  table: CrossoutLogTable | null,
+): table is CrossoutLogTable => {
+  if (!table?.nickname) return false;
+
+  const sample =
+    table.stats?.rows.find((row) => row.kind === "player") ??
+    table.stats?.rows[0];
+  const statWeapons =
+    table.stats?.rows.filter((row) => row.kind === "weapon") ?? [];
+  const battleWeapons = table.rows
+    .flatMap((row) => row.cells)
+    .filter((item) => item.weapon);
+  const battleTone =
+    battleWeapons.length === 0 ||
+    battleWeapons.some((item) => /(green|red)/.test(item.cls));
+  const battleNicks = table.rows
+    .filter((row) => !row.battle && !row.cls.includes("sticDiv"))
+    .flatMap((row) => row.cells)
+    .filter((item) => item.text && !item.weapon && /align(left|right)/.test(item.cls));
+  const nicksMarked =
+    battleNicks.length === 0 ||
+    battleNicks.every((item) => /(^|\s)nick(\s|$)/.test(item.cls));
+  const winrate = sample?.cells[2] ?? "";
+  const parts = sample?.cells[4] ?? "";
+  const frags = sample?.cells[6] ?? "";
+  const columnsMatch =
+    !sample ||
+    (winrate.includes("/") && parts.includes(".") && frags.includes("/"));
+
+  return (
+    columnsMatch &&
+    battleTone &&
+    nicksMarked &&
+    statWeapons.every((row) => Boolean(row.image)) &&
+    battleWeapons.every((item) => Boolean(item.image))
+  );
+};
 
 const parseUploadDate = (value: string): number => {
   const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value.trim());
@@ -279,7 +470,9 @@ const LogsResult = () => {
   const navigate = useNavigate();
   const preferredType = (searchParams.get("type") ?? "").trim().toLowerCase();
   const { t, i18n } = useTranslation("logsPage");
-  const isRu = contentLanguage(i18n.language) === "ru";
+  const namesLanguage = contentLanguage(i18n.language);
+  const isRu = namesLanguage === "ru";
+  const [nameCatalog, setNameCatalog] = useState<CrossoutNameCatalog | null>(null);
   const [summary, setSummary] = useState<CrossoutLogSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ResultError | null>(null);
@@ -323,6 +516,20 @@ const LogsResult = () => {
 
       if (table.date) setUploadDate(table.date);
 
+      const nick = table.nickname?.trim();
+      const current = summaryRef.current;
+
+      if (nick && current && !current.nickname.trim()) {
+        const next = {
+          ...current,
+          nickname: nick,
+          title: current.title || nick,
+        };
+
+        summaryRef.current = next;
+        setSummary(next);
+      }
+
       if (!ranged && table.times.length > 0) {
         setTimeOptions(table.times);
         setTimeFrom(table.times[0].at);
@@ -333,20 +540,27 @@ const LogsResult = () => {
     [],
   );
 
+  const loadSeq = useRef(0);
+
   const loadLogType = useCallback(async (
     id: string,
     slug: string,
     expectedBattles = 0,
     range?: { from: number; to: number } | null,
   ) => {
+    const seq = ++loadSeq.current;
+
     setLogType(slug);
 
     if (!range) {
       try {
         const cached = await window.electronAPI.crossoutStatsCacheGet(id);
+
+        if (seq !== loadSeq.current) return;
+
         const table = cached ? cachedTable(cached.tables, slug) : null;
 
-        if (table) {
+        if (cachedTableReady(table)) {
           setLogTableError(null);
           setLogTableLoading(false);
           applyLoadedTable(table, false);
@@ -355,6 +569,8 @@ const LogsResult = () => {
       } catch (error) {
         logWarning("crossout-stats-cache", error);
       }
+
+      if (seq !== loadSeq.current) return;
 
       setLogTable(null);
     }
@@ -369,6 +585,8 @@ const LogsResult = () => {
         expectedBattles,
         range,
       );
+
+      if (seq !== loadSeq.current) return;
 
       if (result.ok) {
         applyLoadedTable(result.table, Boolean(range));
@@ -396,7 +614,7 @@ const LogsResult = () => {
       logWarning("crossout-log", error);
       setLogTableError({ fallbackKey: "result.error" });
     } finally {
-      setLogTableLoading(false);
+      if (seq === loadSeq.current) setLogTableLoading(false);
     }
   }, [applyLoadedTable]);
 
@@ -474,7 +692,7 @@ const LogsResult = () => {
           window.clearTimeout(logoTimer);
           setLoading(false);
 
-          if (table && firstType) {
+          if (cachedTableReady(table) && firstType) {
             setLogType(firstType.key);
             applyLoadedTable(table, false);
             return;
@@ -535,6 +753,21 @@ const LogsResult = () => {
       window.clearTimeout(logoTimer);
     };
   }, [applyLoadedTable, logId, loadLogType, preferredType]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void window.electronAPI
+      .crossoutNames()
+      .then((catalog) => {
+        if (!cancelled) setNameCatalog(catalog);
+      })
+      .catch((error) => logWarning("crossout-names", error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!summary) return;
@@ -599,13 +832,19 @@ const LogsResult = () => {
   };
 
   const logTypeLabel = (key: string, fallback: string) => {
-    const slug = key.toLowerCase();
+    const slug = key.toLowerCase().trim().replace(/[\s-]+/g, "_");
 
     if (i18n.exists(`logTypes.${slug}`, { ns: "logsPage" })) {
       return t(`logTypes.${slug}`);
     }
 
-    return fallback || slug.toUpperCase();
+    const upper = slug.toUpperCase();
+
+    if (i18n.exists(`types.${upper}`, { ns: "logsPage" })) {
+      return t(`types.${upper}`);
+    }
+
+    return fallback || upper;
   };
 
   const logCellLabel = (text: string) => {
@@ -677,8 +916,13 @@ const LogsResult = () => {
     setMapQuery("");
   }, [logTable]);
 
+  const shownTable = useMemo(
+    () => localizeLogTable(logTable, nameCatalog, namesLanguage),
+    [logTable, nameCatalog, namesLanguage],
+  );
+
   const allyTeam = useMemo(() => {
-    const rows = logTable?.stats?.rows ?? [];
+    const rows = shownTable?.stats?.rows ?? [];
     const nick = summary?.nickname ?? "";
     const matched = rows.find(
       (row) => row.kind === "player" && sameName(row.name, nick),
@@ -687,10 +931,10 @@ const LogsResult = () => {
     if (matched?.team) return matched.team;
 
     return rows.find((row) => row.kind === "player" && row.team)?.team ?? "";
-  }, [logTable, summary]);
+  }, [shownTable, summary]);
 
   const filteredStats = useMemo(() => {
-    const rows = logTable?.stats?.rows ?? [];
+    const rows = shownTable?.stats?.rows ?? [];
     const query = statsQuery.trim().toLowerCase();
 
     return groupStatRows(rows).flatMap((group) => {
@@ -718,10 +962,10 @@ const LogsResult = () => {
 
       return group.player ? [group.player, ...weapons] : weapons;
     });
-  }, [alliesOnly, allyTeam, logTable, statsQuery]);
+  }, [alliesOnly, allyTeam, shownTable, statsQuery]);
 
   const filteredBattles = useMemo(() => {
-    const rows = logTable?.rows ?? [];
+    const rows = shownTable?.rows ?? [];
     const query = mapQuery.trim().toLowerCase();
 
     if (!query) return rows;
@@ -757,7 +1001,7 @@ const LogsResult = () => {
     if (matched.length === 0) return [];
 
     return [...preface, ...matched.flat()];
-  }, [logTable, mapLabel, mapQuery]);
+  }, [shownTable, mapLabel, mapQuery]);
 
   const battleColumns = useMemo(() => {
     const header = filteredBattles.find((row) => row.cls.includes("sticDiv"));

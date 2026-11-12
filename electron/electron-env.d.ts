@@ -96,6 +96,7 @@ interface Window {
     crossoutLoadLog(
       logId: string,
     ): Promise<import("@src/types/crossout").CrossoutLogSummaryResult>;
+    crossoutNames(): Promise<import("@src/types/crossout").CrossoutNameCatalog>;
     crossoutLoadLogTable(
       logId: string,
       type: string,

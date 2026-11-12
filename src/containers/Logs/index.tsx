@@ -19,6 +19,8 @@ import {
 import LogHelpModal from "./LogHelpModal";
 import styles from "./styles/Logs.module.scss";
 
+const HISTORY_PAGE_SIZE = 25;
+
 const fileName = (filePath: string): string =>
   filePath.split(/[\\/]/).pop() || filePath;
 
@@ -160,6 +162,7 @@ const Logs = () => {
   );
   const [historyError, setHistoryError] = useState(false);
   const [historyDate, setHistoryDate] = useState("");
+  const [historyPage, setHistoryPage] = useState(1);
   const [historyConfirm, setHistoryConfirm] = useState<
     { kind: "clear" } | { kind: "remove"; id: string; name: string } | null
   >(null);
@@ -241,6 +244,17 @@ const Logs = () => {
     });
   }, [history, historyDate]);
 
+  const historyPageCount = Math.max(
+    1,
+    Math.ceil((visibleHistory?.length ?? 0) / HISTORY_PAGE_SIZE),
+  );
+  const historyPageSafe = Math.min(historyPage, historyPageCount);
+  const pagedHistory =
+    visibleHistory?.slice(
+      (historyPageSafe - 1) * HISTORY_PAGE_SIZE,
+      historyPageSafe * HISTORY_PAGE_SIZE,
+    ) ?? null;
+
   const formatDate = (unix: number) =>
     new Date(unix * 1000).toLocaleString(numberLocale, {
       day: "2-digit",
@@ -251,13 +265,19 @@ const Logs = () => {
     });
 
   const logTypeLabel = (key: string, fallback: string) => {
-    const slug = key.toLowerCase();
+    const slug = key.toLowerCase().trim().replace(/[\s-]+/g, "_");
 
     if (i18n.exists(`logTypes.${slug}`, { ns: "logsPage" })) {
       return t(`logTypes.${slug}`);
     }
 
-    return fallback || slug.toUpperCase();
+    const upper = slug.toUpperCase();
+
+    if (i18n.exists(`types.${upper}`, { ns: "logsPage" })) {
+      return t(`types.${upper}`);
+    }
+
+    return fallback || upper;
   };
 
   const errorText = (error: LogsError) => {
@@ -290,6 +310,7 @@ const Logs = () => {
 
       setHistory(entries);
       setHistoryDate("");
+      setHistoryPage(1);
     } catch (error) {
       logWarning("crossout-history", error);
       setHistoryError(true);
@@ -700,7 +721,10 @@ const Logs = () => {
                   className={styles.date}
                   value={historyDate}
                   aria-label={t("history.date")}
-                  onChange={(event) => setHistoryDate(event.target.value)}
+                  onChange={(event) => {
+                    setHistoryDate(event.target.value);
+                    setHistoryPage(1);
+                  }}
                 />
                 <svg
                   className={styles.historyDateIcon}
@@ -732,7 +756,10 @@ const Logs = () => {
               type="button"
               className={styles.secondaryButton}
               disabled={!historyDate}
-              onClick={() => setHistoryDate("")}
+              onClick={() => {
+                setHistoryDate("");
+                setHistoryPage(1);
+              }}
             >
               {t("history.reset")}
             </button>
@@ -761,64 +788,118 @@ const Logs = () => {
           <p className={styles.empty}>{t("history.dateEmpty")}</p>
         )}
 
-        {visibleHistory && visibleHistory.length > 0 && (
-          <ul className={styles.historyList}>
-            {visibleHistory.map((entry) => (
-              <li key={entry.logId} className={styles.historyItem}>
-                <button
-                  type="button"
-                  className={styles.historyOpen}
+        {pagedHistory && pagedHistory.length > 0 && (
+          <div className={styles.historyTableWrap}>
+          <table className={styles.historyTable}>
+            <colgroup>
+              <col className={styles.historyColPlayer} />
+              <col className={styles.historyColBattles} />
+              <col className={styles.historyColId} />
+              <col />
+              <col className={styles.historyColDate} />
+              <col className={styles.historyColAction} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>{t("history.player")}</th>
+                <th className={styles.historyBattles}>{t("history.battles")}</th>
+                <th>{t("history.log")}</th>
+                <th>{t("history.types")}</th>
+                <th>{t("history.when")}</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {pagedHistory.map((entry) => (
+                <tr
+                  key={entry.logId}
+                  className={styles.historyRow}
+                  tabIndex={0}
                   onClick={() => navigate(`/logs/${entry.logId}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") navigate(`/logs/${entry.logId}`);
+                  }}
                 >
-                  <span className={styles.historyNick}>
+                  <td className={styles.historyNick}>
                     {entry.nickname || entry.logId}
-                  </span>
-                  <span className={styles.historyId}>{entry.logId}</span>
-                  <span className={styles.historyMeta}>
-                    {entry.types
-                      .map(
-                        (type) =>
-                          `${logTypeLabel(type.key, type.label)}: ${type.count}`,
-                      )
-                      .join(" · ")}
-                    {entry.types.length > 0 ? " · " : ""}
-                    {entry.uploadedAt > 0
-                      ? t("history.uploaded", {
-                          date: new Date(entry.uploadedAt).toLocaleDateString(
-                            numberLocale,
-                            {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            },
-                          ),
-                          interpolation: { escapeValue: false },
-                        })
-                      : t("history.saved", {
-                          date: formatDate(entry.savedAt / 1000),
-                          interpolation: { escapeValue: false },
-                        })}
-                  </span>
-                </button>
+                  </td>
+                  <td className={styles.historyBattles}>
+                    {entry.types.reduce((sum, type) => sum + type.count, 0)}
+                  </td>
+                  <td className={styles.historyId}>{entry.logId}</td>
+                  <td>
+                    {entry.types.length > 0 && (
+                      <span className={styles.historyTypes}>
+                        {entry.types.map((type) => (
+                          <span key={type.key} className={styles.historyType}>
+                            {logTypeLabel(type.key, type.label)}
+                            <span className={styles.historyTypeCount}>{type.count}</span>
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </td>
+                  <td className={styles.historyMeta}>
+                    {new Date(
+                      entry.uploadedAt > 0 ? entry.uploadedAt : entry.savedAt,
+                    ).toLocaleDateString(numberLocale, {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className={styles.historyRemove}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setHistoryConfirm({
+                          kind: "remove",
+                          id: entry.logId,
+                          name: entry.nickname || entry.logId,
+                        });
+                      }}
+                      title={t("history.remove")}
+                      aria-label={t("history.remove")}
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          </div>
+        )}
 
-                <button
-                  type="button"
-                  className={styles.historyRemove}
-                  onClick={() =>
-                    setHistoryConfirm({
-                      kind: "remove",
-                      id: entry.logId,
-                      name: entry.nickname || entry.logId,
-                    })
-                  }
-                  title={t("history.remove")}
-                  aria-label={t("history.remove")}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
+        {visibleHistory && visibleHistory.length > HISTORY_PAGE_SIZE && (
+          <div className={styles.historyPager}>
+            <button
+              type="button"
+              className={styles.historyPageButton}
+              disabled={historyPageSafe <= 1}
+              onClick={() => setHistoryPage(Math.max(1, historyPageSafe - 1))}
+            >
+              {t("history.prev")}
+            </button>
+            <span>
+              {t("history.page", {
+                page: historyPageSafe,
+                total: historyPageCount,
+              })}
+            </span>
+            <button
+              type="button"
+              className={styles.historyPageButton}
+              disabled={historyPageSafe >= historyPageCount}
+              onClick={() =>
+                setHistoryPage(Math.min(historyPageCount, historyPageSafe + 1))
+              }
+            >
+              {t("history.next")}
+            </button>
+          </div>
         )}
       </section>
       </div>

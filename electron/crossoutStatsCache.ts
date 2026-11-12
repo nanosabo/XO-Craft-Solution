@@ -86,12 +86,15 @@ const normalizeTable = (value: unknown): CrossoutLogTable | null => {
 
   if (!type || !Array.isArray(raw.rows)) return null;
 
+  const nickname = asString(raw.nickname).trim();
+
   return {
     type,
     date: asString(raw.date),
     times: normalizeTimes(raw.times),
     stats: normalizeStat(raw.stats),
     rows: raw.rows,
+    ...(nickname ? { nickname } : {}),
   };
 };
 
@@ -150,21 +153,21 @@ const writeCache = (entries: CrossoutCachedLogStats[]) => {
 
 export const getCrossoutStatsCache = (
   logId: string,
-  language: "ru" | "en",
+  _language: "ru" | "en",
 ): CrossoutCachedLogStats | null => {
   const id = String(logId ?? "").trim();
 
   if (!id) return null;
 
   const entries = readCache();
-  const found = entries.find(
-    (entry) => entry.logId === id && entry.language === language,
-  );
+  const found = entries.find((entry) => entry.logId === id);
 
   if (!found) return null;
 
   const next = { ...found, viewedAt: Date.now() };
-  const rest = entries.filter((entry) => entry.logId !== id);
+  const rest = entries.filter(
+    (entry) => entry.logId !== id || entry.language !== found.language,
+  );
 
   writeCache(
     [next, ...rest].sort((left, right) => right.viewedAt - left.viewedAt),

@@ -85,6 +85,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   crossoutLoadLog: (logId: string) =>
     ipcRenderer.invoke("crossout-load-log", logId),
+  crossoutNames: () =>
+    ipcRenderer.invoke("crossout-names") as Promise<
+      import("@src/types/crossout").CrossoutNameCatalog
+    >,
   crossoutLoadLogTable: (
     logId: string,
     type: string,

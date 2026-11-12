@@ -57,11 +57,20 @@ import {
   clearCrossoutApiKey,
   fetchCrossoutBattles,
   getCrossoutApiKey,
-  loadCrossoutLog,
-  loadCrossoutLogTable,
+  probeCrossoutHost,
   saveCrossoutApiKey,
   uploadCrossoutLog,
 } from "./crossoutInfo";
+import {
+  getCrossoutNameCatalog,
+  loadCrossoutLog,
+  loadCrossoutLogTable,
+} from "./crossoutLogApi";
+import { closeCrossoutBrowser } from "./crossoutBrowser";
+import {
+  installWeaponScheme,
+  registerWeaponProtocol,
+} from "./weaponImages";
 import {
   clearCrossoutHistory,
   listCrossoutHistory,
@@ -74,7 +83,6 @@ import {
   getCrossoutStatsCache,
   saveCrossoutStatsCache,
 } from "./crossoutStatsCache";
-import { closeCrossoutBrowser } from "./crossoutBrowser";
 import { findLatestCombatLog } from "./crossoutLogFind";
 import {
   type AppLogLink,
@@ -612,6 +620,8 @@ ipcMain.handle(
 ipcMain.handle("crossout-load-log", (_, logId: string) => {
   return loadCrossoutLog(String(logId ?? ""), getContentLanguage());
 });
+
+ipcMain.handle("crossout-names", () => getCrossoutNameCatalog());
 
 ipcMain.handle(
   "crossout-load-log-table",
@@ -1375,7 +1385,11 @@ ipcMain.handle("search-required-parts", async (_, value) => {
 
 let tray;
 
+installWeaponScheme();
+
 app.whenReady().then(async () => {
+  registerWeaponProtocol();
+
   writeLog("info", "app", "Application started", {
     version: app.getVersion(),
     platform: process.platform,
@@ -1432,5 +1446,6 @@ app.whenReady().then(async () => {
   // Never block the window on network access: without a connection the app
   // must still open and show the error/report screen.
   void ensureParts();
+  void probeCrossoutHost();
   createWindow();
 });

@@ -124,7 +124,15 @@
     "confirmClear": "Every entry will leave the list. The logs stay on crossout-info.",
     "confirmRemoveTitle": "Remove from history?",
     "confirmRemove": "Remove {{name}} from history? The log stays on crossout-info.",
-    "remove": "Remove from history"
+    "remove": "Remove from history",
+    "player": "Player",
+    "log": "Log",
+    "types": "Types",
+    "battles": "Battles",
+    "when": "Uploaded",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "{{page}} of {{total}}"
   },
   "result": {
     "back": "Back to history",
@@ -193,8 +201,12 @@
     "arcade": "Arcade",
     "pve": "Raids",
     "brawl": "Brawls",
-    "unknown": "Unknown",
-    "no": "Unknown"
+    "create": "Custom battle",
+    "unknown": "Not defined",
+    "no": "Not defined",
+    "not_defined": "Not defined",
+    "notdefined": "Not defined",
+    "undefined": "Not defined"
   },
   "stats": {
     "title": "Battle stats",

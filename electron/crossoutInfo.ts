@@ -1,4 +1,4 @@
-import { app } from "electron";
+import { app, net } from "electron";
 import axios from "axios";
 import fs from "node:fs";
 import path from "node:path";
@@ -11,22 +11,10 @@ import {
   type CrossoutBattlesResult,
   type CrossoutErrorCode,
   type CrossoutFetchBattlesParams,
-  type CrossoutLogCell,
-  type CrossoutLogRow,
-  type CrossoutLogStat,
-  type CrossoutLogStatRow,
-  type CrossoutLogSummaryResult,
-  type CrossoutLogTable,
-  type CrossoutLogTableResult,
-  type CrossoutLogTime,
   type CrossoutUploadLogParams,
   type CrossoutUploadLogResult,
   type CrossoutUploadProgress,
 } from "../src/types/crossout";
-import {
-  extractCrossoutPage,
-  loadCrossoutPage,
-} from "./crossoutBrowser";
 import {
   translateCrossoutWeaponName,
   translateCrossoutWeaponNameToEnglish,
@@ -39,14 +27,52 @@ export type CrossoutLanguage = "ru" | "en";
 
 type WeaponTranslator = (name: string) => Promise<string>;
 
+const PROBE_TIMEOUT = 4_000;
+
+let preferredHost = RU_HOST;
+let probeTask: Promise<void> | null = null;
+
+/** Remember the host that actually answered, so the next request starts there. */
+export const noteCrossoutHost = (url: string): void => {
+  if (url.startsWith(EN_HOST)) preferredHost = EN_HOST;
+  else if (url.startsWith(RU_HOST)) preferredHost = RU_HOST;
+};
+
 /**
- * The English interface prefers the English subdomain, but its battle API
- * truncates responses larger than ~256 KB, so the Russian host is kept as a
- * fallback. The Russian interface prefers the main domain and falls back to the
- * English mirror when the main domain is unavailable.
+ * One cheap check at startup. Any answer from the main domain keeps it.
+ * A timeout or a network error switches the session to the English subdomain.
+ * Log requests still try the other host if the preferred one fails.
  */
-const getBaseUrls = (language: CrossoutLanguage): string[] =>
-  language === "en" ? [EN_HOST, RU_HOST] : [RU_HOST, EN_HOST];
+export const probeCrossoutHost = (): Promise<void> => {
+  if (probeTask) return probeTask;
+
+  probeTask = (async () => {
+    if (!net.isOnline()) return;
+
+    try {
+      const response = await axios.get(`${RU_HOST}/`, {
+        timeout: PROBE_TIMEOUT,
+        headers: {
+          Accept: "*/*",
+          "User-Agent": API_USER_AGENT,
+        },
+        validateStatus: () => true,
+      });
+
+      preferredHost = response.status >= 500 ? EN_HOST : RU_HOST;
+    } catch {
+      preferredHost = EN_HOST;
+    }
+  })();
+
+  return probeTask;
+};
+
+export const getBaseUrls = async (): Promise<string[]> => {
+  await probeCrossoutHost();
+
+  return preferredHost === EN_HOST ? [EN_HOST, RU_HOST] : [RU_HOST, EN_HOST];
+};
 
 const getWeaponTranslator = (
   language: CrossoutLanguage,
@@ -68,9 +94,25 @@ const MAX_RANGE_DAYS = 7;
 const MAX_LOG_BYTES = 64 * 1024 * 1024;
 const CONFIG_PATH = path.join(app.getPath("userData"), "crossout-info.json");
 const USER_AGENT = `XO-Craft-Solution/${app.getVersion()}`;
-const DEFAULT_API_KEY = "7b60878e44dcb651176061e2c0a67ea4";
+const API_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+const API_TIMEOUT = 45_000;
+
+export const fetchCrossoutText = async (url: string): Promise<string> => {
+  const response = await axios.get<string>(url, {
+    timeout: API_TIMEOUT,
+    responseType: "text",
+    headers: {
+      Accept: "application/json, text/plain, */*",
+      "User-Agent": API_USER_AGENT,
+    },
+  });
+
+  return String(response.data ?? "");
+};
+/** Public crossout-info key. One place for every log and battle request. */
+const DEFAULT_API_KEY = "025ffb8e0248088848a57b8831c23987";
 const LOG_ID_PATTERN = /^[A-Za-z0-9_-]{4,64}$/;
-const LOG_TYPE_PATTERN = /^[a-z0-9_-]{1,32}$/;
 
 interface CrossoutInfoConfig {
   apiKey?: string;
@@ -274,24 +316,6 @@ const createUploadTracker = (
   };
 };
 
-const logSummaryFailure = (
-  code: CrossoutErrorCode,
-  message: string,
-): CrossoutLogSummaryResult => ({
-  ok: false,
-  error: message,
-  errorCode: code,
-});
-
-const logTableFailure = (
-  code: CrossoutErrorCode,
-  message: string,
-): CrossoutLogTableResult => ({
-  ok: false,
-  error: message,
-  errorCode: code,
-});
-
 const normalizeBattle = (value: unknown): CrossoutBattle | null => {
   if (!value || typeof value !== "object") return null;
 
@@ -439,66 +463,6 @@ const translateBattles = async (
   });
 };
 
-const translateLogStatRow = async (
-  row: CrossoutLogStatRow,
-  translate: WeaponTranslator,
-): Promise<CrossoutLogStatRow> => {
-  if (row.kind !== "weapon") return row;
-
-  const cells = row.cells.length > 0 ? [...row.cells] : [];
-
-  if (cells[0]) {
-    cells[0] = await translate(cells[0]);
-  }
-
-  return {
-    ...row,
-    name: await translate(row.name),
-    weapon: await translate(row.weapon || row.name),
-    cells,
-  };
-};
-
-const translateLogTable = async (
-  table: CrossoutLogTable,
-  translate: WeaponTranslator,
-): Promise<CrossoutLogTable> => {
-  const stats = table.stats
-    ? {
-        ...table.stats,
-        rows: await Promise.all(
-          table.stats.rows.map((row) => translateLogStatRow(row, translate)),
-        ),
-      }
-    : null;
-
-  const rows = await Promise.all(
-    table.rows.map(async (row) => ({
-      ...row,
-      cells: await Promise.all(
-        row.cells.map(async (cell) => {
-          if (cell.images.length === 0 && !cell.weapon) return cell;
-
-          const images = await Promise.all(
-            cell.images.map(async (item) => ({
-              ...item,
-              name: item.name ? await translate(item.name) : item.name,
-            })),
-          );
-
-          return {
-            ...cell,
-            images,
-            weapon: images.find((item) => item.name)?.name || cell.weapon,
-          };
-        }),
-      ),
-    })),
-  );
-
-  return { ...table, stats, rows };
-};
-
 export const fetchCrossoutBattles = async (
   params: CrossoutFetchBattlesParams,
   language: CrossoutLanguage = "ru",
@@ -551,10 +515,9 @@ export const fetchCrossoutBattles = async (
 
   let lastError: unknown = null;
 
-  for (const baseUrl of getBaseUrls(language)) {
+  for (const baseUrl of await getBaseUrls()) {
     try {
-      const page = await loadCrossoutPage(`${baseUrl}/${path}`);
-      const text = page.text.trim();
+      const text = (await fetchCrossoutText(`${baseUrl}/${path}`)).trim();
 
       if (isForbiddenText(text)) {
         lastError = new CrossoutServiceError(
@@ -587,6 +550,8 @@ export const fetchCrossoutBattles = async (
       const result = normalizeResponse(data);
       const translate = getWeaponTranslator(language, baseUrl);
 
+      noteCrossoutHost(baseUrl);
+
       if (!translate) return result;
 
       const battles = await translateBattles(result.battles, translate);
@@ -614,7 +579,7 @@ const timezoneOffset = (): string => {
 
 export const uploadCrossoutLog = async (
   params: CrossoutUploadLogParams,
-  language: CrossoutLanguage = "ru",
+  _language: CrossoutLanguage = "ru",
   onProgress?: (progress: CrossoutUploadProgress) => void,
 ): Promise<CrossoutUploadLogResult> => {
   const filePath = params.filePath.trim();
@@ -661,7 +626,7 @@ export const uploadCrossoutLog = async (
 
   let lastError: unknown = null;
 
-  for (const baseUrl of getBaseUrls(language)) {
+  for (const baseUrl of await getBaseUrls()) {
     const form = new FormData();
 
     form.append("file", file, {
@@ -732,6 +697,8 @@ export const uploadCrossoutLog = async (
         );
       }
 
+      noteCrossoutHost(baseUrl);
+
       return { ok: true, logId, logUrl: `${baseUrl}/log/${logId}` };
     } catch (error) {
       body.destroy();
@@ -745,605 +712,4 @@ export const uploadCrossoutLog = async (
   const failure = describeError(lastError);
 
   return uploadFailure(failure.code, failure.message);
-};
-
-interface RawLogType {
-  key?: unknown;
-  label?: unknown;
-  count?: unknown;
-}
-
-interface RawLogSummary {
-  forbidden?: unknown;
-  title?: unknown;
-  nickname?: unknown;
-  types?: unknown;
-}
-
-interface RawLogCell {
-  text?: unknown;
-  colSpan?: unknown;
-  rowSpan?: unknown;
-  cls?: unknown;
-  weapon?: unknown;
-  image?: unknown;
-  images?: unknown;
-  destroyed?: unknown;
-}
-
-interface RawLogBattle {
-  index?: unknown;
-  map?: unknown;
-  duration?: unknown;
-}
-
-interface RawLogRow {
-  cells?: unknown;
-  map?: unknown;
-  cls?: unknown;
-  battle?: unknown;
-}
-
-interface RawLogStatRow {
-  kind?: unknown;
-  name?: unknown;
-  weapon?: unknown;
-  image?: unknown;
-  images?: unknown;
-  stars?: unknown;
-  team?: unknown;
-  damage?: unknown;
-  delta?: unknown;
-  deltaKind?: unknown;
-  cells?: unknown;
-}
-
-interface RawLogStat {
-  headers?: unknown;
-  rows?: unknown;
-}
-
-interface RawLogTime {
-  at?: unknown;
-  label?: unknown;
-}
-
-interface RawLogTable {
-  forbidden?: unknown;
-  date?: unknown;
-  times?: unknown;
-  rows?: unknown;
-  stats?: unknown;
-}
-
-const LOG_SUMMARY_SCRIPT = `(() => {
-  const bodyText = document.body ? document.body.innerText.trim() : "";
-  if (bodyText === "Forbidden") return { forbidden: true };
-
-  const anchors = Array.from(document.querySelectorAll('a.button[href*="/log/"]'));
-  const types = anchors.map((anchor) => {
-    const href = anchor.getAttribute("href") || "";
-    const parts = href.split("/").filter(Boolean);
-    const key = parts[parts.length - 1] || "";
-    const countNode = anchor.querySelector(".bold.black");
-    const labelNode = anchor.querySelector(".bold.roboto.s18");
-    return {
-      key,
-      label: labelNode ? labelNode.textContent.trim() : "",
-      count: countNode ? parseInt(countNode.textContent.trim(), 10) || 0 : 0
-    };
-  }).filter((type) => type.key && type.key !== "log");
-
-  const title = document.title || "";
-  const match = title.match(/игрока\\s+(.+)$/i) || title.match(/player\\s+(.+)$/i);
-
-  return {
-    forbidden: false,
-    title,
-    nickname: match ? match[1].trim() : "",
-    types
-  };
-})()`;
-
-const LOG_TABLE_SCRIPT = `(() => {
-  const bodyText = document.body ? document.body.innerText.trim() : "";
-  if (bodyText === "Forbidden") return { forbidden: true };
-
-  const absoluteUrl = (value) => {
-    if (!value) return "";
-    try {
-      return new URL(value, location.origin).href;
-    } catch {
-      return value;
-    }
-  };
-
-  const cellText = (span) => {
-    const parts = Array.from(span.children).filter((child) => child.tagName === "SPAN");
-    if (parts.length > 1) {
-      return parts
-        .map((part) => (part.innerText || part.textContent || "").replace(/\\s+/g, " ").trim())
-        .filter(Boolean)
-        .join(" ");
-    }
-    return (span.innerText || span.textContent || "").replace(/\\s+/g, " ").trim();
-  };
-
-  const readImages = (root) => {
-    const images = [];
-    const push = (src, name, destroyed) => {
-      const url = absoluteUrl(src || "");
-      if (!url) return;
-      images.push({
-        src: url,
-        name: (name || "").replace(/\\s+/g, " ").trim(),
-        destroyed: Boolean(destroyed)
-      });
-    };
-
-    root.querySelectorAll("img").forEach((img) => {
-      push(
-        img.getAttribute("src") || img.getAttribute("data-src") || "",
-        img.getAttribute("title") || img.getAttribute("alt") || "",
-        img.classList.contains("trought") || Boolean(img.closest(".trought"))
-      );
-    });
-
-    root.querySelectorAll(".imgweap").forEach((node) => {
-      if (node.querySelector("img")) return;
-      const match = /url\\(["']?([^"')]+)["']?\\)/.exec(
-        window.getComputedStyle(node).backgroundImage || ""
-      );
-      if (match) push(match[1], node.getAttribute("title") || "", node.classList.contains("trought"));
-    });
-
-    return images;
-  };
-
-  const statsNode = document.querySelector("div.stat");
-  let stats = null;
-  if (statsNode) {
-    const headerNode = Array.from(statsNode.children).find((child) => child.classList.contains("sticDiv"));
-    const headers = headerNode
-      ? Array.from(headerNode.children)
-          .filter((child) => child.tagName === "SPAN")
-          .map(cellText)
-      : [];
-    const statRows = [];
-    let currentTeam = "";
-    for (const row of Array.from(statsNode.children)) {
-      const body = row.querySelector(".statBody");
-      const isPlayer = Boolean(row.getAttribute("data-nickprofile"));
-      const isWeapon = row.getAttribute("data-edite") === "getWeaponData";
-      if (!isPlayer && !isWeapon) continue;
-      const bodyRow = body ? body.querySelector(".row") : null;
-      const spans = bodyRow
-        ? Array.from(bodyRow.children).filter((child) => child.tagName === "SPAN")
-        : [];
-      const cells = spans
-        .filter((span) => !span.className.includes("imgweap"))
-        .map(cellText);
-      if (isPlayer) {
-        const teamMatch = body ? body.className.match(/red|green/) : null;
-        currentTeam = teamMatch ? teamMatch[0] : "";
-      }
-      const images = isWeapon ? readImages(row).map((item) => item.src) : [];
-      const img = images[0] || "";
-      const starRect = row.querySelector(".div-star-mask rect");
-      const starWidth = starRect ? parseFloat(starRect.getAttribute("width") || "") : NaN;
-      const afterData = Array.from(row.querySelectorAll(".afterData"));
-      const deltaNode = afterData.length > 1 ? afterData[afterData.length - 1] : null;
-      const delta = deltaNode ? (deltaNode.textContent || "").replace(/\\s+/g, " ").trim() : "";
-      const deltaKind = deltaNode
-        ? deltaNode.className.includes("igreen")
-          ? "up"
-          : deltaNode.className.includes("ired")
-            ? "down"
-            : delta.startsWith("-")
-              ? "down"
-              : delta
-                ? "up"
-                : null
-        : null;
-      const damageNode = deltaNode ? deltaNode.parentElement : null;
-      const damage = isWeapon && damageNode
-        ? Array.from(damageNode.childNodes)
-            .filter((node) => node.nodeType === 3)
-            .map((node) => node.textContent || "")
-            .join(" ")
-            .replace(/\\s+/g, " ")
-            .trim()
-        : (cells[3] || "");
-      statRows.push({
-        kind: isPlayer ? "player" : "weapon",
-        name: isPlayer
-          ? (row.getAttribute("data-nick") || cells[0] || "")
-          : (row.getAttribute("data-weaponfind") || cells[0] || ""),
-        weapon: isWeapon
-          ? (row.getAttribute("data-weaponfind") || cells[0] || "")
-          : "",
-        image: img,
-        images,
-        stars: isWeapon && Number.isFinite(starWidth)
-          ? Math.max(0, Math.min(100, starWidth))
-          : null,
-        team: currentTeam,
-        damage,
-        delta: isWeapon ? delta : "",
-        deltaKind: isWeapon ? deltaKind : null,
-        cells
-      });
-    }
-    stats = { headers, rows: statRows };
-  }
-
-  const table = document.querySelector("table.maps");
-  const rows = table ? Array.from(table.rows).map((row) => {
-    const cells = Array.from(row.cells).map((cell) => {
-      const images = readImages(cell);
-      const first = images[0];
-      return {
-        text: (cell.innerText || "").replace(/\\s+/g, " ").trim(),
-        colSpan: cell.colSpan || 1,
-        rowSpan: cell.rowSpan || 1,
-        cls: cell.className || "",
-        weapon: first ? first.name : "",
-        image: first ? first.src : "",
-        images,
-        destroyed: images.length
-          ? images.every((item) => item.destroyed)
-          : Boolean(cell.querySelector(".trought"))
-      };
-    });
-
-    const headerCell = cells.length === 1 && cells[0].colSpan > 1 ? cells[0] : null;
-    const headerText = headerCell ? headerCell.text : "";
-    const battleMatch = headerText.match(/(?:Бой|Battle)\\s*#(\\d+)\\s*\\|\\s*(?:Карта|Map):\\s*(.+?)\\s*\\|\\s*(?:Время боя|Battle time):\\s*(.+)$/i);
-
-    return {
-      cells,
-      map: row.getAttribute("data-maps") || "",
-      cls: row.className || "",
-      battle: battleMatch
-        ? {
-            index: parseInt(battleMatch[1], 10) || 0,
-            map: battleMatch[2].trim(),
-            duration: battleMatch[3].trim()
-          }
-        : null
-    };
-  }).filter((row) => row.cells.length > 0).slice(0, 3000) : [];
-
-  const dateNode = document.querySelector(".grays.bold400.roboto");
-  const dateMatch = dateNode ? (dateNode.textContent || "").match(/\\d{2}\\.\\d{2}\\.\\d{4}/) : null;
-  const fromSelect = document.querySelector('select[name="t_from"]');
-  const times = fromSelect
-    ? Array.from(fromSelect.options).map((option) => ({
-        at: parseInt(option.value, 10) || 0,
-        label: (option.textContent || "").replace(/\\s+/g, " ").trim()
-      })).filter((item) => item.at > 0 && item.label)
-    : [];
-
-  return {
-    forbidden: false,
-    date: dateMatch ? dateMatch[0] : "",
-    times,
-    rows,
-    stats
-  };
-})()`;
-
-const normalizeLogImages = (value: unknown): CrossoutLogCell["images"] => {
-  if (!Array.isArray(value)) return [];
-
-  return value.flatMap((item) => {
-    if (!item || typeof item !== "object") return [];
-
-    const raw = item as { src?: unknown; name?: unknown; destroyed?: unknown };
-    const src = asString(raw.src).trim();
-
-    if (!src) return [];
-
-    return [
-      {
-        src,
-        name: asString(raw.name).trim(),
-        destroyed: Boolean(raw.destroyed),
-      },
-    ];
-  });
-};
-
-const normalizeLogCell = (value: unknown): CrossoutLogCell | null => {
-  if (!value || typeof value !== "object") return null;
-
-  const raw = value as RawLogCell;
-  const image = asString(raw.image).trim();
-  const weapon = asString(raw.weapon).trim();
-  const images = normalizeLogImages(raw.images);
-
-  if (images.length === 0 && image) {
-    images.push({ src: image, name: weapon, destroyed: Boolean(raw.destroyed) });
-  }
-
-  return {
-    text: asString(raw.text),
-    colSpan: Math.max(1, asNumber(raw.colSpan)),
-    rowSpan: Math.max(1, asNumber(raw.rowSpan)),
-    cls: asString(raw.cls),
-    weapon: images[0]?.name || weapon,
-    image: images[0]?.src || image,
-    images,
-    destroyed: Boolean(raw.destroyed),
-  };
-};
-
-const normalizeLogTimes = (value: unknown): CrossoutLogTime[] => {
-  if (!Array.isArray(value)) return [];
-
-  const seen = new Set<number>();
-
-  return value
-    .flatMap((item) => {
-      if (!item || typeof item !== "object") return [];
-
-      const raw = item as RawLogTime;
-      const at = Math.trunc(asNumber(raw.at));
-      const label = asString(raw.label).replace(/\s+/g, " ").trim();
-
-      if (at <= 0 || !label || seen.has(at)) return [];
-
-      seen.add(at);
-
-      return [{ at, label }];
-    })
-    .sort((left, right) => left.at - right.at);
-};
-
-const normalizeLogRow = (value: unknown): CrossoutLogRow | null => {
-  if (!value || typeof value !== "object") return null;
-
-  const raw = value as RawLogRow;
-  const rawCells = Array.isArray(raw.cells) ? raw.cells : [];
-  const cells = rawCells
-    .map(normalizeLogCell)
-    .filter((cell): cell is CrossoutLogCell => cell !== null);
-
-  if (cells.length === 0) return null;
-
-  const rawBattle =
-    raw.battle && typeof raw.battle === "object"
-      ? (raw.battle as RawLogBattle)
-      : null;
-
-  return {
-    cells,
-    map: asString(raw.map),
-    cls: asString(raw.cls),
-    battle: rawBattle
-      ? {
-          index: asNumber(rawBattle.index),
-          map: asString(rawBattle.map),
-          duration: asString(rawBattle.duration),
-        }
-      : null,
-  };
-};
-
-const normalizeLogStatRow = (value: unknown): CrossoutLogStatRow | null => {
-  if (!value || typeof value !== "object") return null;
-
-  const raw = value as RawLogStatRow;
-  const kind = raw.kind === "weapon" ? "weapon" : "player";
-  const rawCells = Array.isArray(raw.cells) ? raw.cells : [];
-  const cells = rawCells.map(asString);
-  const name = asString(raw.name).trim() || cells[0] || "";
-
-  if (!name && cells.length === 0) return null;
-
-  const image = asString(raw.image).trim();
-  const images = (Array.isArray(raw.images) ? raw.images : [])
-    .map(asString)
-    .map((src) => src.trim())
-    .filter(Boolean);
-
-  if (images.length === 0 && image) images.push(image);
-
-  return {
-    kind,
-    name,
-    weapon: asString(raw.weapon).trim(),
-    image: images[0] || image,
-    images,
-    stars:
-      typeof raw.stars === "number" && Number.isFinite(raw.stars)
-        ? Math.max(0, Math.min(100, raw.stars))
-        : null,
-    team: asString(raw.team).trim(),
-    damage: asString(raw.damage),
-    delta: asString(raw.delta).trim(),
-    deltaKind:
-      raw.deltaKind === "up" || raw.deltaKind === "down" ? raw.deltaKind : null,
-    cells,
-  };
-};
-
-const normalizeLogStat = (value: unknown): CrossoutLogStat | null => {
-  if (!value || typeof value !== "object") return null;
-
-  const raw = value as RawLogStat;
-  const headers = (Array.isArray(raw.headers) ? raw.headers : []).map(asString);
-  const rawRows = Array.isArray(raw.rows) ? raw.rows : [];
-  const rows = rawRows
-    .map(normalizeLogStatRow)
-    .filter((row): row is CrossoutLogStatRow => row !== null);
-
-  if (headers.length === 0 && rows.length === 0) return null;
-
-  return { headers, rows };
-};
-
-export const loadCrossoutLog = async (
-  logId: string,
-  language: CrossoutLanguage = "ru",
-): Promise<CrossoutLogSummaryResult> => {
-  const id = logId.trim();
-
-  if (!LOG_ID_PATTERN.test(id)) {
-    return logSummaryFailure(
-      "invalid-log-id",
-      "Некорректный идентификатор лога.",
-    );
-  }
-
-  let lastError: unknown = null;
-
-  for (const baseUrl of getBaseUrls(language)) {
-    try {
-      const page = await extractCrossoutPage<RawLogSummary>(
-        `${baseUrl}/log/${id}`,
-        LOG_SUMMARY_SCRIPT,
-      );
-
-      if (page.value?.forbidden) {
-        lastError = new CrossoutServiceError(
-          "forbidden",
-          "Сервис отклонил запрос (403).",
-        );
-        continue;
-      }
-
-      if (!page.value || typeof page.value !== "object") {
-        lastError = new CrossoutServiceError(
-          "unexpected-response",
-          "Сервис вернул неожиданный ответ.",
-        );
-        continue;
-      }
-
-      const rawTypes = Array.isArray(page.value.types)
-        ? (page.value.types as RawLogType[])
-        : [];
-      const types = rawTypes
-        .map((type) => ({
-          key: asString(type.key).trim(),
-          label: asString(type.label).trim(),
-          count: asNumber(type.count),
-        }))
-        .filter((type) => type.key.length > 0 && type.count > 0);
-
-      return {
-        ok: true,
-        summary: {
-          logId: id,
-          nickname: asString(page.value.nickname),
-          title: asString(page.value.title),
-          types,
-        },
-      };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  const failure = describeError(lastError);
-
-  return logSummaryFailure(failure.code, failure.message);
-};
-
-export const loadCrossoutLogTable = async (
-  logId: string,
-  type: string,
-  language: CrossoutLanguage = "ru",
-  expectedBattles = 0,
-  range?: { from: number; to: number } | null,
-): Promise<CrossoutLogTableResult> => {
-  const id = logId.trim();
-  const slug = type.trim().toLowerCase();
-  const from = Math.trunc(range?.from ?? 0);
-  const to = Math.trunc(range?.to ?? 0);
-  // The site applies the time filter by navigating to
-  // /log/{id}/{type}/f_{unix}/t_{unix}, not by posting the form.
-  const rangePath =
-    from > 0 && to > 0
-      ? `/f_${Math.min(from, to)}/t_${Math.max(from, to)}`
-      : "";
-
-  if (!LOG_ID_PATTERN.test(id) || !LOG_TYPE_PATTERN.test(slug)) {
-    return logTableFailure("invalid-log-id", "Некорректный идентификатор лога.");
-  }
-
-  let lastError: unknown = null;
-
-  for (const baseUrl of getBaseUrls(language)) {
-    try {
-      const page = await extractCrossoutPage<RawLogTable>(
-        `${baseUrl}/log/${id}/${slug}${rangePath}`,
-        LOG_TABLE_SCRIPT,
-      );
-
-      if (page.value?.forbidden) {
-        lastError = new CrossoutServiceError(
-          "forbidden",
-          "Сервис отклонил запрос (403).",
-        );
-        continue;
-      }
-
-      if (!page.value || typeof page.value !== "object") {
-        lastError = new CrossoutServiceError(
-          "unexpected-response",
-          "Сервис вернул неожиданный ответ.",
-        );
-        continue;
-      }
-
-      const rawRows = Array.isArray(page.value.rows)
-        ? (page.value.rows as RawLogRow[])
-        : [];
-      const rows = rawRows
-        .map(normalizeLogRow)
-        .filter((row): row is CrossoutLogRow => row !== null);
-
-      // The English mirror occasionally returns a truncated log table (for
-      // example, the last battle is missing) and caches it. The log summary
-      // knows how many battles the type contains, so use that to reject an
-      // incomplete table and retry on the next host.
-      if (expectedBattles > 0 && !rangePath) {
-        const battles = new Set(
-          rows
-            .map((row) => row.battle?.index)
-            .filter((index): index is number => Boolean(index)),
-        );
-
-        if (battles.size < expectedBattles) {
-          lastError = new CrossoutServiceError(
-            "unexpected-response",
-            "Сервис вернул неполную таблицу боя.",
-          );
-          continue;
-        }
-      }
-
-      const table: CrossoutLogTable = {
-        type: slug,
-        date: asString(page.value.date),
-        times: normalizeLogTimes(page.value.times),
-        stats: normalizeLogStat(page.value.stats),
-        rows,
-      };
-      const translate = getWeaponTranslator(language, baseUrl);
-
-      return {
-        ok: true,
-        table: translate ? await translateLogTable(table, translate) : table,
-      };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  const failure = describeError(lastError);
-
-  return logTableFailure(failure.code, failure.message);
 };
