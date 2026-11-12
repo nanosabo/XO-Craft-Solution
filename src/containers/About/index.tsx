@@ -10,6 +10,9 @@ import {
   CartIcon,
   CraftIcon,
   ExternalIcon,
+  GuideIcon,
+  HistoryIcon,
+  LogsIcon,
   InventoryIcon,
   RefreshIcon,
   SlidersIcon,
@@ -52,6 +55,18 @@ const features = [
   {
     key: "notifications",
     icon: <BellIcon />,
+  },
+  {
+    key: "stats",
+    icon: <LogsIcon />,
+  },
+  {
+    key: "guides",
+    icon: <GuideIcon />,
+  },
+  {
+    key: "history",
+    icon: <HistoryIcon />,
   },
   {
     key: "updates",

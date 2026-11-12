@@ -4,7 +4,7 @@
   "hero": {
     "badge": "Version {{version}}",
     "title": "XO Craft Solution",
-    "description": "A desktop app for planning crafts with your inventory, analog parts and market prices in mind. Every calculation runs locally — no game connection required.",
+    "description": "A desktop app for planning crafts with your inventory, analog parts and market prices in mind. It also breaks down battle stats from a crossout-info log or a combat.log file. Every calculation runs locally — no game connection required.",
     "author": "Author: SABOTAGE",
     "platforms": "Windows · Linux",
     "languages": "Русский · Українська · English"
@@ -41,7 +41,7 @@
   },
   "features": {
     "title": "Features",
-    "subtitle": "Everything you need to plan crafts and trading in one window.",
+    "subtitle": "Everything you need to plan crafts, trading and battle reviews in one window.",
     "craft": {
       "title": "Craft solver",
       "text": "Finds the optimal part combination by power score, weight and durability, taking your available inventory into account."
@@ -58,9 +58,21 @@
       "title": "Market analytics",
       "text": "Shows sell and buy prices, lots, spread, ROI and price history."
     },
+    "stats": {
+      "title": "Battle stats",
+      "text": "Opens a crossout-info log or a combat.log: battle types, maps, damage, frags and win rate by weapon and player."
+    },
     "notifications": {
       "title": "Notifications",
       "text": "Watches selected parts and alerts you when prices or lot counts change."
+    },
+    "guides": {
+      "title": "Guides",
+      "text": "Walks through the craft, market and stats screens: what to enter and what happens next."
+    },
+    "history": {
+      "title": "Previous solution",
+      "text": "Opens the latest solved craft without running the search again."
     },
     "updates": {
       "title": "Updates & languages",
