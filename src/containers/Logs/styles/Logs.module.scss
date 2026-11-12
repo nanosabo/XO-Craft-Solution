@@ -394,6 +394,10 @@
 
 .historyCard {
   grid-column: 1 / -1;
+
+  &:has(> .historyTableWrap:last-child) {
+    padding-bottom: 0;
+  }
 }
 
 .historyHead {
