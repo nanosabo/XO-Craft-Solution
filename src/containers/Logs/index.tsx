@@ -169,21 +169,47 @@ const Logs = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let requestId = 0;
+    let focusTimer = 0;
 
-    window.electronAPI
-      .crossoutFindLatestLog(logsPath)
-      .then((found) => {
-        if (!cancelled) setLatestLog(found);
-      })
-      .catch((error) => {
-        if (cancelled) return;
+    const refresh = (replaceOnError: boolean) => {
+      const id = ++requestId;
 
-        logWarning("crossout-log-find", error);
-        setLatestLog(null);
-      });
+      window.electronAPI
+        .crossoutFindLatestLog(logsPath)
+        .then((found) => {
+          if (cancelled || id !== requestId) return;
+
+          setLatestLog(found);
+        })
+        .catch((error) => {
+          if (cancelled || id !== requestId) return;
+
+          logWarning("crossout-log-find", error);
+          setLatestLog((current) =>
+            current === undefined || replaceOnError ? null : current,
+          );
+        });
+    };
+
+    refresh(true);
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "hidden") return;
+
+      window.clearTimeout(focusTimer);
+      // Minimizing and restoring fires both focus and visibilitychange.
+      focusTimer = window.setTimeout(() => refresh(false), 200);
+    };
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, [logsPath]);
 
