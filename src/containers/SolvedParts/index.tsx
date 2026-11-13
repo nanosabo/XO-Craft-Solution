@@ -5,8 +5,10 @@ import {
   forgetRemovedPart,
   noteRemovedPart,
   selectLoaderState,
+  setInstalledParts,
   setSolvedResult,
   solvedPart,
+  toggleInstalledPart,
 } from "@src/store/slices/loader.slice";
 import {
   returnPart,
@@ -32,7 +34,7 @@ interface RemovedPart extends solvedPart {
 
 const SolvedParts = () => {
   const { t, i18n } = useTranslation("solvePage");
-  const { solvedResult } = useAppSelector(selectLoaderState);
+  const { solvedResult, installedParts } = useAppSelector(selectLoaderState);
   const { parts: requiredParts, forbidden } = useAppSelector(
     selectRequiredPartsState,
   );
@@ -49,6 +51,10 @@ const SolvedParts = () => {
   const requiredIds = useMemo(
     () => new Set(requiredParts.map((part) => part.id)),
     [requiredParts],
+  );
+  const installedIds = useMemo(
+    () => new Set(installedParts.map((part) => part.id)),
+    [installedParts],
   );
   const forbiddenIds = useMemo(
     () => new Set(forbidden.map((part) => part.id)),
@@ -132,10 +138,31 @@ const SolvedParts = () => {
         inputs,
       });
 
+      if (installedParts.some((part) => part.id === analogPart.id)) {
+        const carried = new Set([analog.id]);
+        const kept = installedParts.filter(
+          (part) => part.id !== analogPart.id && !carried.has(part.id),
+        );
+        const moved = next.solution.flatMap((part) =>
+          carried.has(part.id)
+            ? [
+                {
+                  id: part.id,
+                  name: part.name,
+                  eng_name: part.eng_name,
+                  count: part.count,
+                },
+              ]
+            : [],
+        );
+
+        dispatch(setInstalledParts([...kept, ...moved]));
+      }
+
       dispatch(setSolvedResult(next));
       setAnalogPart(null);
     },
-    [analogPart, dispatch, inputs, solvedResult],
+    [analogPart, dispatch, inputs, installedParts, solvedResult],
   );
 
   const onRestoreOriginal = useCallback(
@@ -149,9 +176,33 @@ const SolvedParts = () => {
         inputs,
       });
 
+      const target = solvedResult.solution.find((part) => part.id === targetId);
+
+      if (target && installedParts.some((part) => part.id === targetId)) {
+        const carried = new Set([
+          targetId,
+          ...(target.origins ?? []).map((origin) => origin.id),
+        ]);
+        const kept = installedParts.filter((part) => !carried.has(part.id));
+        const moved = next.solution.flatMap((part) =>
+          carried.has(part.id)
+            ? [
+                {
+                  id: part.id,
+                  name: part.name,
+                  eng_name: part.eng_name,
+                  count: part.count,
+                },
+              ]
+            : [],
+        );
+
+        dispatch(setInstalledParts([...kept, ...moved]));
+      }
+
       dispatch(setSolvedResult(next));
     },
-    [dispatch, inputs, parts, solvedResult],
+    [dispatch, inputs, installedParts, parts, solvedResult],
   );
 
   const orderedSolution = useMemo(() => {
@@ -256,6 +307,17 @@ const SolvedParts = () => {
                 {...item}
                 isForbidden={isForbidden}
                 isRequired={requiredIds.has(item.id)}
+                isInstalled={installedIds.has(item.id)}
+                onToggleInstalled={() =>
+                  dispatch(
+                    toggleInstalledPart({
+                      id: item.id,
+                      name: item.name,
+                      eng_name: item.eng_name,
+                      count: item.count,
+                    }),
+                  )
+                }
                 isReplaced={Boolean(replacedNames?.length)}
                 replacedTitle={
                   replacedNames?.length

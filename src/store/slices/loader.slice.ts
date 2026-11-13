@@ -1,6 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { AppError, logError } from "@src/helpers/errorLog";
 import { getLastAppRoute } from "@src/helpers/lastRoute";
+import {
+  mergeInstalledParts,
+  placeInstalledParts,
+} from "@src/helpers/installedParts";
 import { partsToRemove } from "@src/helpers/partsToRemove";
 import { RootState } from "../store";
 
@@ -12,6 +16,66 @@ export enum LoaderStateStatus {
 }
 
 const storage = localStorage.getItem("solution");
+const INSTALLED_PARTS_KEY = "installedParts";
+
+const readInstalledParts = (): solvedPart[] => {
+  try {
+    const raw = localStorage.getItem(INSTALLED_PARTS_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+
+      const part = item as Partial<solvedPart>;
+      const count = Math.round(Number(part.count));
+
+      if (typeof part.id !== "string" || !part.id) return [];
+      if (!Number.isFinite(count) || count <= 0) return [];
+
+      return [
+        {
+          id: part.id,
+          name: typeof part.name === "string" ? part.name : "",
+          eng_name: typeof part.eng_name === "string" ? part.eng_name : "",
+          count,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+};
+
+const saveInstalledParts = (parts: solvedPart[]) => {
+  localStorage.setItem(INSTALLED_PARTS_KEY, JSON.stringify(parts));
+};
+
+/** Drop marks for parts that left the solution and refresh counts for the rest. */
+const syncInstalledParts = (state: LoaderState) => {
+  const solution = state.solvedResult?.solution;
+  if (!solution) return;
+
+  const rows = new Map(solution.map((part) => [part.id, part]));
+  const next = state.installedParts.flatMap((part) => {
+    const row = rows.get(part.id);
+    if (!row) return [];
+
+    return [
+      {
+        id: row.id,
+        name: row.name,
+        eng_name: row.eng_name,
+        count: row.count,
+      },
+    ];
+  });
+
+  state.installedParts = next;
+  saveInstalledParts(next);
+};
 
 export interface solvedPartOrigin {
   id: string;
@@ -57,6 +121,8 @@ export interface LoaderState {
   /** Parts the user removed by hand. Kept even if they were not in the baseline. */
   explicitlyRemoved: TrackedRemoval[];
   solutionBeforeSolve: solvedPart[] | null;
+  /** Parts marked on the solution screen as already mounted. */
+  installedParts: solvedPart[];
 }
 
 const snapshotSolution = (
@@ -80,6 +146,7 @@ const initialState: LoaderState = {
   solutionBaseline: null,
   explicitlyRemoved: [],
   solutionBeforeSolve: null,
+  installedParts: readInstalledParts(),
 };
 
 const countsById = (parts: solvedPart[] | null | undefined) => {
@@ -137,17 +204,32 @@ export const solveData = createAsyncThunk(
       const state = getState() as RootState;
       const inputs = state.solveInputs;
       const { parts, forbidden } = state.requiredParts;
-      const { inventory, inventoryEnabled } = state.settings;
-      const result = await window.ipcRenderer.invoke("solve", {
+      const { inventory, inventoryEnabled, keepInstalledParts } = state.settings;
+      const required = mergeInstalledParts(
+        parts,
+        state.loader.installedParts,
+        forbidden,
+        keepInstalledParts,
+      );
+      const result = (await window.ipcRenderer.invoke("solve", {
         inputs,
-        requiredParts: parts,
+        requiredParts: required.parts,
         forbidden: forbidden,
         inventory,
         inventoryEnabled,
-      });
-      localStorage.setItem("solution", JSON.stringify(result));
+        lockedPartIds: required.lockedPartIds,
+      })) as solvedResult;
+      const ordered = {
+        ...result,
+        solution: placeInstalledParts(
+          result.solution,
+          parts,
+          state.loader.installedParts,
+        ),
+      };
+      localStorage.setItem("solution", JSON.stringify(ordered));
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return result;
+      return ordered;
     } catch (error) {
       const appError = logError("solve", error);
       dispatch(
@@ -164,15 +246,30 @@ export const refreshSolution = createAsyncThunk(
     try {
       const state = getState() as RootState;
       const { parts, forbidden } = state.requiredParts;
-      const { inventory, inventoryEnabled } = state.settings;
-      const result = await window.ipcRenderer.invoke("solve", {
+      const { inventory, inventoryEnabled, keepInstalledParts } = state.settings;
+      const required = mergeInstalledParts(
+        parts,
+        state.loader.installedParts,
+        forbidden,
+        keepInstalledParts,
+      );
+      const result = (await window.ipcRenderer.invoke("solve", {
         inputs: state.solveInputs,
-        requiredParts: parts,
+        requiredParts: required.parts,
         forbidden,
         inventory,
         inventoryEnabled,
-      });
-      return result as solvedResult;
+        lockedPartIds: required.lockedPartIds,
+      })) as solvedResult;
+
+      return {
+        ...result,
+        solution: placeInstalledParts(
+          result.solution,
+          parts,
+          state.loader.installedParts,
+        ),
+      };
     } catch (error) {
       logError("solve", error);
       throw error;
@@ -220,6 +317,42 @@ export const LoaderSlice = createSlice({
     setSolvedResult(state, action: PayloadAction<solvedResult>) {
       state.solvedResult = action.payload;
       localStorage.setItem("solution", JSON.stringify(action.payload));
+      syncInstalledParts(state);
+    },
+
+    toggleInstalledPart(state, action: PayloadAction<solvedPart>) {
+      const { id, name, eng_name, count } = action.payload;
+      const index = state.installedParts.findIndex((part) => part.id === id);
+
+      if (index >= 0) {
+        state.installedParts.splice(index, 1);
+      } else {
+        state.installedParts.push({
+          id,
+          name,
+          eng_name,
+          count: Math.max(1, Math.round(count)),
+        });
+      }
+
+      saveInstalledParts(state.installedParts);
+    },
+
+    removeInstalledPart(state, action: PayloadAction<string>) {
+      state.installedParts = state.installedParts.filter(
+        (part) => part.id !== action.payload,
+      );
+      saveInstalledParts(state.installedParts);
+    },
+
+    setInstalledParts(state, action: PayloadAction<solvedPart[]>) {
+      state.installedParts = action.payload.map((part) => ({
+        id: part.id,
+        name: part.name,
+        eng_name: part.eng_name,
+        count: Math.max(1, Math.round(part.count)),
+      }));
+      saveInstalledParts(state.installedParts);
     },
 
     clearDroppedParts(state) {
@@ -284,6 +417,7 @@ export const LoaderSlice = createSlice({
           );
           state.solutionBeforeSolve = null;
           state.solvedResult = action.payload;
+          syncInstalledParts(state);
         }
       )
       .addCase(refreshSolution.pending, (state, action) => {
@@ -303,6 +437,7 @@ export const LoaderSlice = createSlice({
 
         state.solvedResult = action.payload;
         localStorage.setItem("solution", JSON.stringify(action.payload));
+        syncInstalledParts(state);
 
         for (const part of state.explicitlyRemoved) {
           part.settled = true;
@@ -341,6 +476,9 @@ export const {
   setLoaderInititalStatus,
   setLoaderSolvingStatus,
   setSolvedResult,
+  setInstalledParts,
+  removeInstalledPart,
+  toggleInstalledPart,
 } = LoaderSlice.actions;
 
 export const selectLoaderState = (state: RootState) => state.loader;

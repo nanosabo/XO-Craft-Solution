@@ -1,4 +1,4 @@
-import React, { FC, memo, useState } from "react";
+import React, { FC, memo } from "react";
 import styles from "./styles/PartItem.module.scss";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
@@ -11,6 +11,7 @@ import {
   removeRequiredPart,
   returnPart,
 } from "@src/store/slices/requiredParts.slice";
+import { removeInstalledPart } from "@src/store/slices/loader.slice";
 
 type Props = {
   id: string;
@@ -19,8 +20,10 @@ type Props = {
   count: number;
   isForbidden?: boolean;
   isRequired?: boolean;
+  isInstalled?: boolean;
   isReplaced?: boolean;
   replacedTitle?: string;
+  onToggleInstalled?: () => void;
   onShowAnalogs?: () => void;
   onRestoreOriginal?: () => void;
   onExcluded?: () => void;
@@ -34,20 +37,20 @@ const PartItem: FC<Props> = memo(
     count,
     isForbidden,
     isRequired,
+    isInstalled,
     isReplaced,
     replacedTitle,
+    onToggleInstalled,
     onShowAnalogs,
     onRestoreOriginal,
     onExcluded,
   }) => {
-    const [isActive, setIsActive] = useState(false);
-
     const { t, i18n } = useTranslation("solvePage");
     const dispatch = useAppDispatch();
 
     const onClick = () => {
       if (isForbidden) return;
-      setIsActive((prev) => !prev);
+      onToggleInstalled?.();
     };
 
     const onClickRemove = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -55,8 +58,8 @@ const PartItem: FC<Props> = memo(
       if (isForbidden) {
         dispatch(returnPart(id));
       } else {
-        setIsActive(false);
         dispatch(excludePart({ id, name, eng_name, maxCount: 0 }));
+        dispatch(removeInstalledPart(id));
         onExcluded?.();
       }
 
@@ -88,7 +91,7 @@ const PartItem: FC<Props> = memo(
     return (
       <div
         className={classNames(styles.root, {
-          [styles.active]: isActive,
+          [styles.active]: isInstalled,
           [styles.forbidden]: isForbidden,
           [styles.required]: isRequired && !isForbidden,
           [styles.replaced]: isReplaced && !isForbidden,

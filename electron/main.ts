@@ -990,6 +990,8 @@ interface DataToSolve {
   forbidden: requiredPart[];
   inventory?: Record<string, number>;
   inventoryEnabled?: boolean;
+  /** Parts whose count is fixed. The solver must not add any more of them. */
+  lockedPartIds?: string[];
 }
 
 interface SolveResultPart {
@@ -1178,6 +1180,7 @@ ipcMain.handle(
       forbidden,
       inventory = {},
       inventoryEnabled = false,
+      lockedPartIds = [],
     }: DataToSolve,
   ) => {
     if (!fs.existsSync(exePath)) {
@@ -1224,11 +1227,15 @@ ipcMain.handle(
     /* ---------------- limits ---------------- */
 
     const maxPS = inputs.maxPowerScores === 0 ? 999999 : inputs.maxPowerScores;
+    const lockedIds = new Set(lockedPartIds);
 
     const dataToSolve = {
-      maxPower: maxPS - inputs.powerScores - requiredStats.power,
-      maxWeight: inputs.tonnage - inputs.weight - requiredStats.weight - 1,
-      maxParts: inputs.maxParts - inputs.parts - requiredStats.parts,
+      maxPower: Math.max(0, maxPS - inputs.powerScores - requiredStats.power),
+      maxWeight: Math.max(
+        0,
+        inputs.tonnage - inputs.weight - requiredStats.weight - 1,
+      ),
+      maxParts: Math.max(0, inputs.maxParts - inputs.parts - requiredStats.parts),
     };
 
     /* ---------------- prepare parts ---------------- */
@@ -1249,6 +1256,8 @@ ipcMain.handle(
           const owned = Math.max(0, (inventory[p.id] ?? 0) - requiredCount);
           maxCount = Math.min(maxCount, owned);
         }
+
+        if (lockedIds.has(p.id)) maxCount = 0;
 
         return {
           ...p,

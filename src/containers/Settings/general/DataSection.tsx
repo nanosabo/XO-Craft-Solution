@@ -14,6 +14,7 @@ const CACHE_KEYS = [
   "requiredParts",
   "solveInputs",
   "solution",
+  "installedParts",
   "version",
 ];
 

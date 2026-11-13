@@ -97,8 +97,8 @@
       rgba(22, 25, 27, 0.92);
   }
 
-  &.replaced:hover,
-  &.replaced:focus-within {
+  &.replaced:not(.active):hover,
+  &.replaced:not(.active):focus-within {
     border-color: #f5a524;
   }
 

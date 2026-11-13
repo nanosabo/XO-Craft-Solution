@@ -9,7 +9,7 @@
   "refreshing": "Recalculating...",
   "parts": {
     "title": "Recommended Parts List",
-    "subtitle": "Hover a part to swap it for a similar one or drop it from the solution."
+    "subtitle": "Click a part to mark it as installed. Hover to swap it for a similar one or drop it from the solution."
   },
   "totals": {
     "weight": {

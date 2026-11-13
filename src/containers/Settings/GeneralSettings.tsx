@@ -3,11 +3,13 @@ import { useAppDispatch, useAppSelector } from "@src/store/store";
 import {
   selectSettingsState,
   setAutoUpdate,
+  setKeepInstalledParts,
   setStartScreen,
 } from "@src/store/slices/settings.slice";
 import { normalizeUiLanguage, type UiLanguage } from "@src/helpers/contentLanguage";
 import useAppVersion from "./useAppVersion";
 import AboutSection from "./general/AboutSection";
+import InstalledPartsSection from "./general/InstalledPartsSection";
 import DataSection from "./general/DataSection";
 import LanguageSection from "./general/LanguageSection";
 import LogsPathSection from "./general/LogsPathSection";
@@ -19,7 +21,7 @@ import styles from "./styles/Settings.module.scss";
 const GeneralSettings = () => {
   const { t, i18n } = useTranslation("settingsPage");
   const dispatch = useAppDispatch();
-  const { autoUpdate, crossoutLogsPath, startScreen } =
+  const { autoUpdate, crossoutLogsPath, keepInstalledParts, startScreen } =
     useAppSelector(selectSettingsState);
   const version = useAppVersion();
 
@@ -42,6 +44,11 @@ const GeneralSettings = () => {
       <StartScreenSection
         startScreen={startScreen}
         onChange={(screen) => dispatch(setStartScreen(screen))}
+      />
+
+      <InstalledPartsSection
+        enabled={keepInstalledParts}
+        onChange={(enabled) => dispatch(setKeepInstalledParts(enabled))}
       />
 
       <StartupSection />

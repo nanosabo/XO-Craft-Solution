@@ -24,6 +24,8 @@ export interface SettingsState {
   analog: AnalogTolerances;
   notifications: MarketNotificationSettings;
   autoUpdate: boolean;
+  /** Marked parts on the solution screen stay through a recalculation. */
+  keepInstalledParts: boolean;
   /** Folder that contains combat.log, or the log file itself. */
   crossoutLogsPath: string | null;
   /** Page opened after the first load. */
@@ -48,6 +50,7 @@ export const createDefaultSettings = (): SettingsState => ({
     customSoundName: null,
   },
   autoUpdate: true,
+  keepInstalledParts: true,
   crossoutLogsPath: null,
   startScreen: "craft",
 });
@@ -88,6 +91,11 @@ const loadSettings = (): SettingsState => {
     return {
       ...defaults,
       ...parsed,
+      autoUpdate: parsed.autoUpdate !== false,
+      keepInstalledParts:
+        typeof parsed.keepInstalledParts === "boolean"
+          ? parsed.keepInstalledParts
+          : defaults.keepInstalledParts,
       crossoutLogsPath: logsPath || null,
       startScreen: isStartScreen(parsed.startScreen)
         ? parsed.startScreen
@@ -171,6 +179,10 @@ export const settingsSlice = createSlice({
       state.autoUpdate = action.payload;
       saveSettings(state);
     },
+    setKeepInstalledParts(state, action: PayloadAction<boolean>) {
+      state.keepInstalledParts = action.payload;
+      saveSettings(state);
+    },
     setCrossoutLogsPath(state, action: PayloadAction<string | null>) {
       const value = action.payload?.trim() ?? "";
 
@@ -200,6 +212,7 @@ export const {
   resetAnalogTolerances,
   setNotificationSettings,
   setAutoUpdate,
+  setKeepInstalledParts,
   setCrossoutLogsPath,
   setStartScreen,
   resetSettings,

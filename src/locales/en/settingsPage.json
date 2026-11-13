@@ -9,7 +9,13 @@
   },
   "general": {
     "title": "General settings",
-    "subtitle": "Interface language, start screen, launch at startup, Crossout logs, updates and app data.",
+    "subtitle": "Interface language, start screen, solution, launch at startup, Crossout logs, updates and app data.",
+    "installed": {
+      "title": "Solution",
+      "subtitle": "Parts already mounted on the craft can stay in the selection.",
+      "keep": "Keep installed parts in the solution",
+      "keepHint": "Mark them with a click on the solution screen — they glow blue. On recalculation those parts stay, and the rest are replaced."
+    },
     "logs": {
       "title": "Crossout logs",
       "subtitle": "The folder that contains combat.log. Use it when the app cannot find the logs on its own.",
