@@ -37,7 +37,8 @@
   },
   "undo": {
     "label": "Removed",
-    "action": "Restore"
+    "action": "Restore",
+    "clear": "Clear"
   },
   "takeoff": {
     "title": "Remove from the vehicle",

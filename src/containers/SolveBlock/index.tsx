@@ -1,10 +1,11 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
-import { selectLoaderState } from "@src/store/slices/loader.slice";
+import { clearDroppedParts, selectLoaderState } from "@src/store/slices/loader.slice";
 import { selectRequiredPartsState } from "@src/store/slices/requiredParts.slice";
-import { useAppSelector } from "@src/store/store";
+import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { CopyIcon, SlidersIcon } from "@src/ui/icons";
+import { getPartImageUrl } from "@src/containers/Settings/types";
 import classNames from "classnames";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SolvedParts from "../SolvedParts";
@@ -19,6 +20,7 @@ const plain = (value: string) => value.replace(/\u00a0/g, " ");
 
 const SolveBlock = () => {
   const { t, i18n } = useTranslation("solvePage");
+  const dispatch = useAppDispatch();
   const { solvedResult, refreshing, droppedParts } = useAppSelector(
     selectLoaderState,
   );
@@ -109,7 +111,61 @@ const SolveBlock = () => {
 
   return (
     <div className={styles.root}>
-      <SolveTotal />
+      <div className={styles.totals}>
+        <SolveTotal />
+        <AnimatePresence>
+          {droppedParts.length > 0 && (
+            <motion.section
+              className={styles.takeoff}
+              title={t("takeoff.subtitle")}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+            >
+              <div className={styles.takeoffText}>
+                <p>{t("takeoff.title")}</p>
+                <span>{t("takeoff.subtitle")}</span>
+              </div>
+              <div className={styles.takeoffList}>
+                {droppedParts.map((part, index) => {
+                  const name = (
+                    contentLanguage(i18n.language) === "ru"
+                      ? part.name
+                      : part.eng_name
+                  ).trim();
+
+                  return (
+                    <motion.div
+                      key={part.id}
+                      className={styles.takeoffItem}
+                      title={`${part.count}× ${name}`}
+                      initial={{ opacity: 0, x: -6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{
+                        duration: 0.2,
+                        ease: "easeOut",
+                        delay: Math.min(index, 10) * 0.03,
+                      }}
+                    >
+                      <img src={getPartImageUrl(part.id)} alt="" draggable={false} />
+                      <p>{name}</p>
+                      <b>{part.count}×</b>
+                    </motion.div>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className={styles.takeoffHide}
+                onClick={() => dispatch(clearDroppedParts())}
+              >
+                {t("takeoff.hide")}
+              </button>
+            </motion.section>
+          )}
+        </AnimatePresence>
+      </div>
 
       <div className={styles.parts}>
         <div className={styles.head}>

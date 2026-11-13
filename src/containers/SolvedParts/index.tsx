@@ -2,7 +2,6 @@ import PartItem from "@src/components/PartItem";
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import {
-  clearDroppedParts,
   forgetRemovedPart,
   noteRemovedPart,
   selectLoaderState,
@@ -33,7 +32,7 @@ interface RemovedPart extends solvedPart {
 
 const SolvedParts = () => {
   const { t, i18n } = useTranslation("solvePage");
-  const { solvedResult, droppedParts } = useAppSelector(selectLoaderState);
+  const { solvedResult } = useAppSelector(selectLoaderState);
   const { parts: requiredParts, forbidden } = useAppSelector(
     selectRequiredPartsState,
   );
@@ -117,6 +116,8 @@ const SolvedParts = () => {
     [dispatch],
   );
 
+  const clearRemoved = () => setRemoved([]);
+
   const onCloseAnalogs = useCallback(() => setAnalogPart(null), []);
 
   const onReplace = useCallback(
@@ -178,61 +179,7 @@ const SolvedParts = () => {
     (contentLanguage(i18n.language) === "ru" ? part.name : part.eng_name).trim();
 
   return (
-    <>
-      <AnimatePresence>
-        {droppedParts.length > 0 && (
-          <motion.section
-            className={styles.takeoff}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-          >
-            <div className={styles.takeoffHead}>
-              <div>
-                <p>{t("takeoff.title")}</p>
-                <span>{t("takeoff.subtitle")}</span>
-              </div>
-              <button
-                type="button"
-                className={styles.takeoffHide}
-                onClick={() => dispatch(clearDroppedParts())}
-              >
-                {t("takeoff.hide")}
-              </button>
-            </div>
-            <div className={styles.takeoffList}>
-              {droppedParts.map((part, index) => {
-                const name = partLabel(part);
-
-                return (
-                  <motion.div
-                    key={part.id}
-                    className={styles.takeoffItem}
-                    title={`${part.count}× ${name}`}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.2,
-                      ease: "easeOut",
-                      delay: Math.min(index, 10) * 0.035,
-                    }}
-                  >
-                    <img
-                      src={getPartImageUrl(part.id)}
-                      alt=""
-                      draggable={false}
-                    />
-                    <p>{name}</p>
-                    <b>{part.count}×</b>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.section>
-        )}
-      </AnimatePresence>
-
+    <div className={styles.stage}>
       {trayOpen && (
         <div className={styles.undo}>
           <span className={styles.undoLabel}>{t("undo.label")}</span>
@@ -279,34 +226,41 @@ const SolvedParts = () => {
               })}
             </AnimatePresence>
           </div>
+          <button
+            type="button"
+            className={styles.undoClear}
+            onClick={clearRemoved}
+          >
+            {t("undo.clear")}
+          </button>
         </div>
       )}
 
       <SolvedPartsWrapper>
-        {orderedSolution.map((item) => {
-          const isForbidden = forbiddenNames.has(item.eng_name);
+          {orderedSolution.map((item) => {
+            const isForbidden = forbiddenNames.has(item.eng_name);
 
-          return (
-            <PartItem
-              key={item.id}
-              {...item}
-              isForbidden={isForbidden}
-              isRequired={requiredIds.has(item.id)}
-              onShowAnalogs={
-                isForbidden ? undefined : () => setAnalogPart(item)
-              }
-              onRestoreOriginal={
-                !isForbidden && item.origins?.length && parts.length > 0
-                  ? () => onRestoreOriginal(item.id)
-                  : undefined
-              }
-              onExcluded={
-                isForbidden ? undefined : () => rememberRemoved(item)
-              }
-            />
-          );
-        })}
-      </SolvedPartsWrapper>
+            return (
+              <PartItem
+                key={item.id}
+                {...item}
+                isForbidden={isForbidden}
+                isRequired={requiredIds.has(item.id)}
+                onShowAnalogs={
+                  isForbidden ? undefined : () => setAnalogPart(item)
+                }
+                onRestoreOriginal={
+                  !isForbidden && item.origins?.length && parts.length > 0
+                    ? () => onRestoreOriginal(item.id)
+                    : undefined
+                }
+                onExcluded={
+                  isForbidden ? undefined : () => rememberRemoved(item)
+                }
+              />
+            );
+          })}
+        </SolvedPartsWrapper>
 
       <AnimatePresence>
         {analogPart && (
@@ -321,7 +275,7 @@ const SolvedParts = () => {
           />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 
