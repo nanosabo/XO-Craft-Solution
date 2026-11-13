@@ -1,16 +1,24 @@
 {
   "title": "Settings",
-  "subtitle": "Manage the app, your parts inventory and notifications",
+  "subtitle": "Assembly, market, statistics and the app itself are grouped into sections.",
+  "groups": {
+    "craft": "Assembly",
+    "market": "Market",
+    "stats": "Statistics",
+    "app": "App"
+  },
   "tabs": {
-    "general": "General",
+    "selection": "Solution",
     "inventory": "Parts inventory",
     "excluded": "Never suggest",
     "analog": "Analog criteria",
-    "market": "Market & notifications"
+    "market": "Notifications",
+    "logs": "Logs",
+    "general": "General"
   },
   "general": {
     "title": "General settings",
-    "subtitle": "Interface language, start screen, solution, launch at startup, Crossout logs, updates and app data.",
+    "subtitle": "Interface language, start screen, launch at startup, updates and app data.",
     "installed": {
       "title": "Solution",
       "subtitle": "Parts already mounted on the craft can stay in the selection.",

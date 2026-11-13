@@ -21,8 +21,24 @@
 
 .sidebarTabs {
   display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sidebarGroup {
+  display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.sidebarGroupLabel {
+  padding: 0 11px;
+  color: rgba($white, 0.38);
+  @include caption;
+  line-height: 16px;
 }
 
 .sidebarItem {

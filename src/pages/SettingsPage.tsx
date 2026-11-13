@@ -5,7 +5,9 @@ import AnalogSettings from "@src/containers/Settings/AnalogSettings";
 import ExcludedSettings from "@src/containers/Settings/ExcludedSettings";
 import GeneralSettings from "@src/containers/Settings/GeneralSettings";
 import InventorySettings from "@src/containers/Settings/InventorySettings";
+import LogsSettings from "@src/containers/Settings/LogsSettings";
 import MarketSettings from "@src/containers/Settings/MarketSettings";
+import SelectionSettings from "@src/containers/Settings/SelectionSettings";
 import SettingsSidebar from "@src/containers/Settings/SettingsSidebar";
 import { SettingsTab } from "@src/containers/Settings/types";
 import useScrollFade from "@src/hooks/useScrollFade";
@@ -38,11 +40,13 @@ const SettingsPage = () => {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.16 }}
             >
-              {activeTab === "general" && <GeneralSettings />}
+              {activeTab === "selection" && <SelectionSettings />}
               {activeTab === "inventory" && <InventorySettings />}
               {activeTab === "excluded" && <ExcludedSettings />}
               {activeTab === "analog" && <AnalogSettings />}
               {activeTab === "market" && <MarketSettings />}
+              {activeTab === "logs" && <LogsSettings />}
+              {activeTab === "general" && <GeneralSettings />}
             </motion.div>
           </AnimatePresence>
         </div>
