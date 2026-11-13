@@ -1,5 +1,7 @@
 # XO Craft Solution
 
+![XO Craft Solution](docs/screenshots/about.png)
+
 Настольное приложение для Crossout: подбор брони, склад, рынок и разбор боёв в одном окне. Расчёты выполняются на компьютере.
 
 Автор — [SABOTAGE](https://github.com/nanosabo). Интерфейс на русском, украинском и английском.
