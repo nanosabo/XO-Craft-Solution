@@ -23,10 +23,27 @@ const initialState: requiredPartsState = {
 
 const storage = localStorage.getItem("requiredParts");
 
+const withoutForbiddenOverlap = (
+  stored: requiredPartsState,
+): requiredPartsState => {
+  const forbidden = stored.forbidden ?? [];
+  const parts = stored.parts ?? [];
+  const forbiddenIds = new Set(forbidden.map((part) => part.id));
+
+  return {
+    ...stored,
+    parts: parts.filter((part) => !forbiddenIds.has(part.id)),
+    forbidden,
+  };
+};
+
 export const requiredPartsSlice = createSlice({
   name: "loader",
   initialState: storage
-    ? { ...initialState, ...(JSON.parse(storage) as requiredPartsState) }
+    ? withoutForbiddenOverlap({
+        ...initialState,
+        ...(JSON.parse(storage) as requiredPartsState),
+      })
     : initialState,
   reducers: {
     addPart(
@@ -92,6 +109,9 @@ export const requiredPartsSlice = createSlice({
         };
       },
     ) {
+      const { id } = action.payload;
+      state.parts = state.parts.filter((part) => part.id !== id);
+      state.forbidden = state.forbidden.filter((part) => part.id !== id);
       state.forbidden = [{ ...action.payload, count: 1 }, ...state.forbidden];
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },

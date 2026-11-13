@@ -168,6 +168,9 @@ export const replaceSolutionPart = ({
   return {
     solution,
     ...buildSolutionTotals({ solution, parts, inputs }),
+    ...(typeof result.openDurability === "number"
+      ? { openDurability: result.openDurability }
+      : {}),
   };
 };
 
@@ -230,5 +233,8 @@ export const restoreOriginalParts = ({
   return {
     solution,
     ...buildSolutionTotals({ solution, parts, inputs }),
+    ...(typeof result.openDurability === "number"
+      ? { openDurability: result.openDurability }
+      : {}),
   };
 };

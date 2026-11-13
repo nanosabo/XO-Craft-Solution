@@ -1007,6 +1007,8 @@ interface SolveResult {
   totalPower: number;
   totalDurability: number;
   totalParts: number;
+  /** Durability of the same budget with no required, forbidden or locked parts. */
+  openDurability?: number;
 }
 
 export interface CalcParams {
@@ -1170,19 +1172,14 @@ ipcMain.handle("fetchMarketChartData", async (_, id: number) => {
   return buildChartData(chartData !== undefined ? chartData : [], "6m", lang);
 });
 
-ipcMain.handle(
-  "solve",
-  async (
-    _,
-    {
-      inputs,
-      requiredParts,
-      forbidden,
-      inventory = {},
-      inventoryEnabled = false,
-      lockedPartIds = [],
-    }: DataToSolve,
-  ) => {
+const runSolve = async ({
+  inputs,
+  requiredParts,
+  forbidden,
+  inventory = {},
+  inventoryEnabled = false,
+  lockedPartIds = [],
+}: DataToSolve): Promise<SolveResult> => {
     if (!fs.existsSync(exePath)) {
       throw new Error(
         `Solver not found at "${exePath}". Build it with "yarn solver:build".`,
@@ -1391,8 +1388,31 @@ ipcMain.handle(
     });
 
     return result;
-  },
-);
+};
+
+ipcMain.handle("solve", async (_, data: DataToSolve) => {
+  const result = await runSolve(data);
+  const constrained =
+    data.requiredParts.length > 0 ||
+    data.forbidden.length > 0 ||
+    (data.lockedPartIds?.length ?? 0) > 0;
+
+  if (!constrained) return result;
+
+  try {
+    const open = await runSolve({
+      ...data,
+      requiredParts: [],
+      forbidden: [],
+      lockedPartIds: [],
+    });
+
+    return { ...result, openDurability: open.totalDurability };
+  } catch (error) {
+    console.error("Unconstrained durability solve failed:", error);
+    return result;
+  }
+});
 
 ipcMain.handle("getParts", async () => {
   return ensureParts();

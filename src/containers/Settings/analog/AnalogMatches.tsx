@@ -37,8 +37,8 @@ const AnalogMatches: FC<Props> = ({ matches }) => {
                 <div className={styles.deltas}>
                   <span
                     className={classNames(styles.delta, {
-                      [styles.deltaGood]: powerDelta >= 0,
-                      [styles.deltaBad]: powerDelta < 0,
+                      [styles.deltaGood]: powerDelta <= 0,
+                      [styles.deltaBad]: powerDelta > 0,
                     })}
                   >
                     {formatDelta(powerDelta, t("analog.powerDelta"))}

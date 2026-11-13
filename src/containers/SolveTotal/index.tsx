@@ -26,14 +26,30 @@ const SolveTotal = () => {
     return null;
   }
 
-  const { totalDurability, totalWeight, totalPower, totalParts } = solvedResult;
+  const { totalDurability, totalWeight, totalPower, totalParts, openDurability } =
+    solvedResult;
   const weightOver = weightExcess(totalWeight, tonnage);
   const powerOver =
     maxPowerScores > 0 ? excessOver(totalPower, maxPowerScores) : 0;
 
   return (
     <div className={styles.root}>
-      <StatsItem info={totalDurability} version="durability" />
+      <StatsItem
+        info={totalDurability}
+        version="durability"
+        note={
+          typeof openDurability === "number" &&
+          openDurability !== totalDurability
+            ? String(openDurability)
+            : undefined
+        }
+        noteTitle={
+          typeof openDurability === "number" &&
+          openDurability !== totalDurability
+            ? t("durability.openFull", { value: openDurability })
+            : undefined
+        }
+      />
       <StatsItem
         info={totalWeight}
         version="weight"

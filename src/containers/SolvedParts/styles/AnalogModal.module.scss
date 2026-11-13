@@ -180,6 +180,59 @@
   padding-right: 4px;
   overflow-y: auto;
 
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  -webkit-mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position:
+    0 -60px,
+    0 0;
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  mask-repeat: no-repeat;
+  mask-position:
+    0 -60px,
+    0 0;
+  mask-composite: intersect;
+  transition:
+    -webkit-mask-position 0.2s ease-in-out,
+    mask-position 0.2s ease-in-out;
+
+  &.fadeTop {
+    -webkit-mask-position:
+      0 0,
+      0 0;
+    mask-position:
+      0 0,
+      0 0;
+  }
+
+  &.fadeBottom {
+    -webkit-mask-position:
+      0 -60px,
+      0 -60px;
+    mask-position:
+      0 -60px,
+      0 -60px;
+  }
+
+  &.fadeTop.fadeBottom {
+    -webkit-mask-position:
+      0 0,
+      0 -60px;
+    mask-position:
+      0 0,
+      0 -60px;
+  }
+
   &::-webkit-scrollbar {
     width: 6px;
   }

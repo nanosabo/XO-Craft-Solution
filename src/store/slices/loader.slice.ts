@@ -140,6 +140,8 @@ export interface solvedResult {
   totalPower: number;
   totalDurability: number;
   totalParts: number;
+  /** Durability without required, forbidden and locked parts. */
+  openDurability?: number;
 }
 
 export interface LoaderState {
@@ -175,6 +177,9 @@ const cloneSolvedResult = (result: solvedResult): solvedResult => ({
   totalPower: result.totalPower,
   totalDurability: result.totalDurability,
   totalParts: result.totalParts,
+  ...(typeof result.openDurability === "number"
+    ? { openDurability: result.openDurability }
+    : {}),
 });
 
 const snapshotSolution = (
@@ -520,11 +525,10 @@ export const LoaderSlice = createSlice({
         (state, action: { payload: solvedResult }) => {
           state.status = LoaderStateStatus.SOLVED;
           const previousCounts = countsById(state.solutionBeforeSolve);
-          state.solutionBaseline = snapshotSolution(state.solutionBeforeSolve);
-          state.droppedParts = partsToRemove(
-            state.solutionBeforeSolve,
-            action.payload.solution,
-          );
+          state.solutionBaseline = snapshotSolution(action.payload.solution);
+          state.droppedParts = [];
+          state.explicitlyRemoved = [];
+          state.removalSnapshot = null;
           state.solutionBeforeSolve = null;
           state.solvedResult = action.payload;
           syncInstalledParts(state, previousCounts);

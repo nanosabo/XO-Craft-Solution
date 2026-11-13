@@ -1,3 +1,4 @@
+import useScrollFade from "@src/hooks/useScrollFade";
 import classNames from "classnames";
 import { motion } from "framer-motion";
 import { FC, useEffect, useId, useMemo, useState } from "react";
@@ -40,6 +41,9 @@ const AnalogModal: FC<Props> = ({
   const { parts, isLoading, error } = useParts();
   const titleId = useId();
   const [mode, setMode] = useState<"stats" | "size">("stats");
+  const [listElement, setListElement] = useState<HTMLDivElement | null>(null);
+  const listRef = useMemo(() => ({ current: listElement }), [listElement]);
+  const fade = useScrollFade(listRef);
 
   const sourcePart = useMemo(
     () => parts.find((part) => part.id === source.id) ?? null,
@@ -222,7 +226,13 @@ const AnalogModal: FC<Props> = ({
               : t("similar.noMatches")}
           </p>
         ) : (
-          <div className={styles.list}>
+          <div
+            ref={setListElement}
+            className={classNames(styles.list, {
+              [styles.fadeTop]: fade.top,
+              [styles.fadeBottom]: fade.bottom,
+            })}
+          >
             {matches.map(
               ({ part, powerDelta, weightDelta, durabilityDelta }) => {
                 const name = getPartName(part, i18n.language);
@@ -244,8 +254,8 @@ const AnalogModal: FC<Props> = ({
                     <div className={styles.deltas}>
                       <span
                         className={classNames(styles.delta, {
-                          [styles.deltaGood]: powerDelta >= 0,
-                          [styles.deltaBad]: powerDelta < 0,
+                          [styles.deltaGood]: powerDelta <= 0,
+                          [styles.deltaBad]: powerDelta > 0,
                         })}
                       >
                         {formatDelta(

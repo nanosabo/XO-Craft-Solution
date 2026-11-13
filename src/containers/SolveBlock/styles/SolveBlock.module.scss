@@ -145,15 +145,22 @@
   display: inline-block;
   min-width: 18px;
   height: 18px;
-  margin-left: 8px;
+  margin-left: 6px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba($primary, 0.22);
   color: $white;
   @include caption;
   line-height: 18px;
   text-align: center;
   vertical-align: 1px;
+}
+
+.filterRequired {
+  background: #0a4f96;
+}
+
+.filterForbidden {
+  background: #8e1414;
 }
 
 .filterOn {

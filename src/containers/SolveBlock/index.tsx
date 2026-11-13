@@ -36,7 +36,8 @@ const SolveBlock = () => {
     () => new Set(forbidden.map((part) => part.eng_name)),
     [forbidden],
   );
-  const filterCount = requiredParts.length + forbidden.length;
+  const requiredCount = requiredParts.length;
+  const forbiddenCount = forbidden.length;
 
   useEffect(
     () => () => {
@@ -205,14 +206,30 @@ const SolveBlock = () => {
             <button
               type="button"
               className={classNames(styles.export, {
-                [styles.filterOn]: filterCount > 0,
+                [styles.filterOn]: requiredCount > 0 || forbiddenCount > 0,
               })}
               onClick={() => setFilterOpen(true)}
             >
               <SlidersIcon />
               {t("filter.action")}
-              {filterCount > 0 && (
-                <span className={styles.filterCount}>{filterCount}</span>
+              {requiredCount > 0 && (
+                <span
+                  className={classNames(styles.filterCount, styles.filterRequired)}
+                  title={t("filter.required")}
+                >
+                  {requiredCount}
+                </span>
+              )}
+              {forbiddenCount > 0 && (
+                <span
+                  className={classNames(
+                    styles.filterCount,
+                    styles.filterForbidden,
+                  )}
+                  title={t("filter.forbidden")}
+                >
+                  {forbiddenCount}
+                </span>
               )}
             </button>
             <button

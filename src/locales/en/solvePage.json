@@ -26,7 +26,8 @@
     },
     "durability": {
       "title": "Total Durability",
-      "prefix": "pts"
+      "prefix": "pts",
+      "openFull": "Without required, excluded and already installed parts it would be {{value}} pts."
     },
     "partsUsed": {
       "title": "Parts Used",

@@ -16,9 +16,18 @@ type Props = {
   version: "weight" | "power" | "durability" | "partsUsed";
   warning?: string;
   warningTitle?: string;
+  note?: string;
+  noteTitle?: string;
 };
 
-const StatsItem: FC<Props> = ({ info, version, warning, warningTitle }) => {
+const StatsItem: FC<Props> = ({
+  info,
+  version,
+  warning,
+  warningTitle,
+  note,
+  noteTitle,
+}) => {
   const { t } = useTranslation("solvePage", { keyPrefix: "totals" });
 
   const Icon = SolvedIcons[versions[version]];
@@ -33,6 +42,7 @@ const StatsItem: FC<Props> = ({ info, version, warning, warningTitle }) => {
         <b>
           {info}
           <span>{t(`${version}.prefix`)}</span>
+          {note && <small title={noteTitle ?? note}>{note}</small>}
         </b>
       </div>
       <span className={styles.icon}>
