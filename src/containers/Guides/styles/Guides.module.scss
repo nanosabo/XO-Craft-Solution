@@ -230,27 +230,6 @@
   }
 }
 
-.shot {
-  margin: 0 0 22px;
-  overflow: hidden;
-  background: rgba(17, 19, 22, 0.9);
-  border: 1px solid rgba($white, 0.08);
-  border-radius: 12px;
-
-  img {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  figcaption {
-    padding: 10px 14px 12px;
-    color: $default;
-    @include body;
-    line-height: 1.45;
-  }
-}
-
 .section {
   & + & {
     margin-top: 22px;

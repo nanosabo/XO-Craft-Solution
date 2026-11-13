@@ -2,11 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import classNames from "classnames";
 import PageTitle from "@src/components/PageTitle";
-import { contentLanguage } from "@src/helpers/contentLanguage";
 import useScrollFade from "@src/hooks/useScrollFade";
 import { CraftIcon, LogsIcon, MarketIcon } from "@src/ui/icons";
-import craftFormRu from "@src/assets/guides/ru/craft-form.jpg";
-import marketListRu from "@src/assets/guides/ru/market-list.jpg";
 import styles from "./styles/Guides.module.scss";
 
 const guides = [
@@ -29,13 +26,6 @@ const guides = [
 
 type GuideKey = (typeof guides)[number]["key"];
 type ScreenKey = (typeof guides)[number]["screens"][number]["key"];
-
-const shots: Partial<
-  Record<`${GuideKey}.${ScreenKey}`, Partial<Record<"ru" | "en", string>>>
-> = {
-  "craft.form": { ru: craftFormRu },
-  "market.list": { ru: marketListRu },
-};
 
 interface GuideSection {
   title: string;
@@ -67,7 +57,7 @@ const sectionsOf = (value: unknown): GuideSection[] => {
 };
 
 const Guides = () => {
-  const { t, i18n } = useTranslation("guidesPage");
+  const { t } = useTranslation("guidesPage");
   const [guide, setGuide] = useState<GuideKey>("craft");
   const [screen, setScreen] = useState<ScreenKey>("form");
   const contentRef = useRef<HTMLDivElement>(null);
@@ -80,12 +70,6 @@ const Guides = () => {
       returnObjects: true,
     }),
   );
-  const lang = contentLanguage(i18n.language);
-  const shot =
-    shots[`${guide}.${currentScreen.key}` as `${GuideKey}.${ScreenKey}`]?.[
-      lang
-    ];
-
   const openScreen = (nextGuide: GuideKey, nextScreen: ScreenKey) => {
     setGuide(nextGuide);
     setScreen(nextScreen);
@@ -160,18 +144,6 @@ const Guides = () => {
               <h2>{t(`${guide}.screens.${currentScreen.key}.title`)}</h2>
               <p>{t(`${guide}.screens.${currentScreen.key}.lead`)}</p>
             </header>
-
-            {shot && (
-              <figure className={styles.shot}>
-                <img
-                  src={shot}
-                  alt={t(`${guide}.screens.${currentScreen.key}.caption`)}
-                />
-                <figcaption>
-                  {t(`${guide}.screens.${currentScreen.key}.caption`)}
-                </figcaption>
-              </figure>
-            )}
 
             {sections.map((section) => (
               <section key={section.title} className={styles.section}>
