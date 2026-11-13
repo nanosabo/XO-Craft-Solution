@@ -46,6 +46,41 @@ export const requiredPartsSlice = createSlice({
       ];
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
+    addRequiredPart(
+      state: requiredPartsState,
+      action: {
+        payload: {
+          id: string;
+          name: string;
+          eng_name: string;
+          maxCount: number;
+          count?: number;
+        };
+      },
+    ) {
+      const { id, maxCount } = action.payload;
+      state.forbidden = state.forbidden.filter((part) => part.id !== id);
+
+      if (!state.parts.some((part) => part.id === id)) {
+        const limit = Math.max(1, maxCount || 1);
+        const count = Math.min(
+          limit,
+          Math.max(1, Math.round(action.payload.count ?? 1)),
+        );
+        state.parts = [{ ...action.payload, count }, ...state.parts];
+      }
+
+      localStorage.setItem("requiredParts", JSON.stringify(state));
+    },
+    removeRequiredPart(
+      state: requiredPartsState,
+      action: {
+        payload: string;
+      },
+    ) {
+      state.parts = state.parts.filter((part) => part.id !== action.payload);
+      localStorage.setItem("requiredParts", JSON.stringify(state));
+    },
     excludePart(
       state: requiredPartsState,
       action: {
@@ -128,6 +163,8 @@ export const requiredPartsSlice = createSlice({
 
 export const {
   addPart,
+  addRequiredPart,
+  removeRequiredPart,
   removePart,
   inсrementPartCount,
   decrementPartCount,

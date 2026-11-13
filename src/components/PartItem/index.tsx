@@ -3,9 +3,14 @@ import styles from "./styles/PartItem.module.scss";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
 import { contentLanguage } from "@src/helpers/contentLanguage";
-import { BackArrowIcon, RefreshIcon, TrashIcon } from "@src/ui/icons";
+import { BackArrowIcon, MinusIcon, RefreshIcon, TrashIcon } from "@src/ui/icons";
 import { useAppDispatch } from "@src/store/store";
-import { excludePart, returnPart } from "@src/store/slices/requiredParts.slice";
+import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
+import {
+  excludePart,
+  removeRequiredPart,
+  returnPart,
+} from "@src/store/slices/requiredParts.slice";
 
 type Props = {
   id: string;
@@ -13,8 +18,10 @@ type Props = {
   eng_name: string;
   count: number;
   isForbidden?: boolean;
+  isRequired?: boolean;
   onShowAnalogs?: () => void;
   onRestoreOriginal?: () => void;
+  onExcluded?: () => void;
 };
 
 const PartItem: FC<Props> = memo(
@@ -24,8 +31,10 @@ const PartItem: FC<Props> = memo(
     eng_name,
     count,
     isForbidden,
+    isRequired,
     onShowAnalogs,
     onRestoreOriginal,
+    onExcluded,
   }) => {
     const [isActive, setIsActive] = useState(false);
 
@@ -44,7 +53,16 @@ const PartItem: FC<Props> = memo(
       } else {
         setIsActive(false);
         dispatch(excludePart({ id, name, eng_name, maxCount: 0 }));
+        onExcluded?.();
       }
+
+      scheduleSolutionRefresh(dispatch);
+    };
+
+    const onUnpin = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      dispatch(removeRequiredPart(id));
+      scheduleSolutionRefresh(dispatch);
     };
 
     const onClickAnalogs = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -68,18 +86,33 @@ const PartItem: FC<Props> = memo(
         className={classNames(styles.root, {
           [styles.active]: isActive,
           [styles.forbidden]: isForbidden,
+          [styles.required]: isRequired && !isForbidden,
         })}
         onClick={onClick}
       >
-        <p>{partName}</p>
+        <p title={partName}>{partName}</p>
         <img
           src={`https://nanosabo.github.io/xocs-imgs/images/parts/${id}.png`}
           alt={partName}
           draggable={false}
         />
-        <span>
-          {count} {t("totals.partsUsed.prefix")}
+        <span
+          className={styles.count}
+          title={`${count} ${t("totals.partsUsed.prefix")}`}
+        >
+          {count}×
         </span>
+
+        {isRequired && !isForbidden && (
+          <button
+            type="button"
+            className={classNames(styles.action, styles.unpin)}
+            title={t("filter.unpin")}
+            onClick={onUnpin}
+          >
+            <MinusIcon />
+          </button>
+        )}
 
         <div className={styles.actions}>
           {onShowAnalogs && (

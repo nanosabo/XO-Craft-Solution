@@ -23,13 +23,15 @@ const StatsItem: FC<Props> = ({ info, version }) => {
   return (
     <div className={styles.root}>
       <div className={styles.text}>
+        <p>{t(`${version}.title`)}</p>
         <b>
           {info}
           <span>{t(`${version}.prefix`)}</span>
         </b>
-        <p>{t(`${version}.title`)}</p>
       </div>
-      <Icon />
+      <span className={styles.icon}>
+        <Icon />
+      </span>
     </div>
   );
 };

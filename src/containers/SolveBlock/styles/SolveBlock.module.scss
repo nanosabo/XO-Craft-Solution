@@ -1,8 +1,117 @@
+@import "@styles/theme";
+
 .root {
   display: flex;
-  gap: 24px;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
 }
 
 .parts {
-  flex-grow: 3;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.filterCount {
+  display: inline-block;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba($primary, 0.22);
+  color: $white;
+  @include caption;
+  line-height: 18px;
+  text-align: center;
+  vertical-align: 1px;
+}
+
+.filterOn {
+  border-color: rgba($primary, 0.55);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+
+  h2 {
+    @include h2;
+    color: $white;
+  }
+
+  p {
+    max-width: 640px;
+    margin-top: 4px;
+    color: $default;
+    @include caption;
+    line-height: 18px;
+  }
+
+  p.refreshing {
+    color: $primary;
+  }
+}
+
+.export {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba($white, 0.15);
+  border-radius: 8px;
+  background: transparent;
+  color: $white;
+  @include body;
+  line-height: 34px;
+  white-space: nowrap;
+  cursor: pointer;
+
+  svg {
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: -3px;
+  }
+
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.exportDone {
+  border-color: rgba($primary, 0.7);
+  color: $primary;
+}
+
+.exportFailed {
+  border-color: rgba(#c21010, 0.7);
+  color: #ff8d8d;
 }

@@ -41,6 +41,9 @@ export interface LoaderState {
   solvedResult: solvedResult | null;
   error: AppError | null;
   errorReturnTo: string | null;
+  /** A solution update running without leaving the current page. */
+  refreshing: boolean;
+  refreshRequest: string | null;
 }
 
 const initialState: LoaderState = {
@@ -48,6 +51,8 @@ const initialState: LoaderState = {
   solvedResult: storage ? (JSON.parse(storage) as solvedResult) : null,
   error: null,
   errorReturnTo: null,
+  refreshing: false,
+  refreshRequest: null,
 };
 
 export const solveData = createAsyncThunk(
@@ -76,6 +81,28 @@ export const solveData = createAsyncThunk(
       throw error;
     }
   }
+);
+
+export const refreshSolution = createAsyncThunk(
+  "loader/refresh",
+  async (_, { getState }) => {
+    try {
+      const state = getState() as RootState;
+      const { parts, forbidden } = state.requiredParts;
+      const { inventory, inventoryEnabled } = state.settings;
+      const result = await window.ipcRenderer.invoke("solve", {
+        inputs: state.solveInputs,
+        requiredParts: parts,
+        forbidden,
+        inventory,
+        inventoryEnabled,
+      });
+      return result as solvedResult;
+    } catch (error) {
+      logError("solve", error);
+      throw error;
+    }
+  },
 );
 
 export const LoaderSlice = createSlice({
@@ -127,6 +154,8 @@ export const LoaderSlice = createSlice({
         state.solvedResult = null;
         state.error = null;
         state.errorReturnTo = null;
+        state.refreshing = false;
+        state.refreshRequest = null;
       })
       .addCase(
         solveData.fulfilled,
@@ -135,6 +164,25 @@ export const LoaderSlice = createSlice({
           state.solvedResult = action.payload;
         }
       )
+      .addCase(refreshSolution.pending, (state, action) => {
+        state.refreshing = true;
+        state.refreshRequest = action.meta.requestId;
+      })
+      .addCase(refreshSolution.fulfilled, (state, action) => {
+        if (state.refreshRequest !== action.meta.requestId) return;
+        state.refreshing = false;
+        state.refreshRequest = null;
+
+        if (state.status === LoaderStateStatus.SOLVING) return;
+
+        state.solvedResult = action.payload;
+        localStorage.setItem("solution", JSON.stringify(action.payload));
+      })
+      .addCase(refreshSolution.rejected, (state, action) => {
+        if (state.refreshRequest !== action.meta.requestId) return;
+        state.refreshing = false;
+        state.refreshRequest = null;
+      })
       .addCase(solveData.rejected, (state, action) => {
         state.status = LoaderStateStatus.ERROR;
         state.solvedResult = null;

@@ -1,36 +1,83 @@
 @import "@styles/theme";
 
 .root {
-  width: 220px;
-  height: 90px;
+  position: relative;
   display: flex;
   align-items: center;
-  position: relative;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  height: 72px;
+  padding: 0 12px 0 16px;
+  overflow: hidden;
+  border: 1px solid rgba($primary, 0.22);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      90% 160% at 100% 0%,
+      rgba($primary, 0.28) 0%,
+      rgba($primary, 0.05) 46%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, rgba($white, 0.045), transparent 48%),
+    rgba(22, 25, 27, 0.92);
 
-  svg {
-    width: 90px;
-    height: 90px;
+  &::before {
+    content: "";
     position: absolute;
-    right: 0;
-    top: 0;
+    top: 14px;
+    bottom: 14px;
+    left: 0;
+    width: 2px;
+    border-radius: 2px;
+    background: $primary;
+  }
+}
+
+.text {
+  min-width: 0;
+
+  p {
+    color: $default;
+    @include caption;
+    line-height: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .text {
-    b {
-      color: $primary;
-      font-size: 48px;
-      line-height: 30px;
+  b {
+    display: block;
+    margin-top: 2px;
+    color: $white;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 26px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 
-      span {
-        font-weight: 300;
-        font-size: 24px;
-      }
+    span {
+      margin-left: 4px;
+      color: rgba($white, 0.55);
+      font-size: 13px;
+      font-weight: 400;
     }
+  }
+}
 
-    p {
-      @include subtitle;
-      font-weight: 300;
-      color: $white;
-    }
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba($primary, 0.28);
+  border-radius: 12px;
+  background: rgba($primary, 0.12);
+
+  svg {
+    width: 30px;
+    height: 30px;
   }
 }

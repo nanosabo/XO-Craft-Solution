@@ -1,56 +1,195 @@
 @import "@styles/theme";
 
-.wrapper:has(div:nth-child(9)) {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 10px, #000 60px),
-    linear-gradient(270deg, #000 10px, transparent 10px);
-  -webkit-mask-position-y: -50px;
-  -webkit-mask-size: 100% 440px;
-  -webkit-mask-repeat: no-repeat;
-
-  transition: -webkit-mask-position-y 0.15s linear;
-
-  &.scrolled {
-    -webkit-mask-position-y: 0px;
-  }
-}
-
-.overlay {
+.list {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-  width: 100%;
-  overflow: auto;
-  max-height: 383px;
-  padding-right: 12px;
-  padding-bottom: 20px;
+  flex: 1;
+  grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+  grid-auto-rows: 120px;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  margin-right: -16px;
+  padding-right: 8px;
+  padding-bottom: 12px;
+  overflow-y: auto;
 
-  mask-image: linear-gradient(to top, transparent, black),
-    linear-gradient(to left, transparent 10px, black 10px);
-  mask-size: 100% 20000px;
-  mask-position: left bottom;
-  -webkit-mask-image: linear-gradient(to top, transparent, black),
-    linear-gradient(to left, transparent 10px, black 10px);
-  -webkit-mask-size: 100% 20000px;
-  -webkit-mask-position: left bottom;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  -webkit-mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position:
+    0 -60px,
+    0 0;
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 10px, #000 60px),
+    linear-gradient(to top, transparent 10px, #000 60px);
+  mask-size:
+    100% calc(100% + 60px),
+    100% calc(100% + 60px);
+  mask-repeat: no-repeat;
+  mask-position:
+    0 -60px,
+    0 0;
+  mask-composite: intersect;
+  transition:
+    -webkit-mask-position 0.2s ease-in-out,
+    mask-position 0.2s ease-in-out;
 
-  transition: mask-position 0.3s ease-in-out,
-    -webkit-mask-position 0.3s ease-in-out;
+  &.fadeTop {
+    -webkit-mask-position:
+      0 0,
+      0 0;
+    mask-position:
+      0 0,
+      0 0;
+  }
 
-  &:hover {
-    mask-position: left top;
-    -webkit-mask-position: left top;
+  &.fadeBottom {
+    -webkit-mask-position:
+      0 -60px,
+      0 -60px;
+    mask-position:
+      0 -60px,
+      0 -60px;
+  }
+
+  &.fadeTop.fadeBottom {
+    -webkit-mask-position:
+      0 0,
+      0 -60px;
+    mask-position:
+      0 0,
+      0 -60px;
   }
 
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 8px;
   }
 
   &::-webkit-scrollbar-thumb {
     border: 4px solid rgba($primary, 0.5);
-    border-radius: 4px;
+    border-radius: 8px;
+  }
+}
+
+.undo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: 10px;
+}
+
+.undoLabel {
+  flex-shrink: 0;
+  height: 36px;
+  color: $default;
+  @include caption;
+  line-height: 36px;
+}
+
+.undoList {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  max-height: 80px;
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
   }
 
-  &:has(div:nth-child(9)) {
-    padding-right: 8px;
+  &::-webkit-scrollbar-thumb {
+    border: 4px solid rgba($primary, 0.5);
+    border-radius: 8px;
+  }
+}
+
+.chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  height: 36px;
+  padding: 0 4px 0 6px;
+  overflow: hidden;
+  border: 1px solid rgba($primary, 0.35);
+  border-radius: 10px;
+  background: rgba(22, 25, 27, 0.92);
+
+  img,
+  p,
+  button {
+    position: relative;
+    z-index: 1;
+  }
+
+  img {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  p {
+    max-width: 148px;
+    overflow: hidden;
+    color: $white;
+    @include caption;
+    line-height: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.timer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    90deg,
+    rgba($primary, 0.16) 0%,
+    rgba($primary, 0.42) 72%,
+    rgba($primary, 0.72) 100%
+  );
+  transform-origin: left center;
+  animation-name: undoDrain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+@keyframes undoDrain {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.undoButton {
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: $primary;
+  color: $white;
+  @include caption;
+  line-height: 26px;
+  cursor: pointer;
+
+  &:hover {
+    background: #1a86ff;
   }
 }

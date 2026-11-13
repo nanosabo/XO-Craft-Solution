@@ -6,9 +6,10 @@
   "resolve": {
     "title": "Recalculate"
   },
+  "refreshing": "Recalculating...",
   "parts": {
     "title": "Recommended Parts List",
-    "subtitle": "Use the parts selected based on your data. Hover over a part and select «Similar» if any part is out of stock."
+    "subtitle": "Hover a part to swap it for a similar one or drop it from the solution."
   },
   "totals": {
     "weight": {
@@ -34,6 +35,10 @@
   "return": {
     "title": "Return this part"
   },
+  "undo": {
+    "label": "Removed",
+    "action": "Restore"
+  },
   "restore": {
     "title": "Return the original part"
   },
@@ -51,5 +56,31 @@
     "replace": "Replace",
     "close": "Close",
     "tolerances": "Tolerances: power ±{{power}} · mass ±{{weight}} kg · durability −{{durability}} pts"
+  },
+  "export": {
+    "action": "Copy list",
+    "hint": "Copies the parts list as text you can send to a friend",
+    "copied": "Copied",
+    "failed": "Could not copy",
+    "removed": "Dropped from the solution",
+    "line": "{{count}}× {{name}}"
+  },
+  "filter": {
+    "action": "Filter",
+    "title": "Parts filter",
+    "subtitle": "Add required parts or drop unwanted ones, then recalculate.",
+    "search": "Search by name",
+    "quick": "Required part...",
+    "unpin": "Remove from required",
+    "required": "Required",
+    "forbidden": "Unwanted",
+    "emptyRequired": "No required parts yet",
+    "emptyForbidden": "No unwanted parts yet",
+    "noResults": "Nothing found",
+    "add": "Add",
+    "remove": "Remove",
+    "clear": "Clear",
+    "solve": "Recalculate",
+    "close": "Close"
   }
 }
