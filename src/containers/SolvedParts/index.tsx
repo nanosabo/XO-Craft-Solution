@@ -5,22 +5,32 @@ import {
   scheduleSolutionRefresh,
 } from "@src/helpers/scheduleSolutionRefresh";
 import {
+  cancelPendingRefresh,
   forgetRemovedPart,
   noteRemovedPart,
+  removeInstalledPart,
   selectLoaderState,
   setInstalledCount,
   setInstalledParts,
   setSolvedResult,
   solvedPart,
+  solvedResult,
   toggleInstalledPart,
+  installedPart,
 } from "@src/store/slices/loader.slice";
 import {
+  removeRequiredPart,
   returnPart,
   selectRequiredPartsState,
 } from "@src/store/slices/requiredParts.slice";
+import {
+  banExcludedPart,
+  restoreExcludedPart,
+} from "@src/store/slices/settings.slice";
 import { selectSolveInputsState } from "@src/store/slices/solveInputs.slice";
 import { store, useAppDispatch, useAppSelector } from "@src/store/store";
 import { AnimatePresence, motion } from "framer-motion";
+import classNames from "classnames";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getPartImageUrl, Part } from "../Settings/types";
@@ -36,6 +46,13 @@ interface RemovedPart extends solvedPart {
   until: number;
 }
 
+interface BanSnapshot {
+  result: solvedResult;
+  installed: installedPart[];
+}
+
+const cloneData = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
 const SolvedParts = () => {
   const { t, i18n } = useTranslation("solvePage");
   const { solvedResult, installedParts } = useAppSelector(selectLoaderState);
@@ -48,9 +65,15 @@ const SolvedParts = () => {
 
   const [analogPart, setAnalogPart] = useState<solvedPart | null>(null);
   const [removed, setRemoved] = useState<RemovedPart[]>([]);
+  const [hidden, setHidden] = useState<RemovedPart[]>([]);
   const [trayOpen, setTrayOpen] = useState(false);
+  const [hiddenTrayOpen, setHiddenTrayOpen] = useState(false);
   const removedRef = useRef(removed);
+  const hiddenRef = useRef(hidden);
+  const banSnapshotRef = useRef<BanSnapshot | null>(null);
+  const banCommittedRef = useRef(false);
   removedRef.current = removed;
+  hiddenRef.current = hidden;
 
   const requiredIds = useMemo(
     () => new Set(requiredParts.map((part) => part.id)),
@@ -93,6 +116,10 @@ const SolvedParts = () => {
   }, [removed.length]);
 
   useEffect(() => {
+    if (hidden.length > 0) setHiddenTrayOpen(true);
+  }, [hidden.length]);
+
+  useEffect(() => {
     if (removed.length === 0) return;
 
     const nearest = Math.min(...removed.map((part) => part.until));
@@ -104,6 +131,26 @@ const SolvedParts = () => {
 
     return () => window.clearTimeout(timer);
   }, [removed]);
+
+  useEffect(() => {
+    if (hidden.length === 0) {
+      banSnapshotRef.current = null;
+      return;
+    }
+
+    const nearest = Math.min(...hidden.map((part) => part.until));
+    const timer = window.setTimeout(() => {
+      setHidden((current) => {
+        const next = current.filter((part) => part.until > Date.now());
+
+        if (next.length !== current.length) banCommittedRef.current = true;
+
+        return next;
+      });
+    }, Math.max(0, nearest - Date.now()));
+
+    return () => window.clearTimeout(timer);
+  }, [hidden]);
 
   const rememberRemoved = useCallback((part: solvedPart) => {
     dispatch(
@@ -138,6 +185,61 @@ const SolvedParts = () => {
   );
 
   const clearRemoved = () => setRemoved([]);
+
+  const confirmBan = useCallback(
+    (part: solvedPart) => {
+      const name = (
+        contentLanguage(i18n.language) === "ru" ? part.name : part.eng_name
+      ).trim();
+
+      if (!window.confirm(t("ban.confirm", { name }))) return;
+
+      if (hiddenRef.current.length === 0 && solvedResult) {
+        banCommittedRef.current = false;
+        banSnapshotRef.current = {
+          result: cloneData(solvedResult),
+          installed: cloneData(installedParts),
+        };
+      }
+
+      dispatch(banExcludedPart(part.id));
+      dispatch(removeRequiredPart(part.id));
+      dispatch(removeInstalledPart(part.id));
+      setHidden((current) => [
+        { ...part, until: Date.now() + REMOVED_TTL },
+        ...current.filter((item) => item.id !== part.id),
+      ]);
+      scheduleSolutionRefresh(dispatch);
+    },
+    [dispatch, i18n.language, installedParts, solvedResult, t],
+  );
+
+  const undoHidden = useCallback(
+    (id: string) => {
+      const othersRemain = hiddenRef.current.some((part) => part.id !== id);
+      const snapshot = banSnapshotRef.current;
+
+      cancelScheduledSolutionRefresh();
+      dispatch(restoreExcludedPart(id));
+      dispatch(cancelPendingRefresh());
+      setHidden((current) => current.filter((part) => part.id !== id));
+
+      if (othersRemain || !snapshot || banCommittedRef.current) {
+        scheduleSolutionRefresh(dispatch);
+        return;
+      }
+
+      banSnapshotRef.current = null;
+      dispatch(setSolvedResult(snapshot.result));
+      dispatch(setInstalledParts(snapshot.installed));
+    },
+    [dispatch],
+  );
+
+  const clearHidden = () => {
+    banCommittedRef.current = true;
+    setHidden([]);
+  };
 
   const onCloseAnalogs = useCallback(() => setAnalogPart(null), []);
 
@@ -302,6 +404,62 @@ const SolvedParts = () => {
         </div>
       )}
 
+      {hiddenTrayOpen && (
+        <div className={styles.undo}>
+          <span className={styles.undoLabel}>{t("ban.tray")}</span>
+          <div className={styles.undoList}>
+            <AnimatePresence
+              onExitComplete={() => {
+                if (hiddenRef.current.length === 0) setHiddenTrayOpen(false);
+              }}
+            >
+              {hidden.map((part) => {
+                const name = partLabel(part);
+
+                return (
+                  <motion.div
+                    key={part.id}
+                    className={classNames(styles.chip, styles.chipBan)}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                  >
+                    <span
+                      className={classNames(styles.timer, styles.timerBan)}
+                      style={{ animationDuration: `${REMOVED_TTL}ms` }}
+                    />
+                    <img
+                      src={getPartImageUrl(part.id)}
+                      alt=""
+                      draggable={false}
+                    />
+                    <p title={name}>
+                      {part.count > 1 ? `${part.count}× ${name}` : name}
+                    </p>
+                    <button
+                      type="button"
+                      className={classNames(styles.undoButton, styles.undoButtonBan)}
+                      onClick={() => undoHidden(part.id)}
+                    >
+                      {t("undo.action")}
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+          <button
+            type="button"
+            className={styles.undoClear}
+            onClick={clearHidden}
+          >
+            {t("undo.clear")}
+          </button>
+        </div>
+      )}
+
       <SolvedPartsWrapper>
           {orderedSolution.map((item) => {
             const isForbidden = forbiddenNames.has(item.eng_name);
@@ -359,6 +517,11 @@ const SolvedParts = () => {
                 }
                 onExcluded={
                   isForbidden ? undefined : () => rememberRemoved(item)
+                }
+                onBan={
+                  isForbidden || requiredIds.has(item.id)
+                    ? undefined
+                    : () => confirmBan(item)
                 }
               />
             );

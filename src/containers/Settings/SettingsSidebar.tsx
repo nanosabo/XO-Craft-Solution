@@ -6,6 +6,7 @@ import {
   InventoryIcon,
   SettingsIcon,
   SlidersIcon,
+  UnavaibleIcon,
 } from "@src/ui/icons";
 import { selectSettingsState } from "@src/store/slices/settings.slice";
 import { useAppSelector } from "@src/store/store";
@@ -24,13 +25,14 @@ const tabs: Array<{
 }> = [
   { key: "general", icon: <SettingsIcon /> },
   { key: "inventory", icon: <InventoryIcon /> },
+  { key: "excluded", icon: <UnavaibleIcon /> },
   { key: "analog", icon: <SlidersIcon /> },
   { key: "market", icon: <BellIcon /> },
 ];
 
 const SettingsSidebar = ({ activeTab, onChange }: Props) => {
   const { t } = useTranslation("settingsPage");
-  const { inventory } = useAppSelector(selectSettingsState);
+  const { inventory, excludedParts } = useAppSelector(selectSettingsState);
   const version = useAppVersion();
 
   const inventoryCount = Object.keys(inventory).length;
@@ -51,6 +53,9 @@ const SettingsSidebar = ({ activeTab, onChange }: Props) => {
             <span className={styles.sidebarLabel}>{t(`tabs.${key}`)}</span>
             {key === "inventory" && inventoryCount > 0 && (
               <span className={styles.sidebarBadge}>{inventoryCount}</span>
+            )}
+            {key === "excluded" && excludedParts.length > 0 && (
+              <span className={styles.sidebarBadge}>{excludedParts.length}</span>
             )}
           </button>
         ))}

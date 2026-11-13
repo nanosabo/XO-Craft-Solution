@@ -105,6 +105,35 @@
   background: rgba($bg, 0.55);
 }
 
+.toggles {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px 0 12px;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 10px;
+  background: rgba($bg, 0.35);
+
+  span {
+    min-width: 0;
+    overflow: hidden;
+    color: $white;
+    @include caption;
+    line-height: 34px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
 .tab {
   flex: 1;
   height: 32px;

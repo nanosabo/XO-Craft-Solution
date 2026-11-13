@@ -35,9 +35,8 @@ const AnalogModal: FC<Props> = ({
   onReplace,
 }) => {
   const { t, i18n } = useTranslation("solvePage");
-  const { analog, inventory, inventoryEnabled } = useAppSelector(
-    selectSettingsState,
-  );
+  const { analog, inventory, inventoryEnabled, excludedParts, considerExcludedParts } =
+    useAppSelector(selectSettingsState);
   const { parts, isLoading, error } = useParts();
   const titleId = useId();
   const [mode, setMode] = useState<"stats" | "size">("stats");
@@ -69,6 +68,8 @@ const AnalogModal: FC<Props> = ({
         : getAnalogMatches(parts, sourcePart, analog);
 
     return found.filter(({ part }) => {
+      if (!considerExcludedParts && excludedParts.includes(part.id)) return false;
+
       if (forbiddenIds.has(part.id) || forbiddenNames.has(part.eng_name)) {
         return false;
       }
@@ -85,6 +86,8 @@ const AnalogModal: FC<Props> = ({
     });
   }, [
     analog,
+    considerExcludedParts,
+    excludedParts,
     forbiddenIds,
     forbiddenNames,
     inventory,

@@ -2,6 +2,7 @@ import classNames from "classnames";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState } from "react";
 import AnalogSettings from "@src/containers/Settings/AnalogSettings";
+import ExcludedSettings from "@src/containers/Settings/ExcludedSettings";
 import GeneralSettings from "@src/containers/Settings/GeneralSettings";
 import InventorySettings from "@src/containers/Settings/InventorySettings";
 import MarketSettings from "@src/containers/Settings/MarketSettings";
@@ -39,6 +40,7 @@ const SettingsPage = () => {
             >
               {activeTab === "general" && <GeneralSettings />}
               {activeTab === "inventory" && <InventorySettings />}
+              {activeTab === "excluded" && <ExcludedSettings />}
               {activeTab === "analog" && <AnalogSettings />}
               {activeTab === "market" && <MarketSettings />}
             </motion.div>

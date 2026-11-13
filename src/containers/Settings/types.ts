@@ -1,6 +1,11 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
 
-export type SettingsTab = "general" | "inventory" | "analog" | "market";
+export type SettingsTab =
+  | "general"
+  | "inventory"
+  | "excluded"
+  | "analog"
+  | "market";
 
 export interface Part {
   id: string;

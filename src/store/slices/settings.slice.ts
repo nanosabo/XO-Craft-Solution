@@ -26,6 +26,10 @@ export interface SettingsState {
   autoUpdate: boolean;
   /** Marked parts on the solution screen stay through a recalculation. */
   keepInstalledParts: boolean;
+  /** Parts the solver must never suggest, until they are restored. */
+  excludedParts: string[];
+  /** When on, the hidden list stays saved but is used in calculations again. */
+  considerExcludedParts: boolean;
   /** Folder that contains combat.log, or the log file itself. */
   crossoutLogsPath: string | null;
   /** Page opened after the first load. */
@@ -36,7 +40,7 @@ export const SETTINGS_STORAGE_KEY = "settings";
 
 export const createDefaultSettings = (): SettingsState => ({
   inventory: {},
-  inventoryEnabled: false,
+  inventoryEnabled: true,
   analog: {
     power: 50,
     weight: 100,
@@ -51,6 +55,8 @@ export const createDefaultSettings = (): SettingsState => ({
   },
   autoUpdate: true,
   keepInstalledParts: true,
+  excludedParts: [],
+  considerExcludedParts: false,
   crossoutLogsPath: null,
   startScreen: "craft",
 });
@@ -96,6 +102,16 @@ const loadSettings = (): SettingsState => {
         typeof parsed.keepInstalledParts === "boolean"
           ? parsed.keepInstalledParts
           : defaults.keepInstalledParts,
+      inventoryEnabled:
+        typeof parsed.inventoryEnabled === "boolean"
+          ? parsed.inventoryEnabled
+          : true,
+      excludedParts: Array.isArray(parsed.excludedParts)
+        ? parsed.excludedParts.filter(
+            (id): id is string => typeof id === "string" && id.length > 0,
+          )
+        : [],
+      considerExcludedParts: parsed.considerExcludedParts === true,
       crossoutLogsPath: logsPath || null,
       startScreen: isStartScreen(parsed.startScreen)
         ? parsed.startScreen
@@ -183,6 +199,28 @@ export const settingsSlice = createSlice({
       state.keepInstalledParts = action.payload;
       saveSettings(state);
     },
+    banExcludedPart(state, action: PayloadAction<string>) {
+      if (!action.payload || state.excludedParts.includes(action.payload)) {
+        return;
+      }
+
+      state.excludedParts.push(action.payload);
+      saveSettings(state);
+    },
+    restoreExcludedPart(state, action: PayloadAction<string>) {
+      state.excludedParts = state.excludedParts.filter(
+        (id) => id !== action.payload,
+      );
+      saveSettings(state);
+    },
+    clearExcludedParts(state) {
+      state.excludedParts = [];
+      saveSettings(state);
+    },
+    setConsiderExcludedParts(state, action: PayloadAction<boolean>) {
+      state.considerExcludedParts = action.payload;
+      saveSettings(state);
+    },
     setCrossoutLogsPath(state, action: PayloadAction<string | null>) {
       const value = action.payload?.trim() ?? "";
 
@@ -213,6 +251,10 @@ export const {
   setNotificationSettings,
   setAutoUpdate,
   setKeepInstalledParts,
+  banExcludedPart,
+  restoreExcludedPart,
+  clearExcludedParts,
+  setConsiderExcludedParts,
   setCrossoutLogsPath,
   setStartScreen,
   resetSettings,

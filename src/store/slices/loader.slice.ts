@@ -255,6 +255,30 @@ const publishDropped = (state: LoaderState) => {
   state.droppedParts = [...merged.values()];
 };
 
+const withExcludedParts = (
+  forbidden: { id: string; name: string; eng_name: string; count: number; maxCount: number }[],
+  excludedParts: string[],
+) => {
+  const known = new Set(forbidden.map((part) => part.id));
+
+  return [
+    ...forbidden,
+    ...excludedParts.flatMap((id) =>
+      known.has(id)
+        ? []
+        : [
+            {
+              id,
+              name: "",
+              eng_name: `excluded:${id}`,
+              count: 1,
+              maxCount: 0,
+            },
+          ],
+    ),
+  ];
+};
+
 export const solveData = createAsyncThunk(
   "loader/solve",
   async (_, { getState, dispatch }) => {
@@ -262,7 +286,15 @@ export const solveData = createAsyncThunk(
       const state = getState() as RootState;
       const inputs = state.solveInputs;
       const { parts, forbidden } = state.requiredParts;
-      const { inventory, inventoryEnabled, keepInstalledParts } = state.settings;
+      const {
+        inventory,
+        inventoryEnabled,
+        keepInstalledParts,
+        excludedParts,
+        considerExcludedParts,
+      } = state.settings;
+      const hiddenParts = considerExcludedParts ? [] : excludedParts;
+      const blocked = withExcludedParts(forbidden, hiddenParts);
       const shown =
         state.loader.solvedResult?.solution ??
         state.loader.solutionBeforeSolve ??
@@ -270,7 +302,7 @@ export const solveData = createAsyncThunk(
       const required = mergeInstalledParts(
         parts,
         state.loader.installedParts,
-        forbidden,
+        blocked,
         keepInstalledParts,
         new Map(shown.map((part) => [part.id, part.count])),
       );
@@ -281,6 +313,7 @@ export const solveData = createAsyncThunk(
         inventory,
         inventoryEnabled,
         lockedPartIds: required.lockedPartIds,
+        excludedPartIds: hiddenParts,
       })) as solvedResult;
       const ordered = {
         ...result,
@@ -309,12 +342,20 @@ export const refreshSolution = createAsyncThunk(
     try {
       const state = getState() as RootState;
       const { parts, forbidden } = state.requiredParts;
-      const { inventory, inventoryEnabled, keepInstalledParts } = state.settings;
+      const {
+        inventory,
+        inventoryEnabled,
+        keepInstalledParts,
+        excludedParts,
+        considerExcludedParts,
+      } = state.settings;
+      const hiddenParts = considerExcludedParts ? [] : excludedParts;
+      const blocked = withExcludedParts(forbidden, hiddenParts);
       const shown = state.loader.solvedResult?.solution ?? [];
       const required = mergeInstalledParts(
         parts,
         state.loader.installedParts,
-        forbidden,
+        blocked,
         keepInstalledParts,
         new Map(shown.map((part) => [part.id, part.count])),
       );
@@ -325,6 +366,7 @@ export const refreshSolution = createAsyncThunk(
         inventory,
         inventoryEnabled,
         lockedPartIds: required.lockedPartIds,
+        excludedPartIds: hiddenParts,
       })) as solvedResult;
 
       return {
@@ -506,6 +548,10 @@ export const LoaderSlice = createSlice({
 
       publishDropped(state);
     },
+    cancelPendingRefresh(state) {
+      state.refreshRequest = null;
+      state.refreshing = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -587,6 +633,7 @@ export const {
   clearLoaderError,
   forgetRemovedPart,
   noteRemovedPart,
+  cancelPendingRefresh,
   setLoaderError,
   setLoaderInititalStatus,
   setLoaderSolvingStatus,

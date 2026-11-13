@@ -37,6 +37,11 @@
   "exclude": {
     "title": "Exclude from solution"
   },
+  "ban": {
+    "title": "Don't suggest again",
+    "confirm": "\"{{name}}\" will be left out of other calculations too. Are you sure?",
+    "tray": "Hidden"
+  },
   "return": {
     "title": "Return this part"
   },
@@ -104,6 +109,10 @@
     "remove": "Remove",
     "clear": "Clear",
     "live": "The solution updates on its own",
-    "close": "Close"
+    "close": "Close",
+    "inventory": "Use inventory",
+    "inventoryHint": "On — calculations use your stock counts. Off — inventory is ignored and maximum counts are used.",
+    "banned": "Show hidden parts",
+    "bannedHint": "On — hidden parts appear in search and are used in calculations. Off — they stay hidden and are not suggested."
   }
 }

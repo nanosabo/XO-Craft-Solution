@@ -69,6 +69,8 @@
   flex-shrink: 0;
 
   svg {
+    width: 16px;
+    height: 16px;
     color: inherit;
   }
 }
@@ -904,6 +906,17 @@
 
   &:disabled {
     visibility: hidden;
+  }
+}
+
+.excludeButton {
+  border-color: rgba(#c21010, 0.45);
+  color: #ffb4b4;
+
+  &:hover:not(:disabled) {
+    color: $white;
+    border-color: #c21010;
+    background: rgba(#c21010, 0.16);
   }
 }
 

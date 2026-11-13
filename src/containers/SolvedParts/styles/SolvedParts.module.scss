@@ -201,6 +201,27 @@
   }
 }
 
+.chipBan {
+  border-color: rgba(#8b6cff, 0.5);
+}
+
+.timerBan {
+  background: linear-gradient(
+    90deg,
+    rgba(#8b6cff, 0.18) 0%,
+    rgba(#8b6cff, 0.46) 72%,
+    rgba(#9b7cff, 0.78) 100%
+  );
+}
+
+.undoButtonBan {
+  background: #7a5cff;
+
+  &:hover {
+    background: #6848ef;
+  }
+}
+
 .undoClear {
   flex-shrink: 0;
   height: 26px;

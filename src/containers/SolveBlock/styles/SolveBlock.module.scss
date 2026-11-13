@@ -180,6 +180,7 @@
   }
 
   p {
+    position: relative;
     max-width: 640px;
     margin-top: 4px;
     color: $default;
@@ -187,7 +188,14 @@
     line-height: 18px;
   }
 
-  p.refreshing {
+  .subtitleHidden {
+    visibility: hidden;
+  }
+
+  .refreshing {
+    position: absolute;
+    top: 0;
+    left: 0;
     color: $primary;
   }
 }

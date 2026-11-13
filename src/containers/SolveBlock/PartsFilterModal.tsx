@@ -3,6 +3,12 @@ import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import { logWarning } from "@src/helpers/errorLog";
 import { selectLoaderState } from "@src/store/slices/loader.slice";
 import {
+  setConsiderExcludedParts,
+  setInventoryEnabled,
+  selectSettingsState,
+} from "@src/store/slices/settings.slice";
+import Switch from "@src/containers/Settings/components/Switch";
+import {
   addPart,
   decrementPartCount,
   inсrementPartCount,
@@ -33,6 +39,8 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
   const dispatch = useAppDispatch();
   const titleId = useId();
   const { refreshing } = useAppSelector(selectLoaderState);
+  const { inventoryEnabled, considerExcludedParts, excludedParts } =
+    useAppSelector(selectSettingsState);
   const { parts, forbidden, switched } = useAppSelector(
     selectRequiredPartsState,
   );
@@ -87,7 +95,13 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
     debouncedSearch(trimmed, takenIds);
   };
 
-  const visibleResults = results.filter((part) => !takenIds.has(part.id));
+  const excludedIds = useMemo(
+    () => (considerExcludedParts ? new Set<string>() : new Set(excludedParts)),
+    [considerExcludedParts, excludedParts],
+  );
+  const visibleResults = results.filter(
+    (part) => !takenIds.has(part.id) && !excludedIds.has(part.id),
+  );
   const current = switched === "parts" ? parts : forbidden;
   const searching = query.trim().length > 0;
 
@@ -169,6 +183,31 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
             {t("filter.forbidden")}
             <span className={styles.tabCount}>{forbidden.length}</span>
           </button>
+        </div>
+
+        <div className={styles.toggles}>
+          <div className={styles.toggle} title={t("filter.inventoryHint")}>
+            <span>{t("filter.inventory")}</span>
+            <Switch
+              checked={inventoryEnabled}
+              label={t("filter.inventoryHint")}
+              onChange={(enabled) => {
+                dispatch(setInventoryEnabled(enabled));
+                scheduleSolutionRefresh(dispatch);
+              }}
+            />
+          </div>
+          <div className={styles.toggle} title={t("filter.bannedHint")}>
+            <span>{t("filter.banned")}</span>
+            <Switch
+              checked={considerExcludedParts}
+              label={t("filter.bannedHint")}
+              onChange={(shown) => {
+                dispatch(setConsiderExcludedParts(shown));
+                scheduleSolutionRefresh(dispatch);
+              }}
+            />
+          </div>
         </div>
 
         <div className={styles.list}>

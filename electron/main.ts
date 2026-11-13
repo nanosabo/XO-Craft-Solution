@@ -992,6 +992,8 @@ interface DataToSolve {
   inventoryEnabled?: boolean;
   /** Parts whose count is fixed. The solver must not add any more of them. */
   lockedPartIds?: string[];
+  /** Parts the user never wants suggested. Applied even without other filters. */
+  excludedPartIds?: string[];
 }
 
 interface SolveResultPart {
@@ -1179,6 +1181,7 @@ const runSolve = async ({
   inventory = {},
   inventoryEnabled = false,
   lockedPartIds = [],
+  excludedPartIds = [],
 }: DataToSolve): Promise<SolveResult> => {
     if (!fs.existsSync(exePath)) {
       throw new Error(
@@ -1195,8 +1198,9 @@ const runSolve = async ({
     }
 
     const forbiddenNames = forbidden.map((part) => part.eng_name);
+    const excludedIds = new Set(excludedPartIds);
     const parts = loadedParts.filter(
-      (p) => !forbiddenNames.includes(p.eng_name),
+      (p) => !excludedIds.has(p.id) && !forbiddenNames.includes(p.eng_name),
     );
 
     /* ---------------- helpers ---------------- */

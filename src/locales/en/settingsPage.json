@@ -4,6 +4,7 @@
   "tabs": {
     "general": "General",
     "inventory": "Parts inventory",
+    "excluded": "Never suggest",
     "analog": "Analog criteria",
     "market": "Market & notifications"
   },
@@ -120,6 +121,30 @@
     "stats": "{{category}} · {{power}} PS · {{weight}} kg · {{durability}} pts",
     "enabledBadge": "In use",
     "disabledBadge": "Not used"
+  },
+  "excluded": {
+    "title": "Never suggest",
+    "subtitle": "Parts such as Humpback and Buggy tail can be left out of every calculation. The list stays, and the switch below brings them back or hides them again.",
+    "listTitle": "Parts list",
+    "listHint": "Find a part and hide it. Hidden parts stay at the top of the list and can be restored here.",
+    "search": "Search by name...",
+    "onlyHidden": "Hidden only",
+    "clear": "Restore all",
+    "clearHint": "Every hidden part can be used again.",
+    "clearConfirm": "Restore all hidden parts to calculations?",
+    "empty": "No hidden parts yet. Find a part and press Hide.",
+    "notFound": "No parts found",
+    "loading": "Loading parts...",
+    "error": "Could not load the parts list",
+    "hide": "Hide",
+    "restore": "Restore",
+    "badge": "Hidden",
+    "consider": "Use in every calculation",
+    "considerHint": "The hidden list stays. Turn this on to use those parts again, and off to leave them out.",
+    "considerOn": "In use",
+    "considerOff": "Hidden",
+    "considerOnNotice": "Hidden parts are used in every calculation again. The list is kept — turn this off to leave them out.",
+    "considerOffNotice": "Hidden parts stay out of calculations. Turn this on to bring them back without clearing the list."
   },
   "analog": {
     "title": "Analog criteria",

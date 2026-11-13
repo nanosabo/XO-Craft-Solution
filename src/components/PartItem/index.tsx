@@ -3,7 +3,7 @@ import styles from "./styles/PartItem.module.scss";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
 import { contentLanguage } from "@src/helpers/contentLanguage";
-import { BackArrowIcon, MinusIcon, RefreshIcon, TrashIcon } from "@src/ui/icons";
+import { BackArrowIcon, MinusIcon, RefreshIcon, TrashIcon, UnavaibleIcon } from "@src/ui/icons";
 import { useAppDispatch } from "@src/store/store";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import {
@@ -29,6 +29,7 @@ type Props = {
   onShowAnalogs?: () => void;
   onRestoreOriginal?: () => void;
   onExcluded?: () => void;
+  onBan?: () => void;
 };
 
 const PartItem: FC<Props> = memo(
@@ -48,6 +49,7 @@ const PartItem: FC<Props> = memo(
     onShowAnalogs,
     onRestoreOriginal,
     onExcluded,
+    onBan,
   }) => {
     const { t, i18n } = useTranslation("solvePage");
     const dispatch = useAppDispatch();
@@ -68,6 +70,11 @@ const PartItem: FC<Props> = memo(
       }
 
       scheduleSolutionRefresh(dispatch);
+    };
+
+    const onBanClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      onBan?.();
     };
 
     const onUnpin = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -196,6 +203,17 @@ const PartItem: FC<Props> = memo(
             {isForbidden ? <BackArrowIcon /> : <TrashIcon />}
           </button>
         </div>
+
+        {!isForbidden && !isRequired && (
+          <button
+            type="button"
+            className={classNames(styles.action, styles.ban)}
+            title={t("ban.title")}
+            onClick={onBanClick}
+          >
+            <UnavaibleIcon />
+          </button>
+        )}
       </div>
     );
   },

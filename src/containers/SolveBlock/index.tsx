@@ -197,8 +197,13 @@ const SolveBlock = () => {
         <div className={styles.head}>
           <div className={styles.heading}>
             <h2>{t("parts.title")}</h2>
-            <p className={classNames({ [styles.refreshing]: refreshing })}>
-              {refreshing ? t("refreshing") : t("parts.subtitle")}
+            <p>
+              <span className={refreshing ? styles.subtitleHidden : undefined}>
+                {t("parts.subtitle")}
+              </span>
+              {refreshing && (
+                <span className={styles.refreshing}>{t("refreshing")}</span>
+              )}
             </p>
           </div>
           <div className={styles.tools}>

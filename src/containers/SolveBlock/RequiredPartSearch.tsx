@@ -5,6 +5,7 @@ import {
   addRequiredPart,
   selectRequiredPartsState,
 } from "@src/store/slices/requiredParts.slice";
+import { selectSettingsState } from "@src/store/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { SearchIcon } from "@src/ui/icons";
 import { getPartImageUrl } from "../Settings/types";
@@ -19,6 +20,9 @@ const RequiredPartSearch = () => {
   const { t, i18n } = useTranslation("solvePage");
   const dispatch = useAppDispatch();
   const { parts } = useAppSelector(selectRequiredPartsState);
+  const { excludedParts, considerExcludedParts } = useAppSelector(
+    selectSettingsState,
+  );
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const [readyQuery, setReadyQuery] = useState("");
@@ -70,7 +74,13 @@ const RequiredPartSearch = () => {
     };
   }, []);
 
-  const visible = results.filter((part) => !takenIds.has(part.id));
+  const excludedIds = useMemo(
+    () => (considerExcludedParts ? new Set<string>() : new Set(excludedParts)),
+    [considerExcludedParts, excludedParts],
+  );
+  const visible = results.filter(
+    (part) => !takenIds.has(part.id) && !excludedIds.has(part.id),
+  );
 
   const onQueryChange = (value: string) => {
     setQuery(value);
