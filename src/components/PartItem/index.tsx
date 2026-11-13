@@ -21,9 +21,11 @@ type Props = {
   isForbidden?: boolean;
   isRequired?: boolean;
   isInstalled?: boolean;
+  installedCount?: number;
   isReplaced?: boolean;
   replacedTitle?: string;
   onToggleInstalled?: () => void;
+  onInstalledCount?: (count: number) => void;
   onShowAnalogs?: () => void;
   onRestoreOriginal?: () => void;
   onExcluded?: () => void;
@@ -38,9 +40,11 @@ const PartItem: FC<Props> = memo(
     isForbidden,
     isRequired,
     isInstalled,
+    installedCount,
     isReplaced,
     replacedTitle,
     onToggleInstalled,
+    onInstalledCount,
     onShowAnalogs,
     onRestoreOriginal,
     onExcluded,
@@ -87,6 +91,8 @@ const PartItem: FC<Props> = memo(
     const partName =
       contentLanguage(i18n.language) === "ru" ? name : eng_name;
     const btnTitle = isForbidden ? "return" : "exclude";
+    const mounted = Math.min(count, Math.max(1, installedCount ?? count));
+    const canSplit = Boolean(isInstalled && count > 1);
 
     return (
       <div
@@ -95,8 +101,16 @@ const PartItem: FC<Props> = memo(
           [styles.forbidden]: isForbidden,
           [styles.required]: isRequired && !isForbidden,
           [styles.replaced]: isReplaced && !isForbidden,
+          [styles.split]: canSplit,
         })}
         title={isReplaced ? replacedTitle : undefined}
+        style={
+          isInstalled
+            ? ({
+                "--installed": `${(mounted / Math.max(count, 1)) * 100}%`,
+              } as React.CSSProperties)
+            : undefined
+        }
         onClick={onClick}
       >
         <p title={partName}>{partName}</p>
@@ -105,12 +119,40 @@ const PartItem: FC<Props> = memo(
           alt={partName}
           draggable={false}
         />
-        <span
-          className={styles.count}
-          title={`${count} ${t("totals.partsUsed.prefix")}`}
-        >
-          {count}×
-        </span>
+        {canSplit ? (
+          <span
+            className={styles.installedCount}
+            title={t("installed.partial", { count: mounted, total: count })}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              disabled={mounted <= 1}
+              title={t("installed.less")}
+              onClick={() => onInstalledCount?.(mounted - 1)}
+            >
+              −
+            </button>
+            <b>
+              {mounted < count ? `${mounted}/${count}` : `${count}×`}
+            </b>
+            <button
+              type="button"
+              disabled={mounted >= count}
+              title={t("installed.more")}
+              onClick={() => onInstalledCount?.(mounted + 1)}
+            >
+              +
+            </button>
+          </span>
+        ) : (
+          <span
+            className={styles.count}
+            title={`${count} ${t("totals.partsUsed.prefix")}`}
+          >
+            {count}×
+          </span>
+        )}
 
         {isRequired && !isForbidden && (
           <button

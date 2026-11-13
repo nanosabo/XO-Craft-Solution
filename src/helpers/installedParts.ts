@@ -5,6 +5,11 @@ interface MarkedPart {
   name: string;
   eng_name: string;
   count: number;
+  /**
+   * False when the player mounted fewer than the solution showed.
+   * That choice stays partial even if a later solution shrinks to this count.
+   */
+  full?: boolean;
 }
 
 /** Installed parts stay in the solution. The solver may replace everything else. */
@@ -13,6 +18,7 @@ export const mergeInstalledParts = (
   installed: MarkedPart[],
   forbidden: requiredPart[],
   enabled: boolean,
+  solutionCounts?: Map<string, number>,
 ): { parts: requiredPart[]; lockedPartIds: string[] } => {
   if (!enabled || installed.length === 0) {
     return { parts: required, lockedPartIds: [] };
@@ -28,7 +34,10 @@ export const mergeInstalledParts = (
       continue;
     }
 
-    const count = Math.max(1, Math.round(part.count));
+    const shown = solutionCounts?.get(part.id);
+    const stored = Math.max(1, Math.round(part.count));
+    const count =
+      shown == null ? stored : Math.min(stored, Math.max(1, shown));
     const existing = merged.get(part.id);
 
     if (existing) {
@@ -43,7 +52,12 @@ export const mergeInstalledParts = (
       });
     }
 
-    lockedPartIds.push(part.id);
+    // A full mark stays at that count. A partial one keeps what was mounted
+    // and still lets the solver add more, even after the solution has
+    // temporarily shrunk down to the mounted amount.
+    if (part.full !== false && (shown == null || count >= shown)) {
+      lockedPartIds.push(part.id);
+    }
   }
 
   return { parts: [...merged.values()], lockedPartIds };

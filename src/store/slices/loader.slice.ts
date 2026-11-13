@@ -18,7 +18,16 @@ export enum LoaderStateStatus {
 const storage = localStorage.getItem("solution");
 const INSTALLED_PARTS_KEY = "installedParts";
 
-const readInstalledParts = (): solvedPart[] => {
+export interface installedPart {
+  id: string;
+  name: string;
+  eng_name: string;
+  count: number;
+  /** False when the player mounted fewer than the recommended amount. */
+  full?: boolean;
+}
+
+const readInstalledParts = (): installedPart[] => {
   try {
     const raw = localStorage.getItem(INSTALLED_PARTS_KEY);
     if (!raw) return [];
@@ -29,7 +38,7 @@ const readInstalledParts = (): solvedPart[] => {
     return parsed.flatMap((item) => {
       if (!item || typeof item !== "object") return [];
 
-      const part = item as Partial<solvedPart>;
+      const part = item as Partial<installedPart>;
       const count = Math.round(Number(part.count));
 
       if (typeof part.id !== "string" || !part.id) return [];
@@ -41,6 +50,9 @@ const readInstalledParts = (): solvedPart[] => {
           name: typeof part.name === "string" ? part.name : "",
           eng_name: typeof part.eng_name === "string" ? part.eng_name : "",
           count,
+          ...(part.full === false || part.full === true
+            ? { full: part.full }
+            : {}),
         },
       ];
     });
@@ -49,27 +61,51 @@ const readInstalledParts = (): solvedPart[] => {
   }
 };
 
-const saveInstalledParts = (parts: solvedPart[]) => {
+const saveInstalledParts = (parts: installedPart[]) => {
   localStorage.setItem(INSTALLED_PARTS_KEY, JSON.stringify(parts));
 };
 
-/** Drop marks for parts that left the solution and refresh counts for the rest. */
-const syncInstalledParts = (state: LoaderState) => {
+const withFullFlag = (
+  part: installedPart,
+  full: boolean | undefined,
+): installedPart => {
+  if (full === false) return { ...part, full: false };
+  if (full === true) return { ...part, full: true };
+  return part;
+};
+
+/**
+ * A partial mark is remembered even if the part leaves, so a later solve can
+ * bring the recommendation back without freezing it at the mounted amount.
+ * A full mark is dropped once that part is gone.
+ */
+const syncInstalledParts = (
+  state: LoaderState,
+  previousCounts?: Map<string, number>,
+) => {
   const solution = state.solvedResult?.solution;
   if (!solution) return;
 
   const rows = new Map(solution.map((part) => [part.id, part]));
   const next = state.installedParts.flatMap((part) => {
     const row = rows.get(part.id);
-    if (!row) return [];
+    const wasPartial =
+      part.full === false ||
+      (part.full !== true &&
+        (previousCounts?.get(part.id) ?? 0) > part.count);
+
+    if (!row) return wasPartial ? [withFullFlag(part, false)] : [];
 
     return [
-      {
-        id: row.id,
-        name: row.name,
-        eng_name: row.eng_name,
-        count: row.count,
-      },
+      withFullFlag(
+        {
+          id: row.id,
+          name: row.name,
+          eng_name: row.eng_name,
+          count: Math.min(part.count, row.count),
+        },
+        wasPartial ? false : part.full,
+      ),
     ];
   });
 
@@ -120,10 +156,26 @@ export interface LoaderState {
   solutionBaseline: solvedPart[] | null;
   /** Parts the user removed by hand. Kept even if they were not in the baseline. */
   explicitlyRemoved: TrackedRemoval[];
+  /** Selection captured when the current removal batch started. */
+  removalSnapshot: solvedResult | null;
   solutionBeforeSolve: solvedPart[] | null;
   /** Parts marked on the solution screen as already mounted. */
-  installedParts: solvedPart[];
+  installedParts: installedPart[];
 }
+
+const cloneSolvedResult = (result: solvedResult): solvedResult => ({
+  solution: result.solution.map((part) => ({
+    id: part.id,
+    name: part.name,
+    eng_name: part.eng_name,
+    count: part.count,
+    origins: part.origins?.map((origin) => ({ ...origin })),
+  })),
+  totalWeight: result.totalWeight,
+  totalPower: result.totalPower,
+  totalDurability: result.totalDurability,
+  totalParts: result.totalParts,
+});
 
 const snapshotSolution = (
   parts: solvedPart[] | null | undefined,
@@ -145,6 +197,7 @@ const initialState: LoaderState = {
   droppedParts: [],
   solutionBaseline: null,
   explicitlyRemoved: [],
+  removalSnapshot: null,
   solutionBeforeSolve: null,
   installedParts: readInstalledParts(),
 };
@@ -205,11 +258,16 @@ export const solveData = createAsyncThunk(
       const inputs = state.solveInputs;
       const { parts, forbidden } = state.requiredParts;
       const { inventory, inventoryEnabled, keepInstalledParts } = state.settings;
+      const shown =
+        state.loader.solvedResult?.solution ??
+        state.loader.solutionBeforeSolve ??
+        [];
       const required = mergeInstalledParts(
         parts,
         state.loader.installedParts,
         forbidden,
         keepInstalledParts,
+        new Map(shown.map((part) => [part.id, part.count])),
       );
       const result = (await window.ipcRenderer.invoke("solve", {
         inputs,
@@ -247,11 +305,13 @@ export const refreshSolution = createAsyncThunk(
       const state = getState() as RootState;
       const { parts, forbidden } = state.requiredParts;
       const { inventory, inventoryEnabled, keepInstalledParts } = state.settings;
+      const shown = state.loader.solvedResult?.solution ?? [];
       const required = mergeInstalledParts(
         parts,
         state.loader.installedParts,
         forbidden,
         keepInstalledParts,
+        new Map(shown.map((part) => [part.id, part.count])),
       );
       const result = (await window.ipcRenderer.invoke("solve", {
         inputs: state.solveInputs,
@@ -315,9 +375,10 @@ export const LoaderSlice = createSlice({
     },
 
     setSolvedResult(state, action: PayloadAction<solvedResult>) {
+      const previousCounts = countsById(state.solvedResult?.solution);
       state.solvedResult = action.payload;
       localStorage.setItem("solution", JSON.stringify(action.payload));
-      syncInstalledParts(state);
+      syncInstalledParts(state, previousCounts);
     },
 
     toggleInstalledPart(state, action: PayloadAction<solvedPart>) {
@@ -332,7 +393,32 @@ export const LoaderSlice = createSlice({
           name,
           eng_name,
           count: Math.max(1, Math.round(count)),
+          full: true,
         });
+      }
+
+      saveInstalledParts(state.installedParts);
+    },
+
+    setInstalledCount(
+      state,
+      action: PayloadAction<{ id: string; count: number; full?: boolean }>,
+    ) {
+      const part = state.installedParts.find(
+        (item) => item.id === action.payload.id,
+      );
+      if (!part) return;
+
+      const count = Math.round(action.payload.count);
+
+      if (count <= 0) {
+        state.installedParts = state.installedParts.filter(
+          (item) => item.id !== action.payload.id,
+        );
+      } else {
+        part.count = count;
+        if (action.payload.full === false) part.full = false;
+        else if (action.payload.full === true) part.full = true;
       }
 
       saveInstalledParts(state.installedParts);
@@ -345,23 +431,33 @@ export const LoaderSlice = createSlice({
       saveInstalledParts(state.installedParts);
     },
 
-    setInstalledParts(state, action: PayloadAction<solvedPart[]>) {
-      state.installedParts = action.payload.map((part) => ({
-        id: part.id,
-        name: part.name,
-        eng_name: part.eng_name,
-        count: Math.max(1, Math.round(part.count)),
-      }));
+    setInstalledParts(state, action: PayloadAction<installedPart[]>) {
+      state.installedParts = action.payload.map((part) =>
+        withFullFlag(
+          {
+            id: part.id,
+            name: part.name,
+            eng_name: part.eng_name,
+            count: Math.max(1, Math.round(part.count)),
+          },
+          part.full,
+        ),
+      );
       saveInstalledParts(state.installedParts);
     },
 
     clearDroppedParts(state) {
       state.droppedParts = [];
       state.explicitlyRemoved = [];
+      state.removalSnapshot = null;
       state.solutionBaseline = snapshotSolution(state.solvedResult?.solution);
     },
 
     noteRemovedPart(state, action: PayloadAction<solvedPart>) {
+      if (state.explicitlyRemoved.length === 0 && state.solvedResult) {
+        state.removalSnapshot = cloneSolvedResult(state.solvedResult);
+      }
+
       if (!state.solutionBaseline) {
         state.solutionBaseline = snapshotSolution(state.solvedResult?.solution);
       }
@@ -391,6 +487,18 @@ export const LoaderSlice = createSlice({
       state.explicitlyRemoved = state.explicitlyRemoved.filter(
         (part) => part.id !== action.payload,
       );
+      state.refreshRequest = null;
+      state.refreshing = false;
+
+      if (state.explicitlyRemoved.length === 0 && state.removalSnapshot) {
+        const previousCounts = countsById(state.solvedResult?.solution);
+        const restored = cloneSolvedResult(state.removalSnapshot);
+        state.removalSnapshot = null;
+        state.solvedResult = restored;
+        localStorage.setItem("solution", JSON.stringify(restored));
+        syncInstalledParts(state, previousCounts);
+      }
+
       publishDropped(state);
     },
   },
@@ -399,6 +507,7 @@ export const LoaderSlice = createSlice({
       .addCase(solveData.pending, (state) => {
         state.solutionBeforeSolve = state.solvedResult?.solution ?? null;
         state.explicitlyRemoved = [];
+        state.removalSnapshot = null;
         state.status = LoaderStateStatus.SOLVING;
         state.solvedResult = null;
         state.error = null;
@@ -410,6 +519,7 @@ export const LoaderSlice = createSlice({
         solveData.fulfilled,
         (state, action: { payload: solvedResult }) => {
           state.status = LoaderStateStatus.SOLVED;
+          const previousCounts = countsById(state.solutionBeforeSolve);
           state.solutionBaseline = snapshotSolution(state.solutionBeforeSolve);
           state.droppedParts = partsToRemove(
             state.solutionBeforeSolve,
@@ -417,7 +527,7 @@ export const LoaderSlice = createSlice({
           );
           state.solutionBeforeSolve = null;
           state.solvedResult = action.payload;
-          syncInstalledParts(state);
+          syncInstalledParts(state, previousCounts);
         }
       )
       .addCase(refreshSolution.pending, (state, action) => {
@@ -435,9 +545,10 @@ export const LoaderSlice = createSlice({
           state.solutionBaseline = snapshotSolution(state.solvedResult?.solution);
         }
 
+        const previousCounts = countsById(state.solvedResult?.solution);
         state.solvedResult = action.payload;
         localStorage.setItem("solution", JSON.stringify(action.payload));
-        syncInstalledParts(state);
+        syncInstalledParts(state, previousCounts);
 
         for (const part of state.explicitlyRemoved) {
           part.settled = true;
@@ -478,6 +589,7 @@ export const {
   setSolvedResult,
   setInstalledParts,
   removeInstalledPart,
+  setInstalledCount,
   toggleInstalledPart,
 } = LoaderSlice.actions;
 

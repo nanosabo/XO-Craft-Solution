@@ -24,14 +24,29 @@
 
   &.active {
     border-color: $primary;
-    background:
-      radial-gradient(
-        90% 80% at 50% 42%,
-        rgba($primary, 0.78),
-        rgba($primary, 0.34) 72%
-      ),
-      #0b2748;
+    background: rgba(22, 25, 27, 0.92);
     box-shadow: inset 0 0 0 1px rgba($white, 0.28);
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 0;
+      width: var(--installed, 100%);
+      background:
+        linear-gradient(180deg, rgba($white, 0.18), transparent 46%),
+        linear-gradient(90deg, rgba($primary, 0.92), #0b4ea8);
+      pointer-events: none;
+      transition: width 0.2s ease-in-out;
+    }
+
+    > p,
+    > img {
+      position: relative;
+      z-index: 1;
+    }
 
     p {
       font-weight: 600;
@@ -140,6 +155,48 @@
   font-variant-numeric: tabular-nums;
 }
 
+.installedCount {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 3;
+  display: flex;
+  height: 26px;
+  padding: 0 2px;
+  border-radius: 8px;
+  background: $white;
+  color: #04284f;
+
+  button {
+    width: 22px;
+    height: 26px;
+    border-radius: 6px;
+    background: transparent;
+    color: #04284f;
+    font-size: 18px;
+    line-height: 26px;
+    text-align: center;
+
+    &:hover:not(:disabled) {
+      background: rgba(#04284f, 0.1);
+    }
+
+    &:disabled {
+      opacity: 0.35;
+    }
+  }
+
+  b {
+    min-width: 30px;
+    padding: 0 1px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 26px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 .unpin {
   position: absolute;
   top: 6px;
@@ -169,6 +226,24 @@
   gap: 4px;
 
   transition: bottom 0.2s ease-in-out;
+}
+
+.split .actions {
+  right: 84px;
+  bottom: -32px;
+  left: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.split .action {
+  width: 24px;
+  height: 26px;
+}
+
+.split:hover .actions,
+.split:focus-within .actions {
+  bottom: 4px;
 }
 
 .action {
@@ -203,6 +278,15 @@
 
   &:hover {
     background-color: $primary;
+  }
+}
+
+.active .similar {
+  background-color: $white;
+  color: #04284f;
+
+  &:hover {
+    background-color: darken($white, 8%);
   }
 }
 

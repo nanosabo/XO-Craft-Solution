@@ -12,3 +12,11 @@ export const scheduleSolutionRefresh = (dispatch: AppDispatch) => {
     void dispatch(refreshSolution()).catch(() => undefined);
   }, 250);
 };
+
+/** Drop a refresh that has not started, for example after an immediate undo. */
+export const cancelScheduledSolutionRefresh = () => {
+  if (timer === null) return;
+
+  window.clearTimeout(timer);
+  timer = null;
+};

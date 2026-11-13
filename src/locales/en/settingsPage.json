@@ -14,7 +14,7 @@
       "title": "Solution",
       "subtitle": "Parts already mounted on the craft can stay in the selection.",
       "keep": "Keep installed parts in the solution",
-      "keepHint": "Mark them with a click on the solution screen — they glow blue. On recalculation those parts stay, and the rest are replaced."
+      "keepHint": "A click marks the whole amount and the card glows blue. Lower the number on the card if you mounted fewer. On recalculation the marked amount stays."
     },
     "logs": {
       "title": "Crossout logs",

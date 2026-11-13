@@ -1,10 +1,14 @@
 import PartItem from "@src/components/PartItem";
 import { contentLanguage } from "@src/helpers/contentLanguage";
-import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
+import {
+  cancelScheduledSolutionRefresh,
+  scheduleSolutionRefresh,
+} from "@src/helpers/scheduleSolutionRefresh";
 import {
   forgetRemovedPart,
   noteRemovedPart,
   selectLoaderState,
+  setInstalledCount,
   setInstalledParts,
   setSolvedResult,
   solvedPart,
@@ -15,7 +19,7 @@ import {
   selectRequiredPartsState,
 } from "@src/store/slices/requiredParts.slice";
 import { selectSolveInputsState } from "@src/store/slices/solveInputs.slice";
-import { useAppDispatch, useAppSelector } from "@src/store/store";
+import { store, useAppDispatch, useAppSelector } from "@src/store/store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -54,6 +58,10 @@ const SolvedParts = () => {
   );
   const installedIds = useMemo(
     () => new Set(installedParts.map((part) => part.id)),
+    [installedParts],
+  );
+  const installedCounts = useMemo(
+    () => new Map(installedParts.map((part) => [part.id, part.count])),
     [installedParts],
   );
   const forbiddenIds = useMemo(
@@ -114,10 +122,17 @@ const SolvedParts = () => {
 
   const undoRemoved = useCallback(
     (id: string) => {
+      const { explicitlyRemoved, removalSnapshot } = store.getState().loader;
+      const othersRemain = explicitlyRemoved.some((part) => part.id !== id);
+
+      cancelScheduledSolutionRefresh();
       dispatch(returnPart(id));
       dispatch(forgetRemovedPart(id));
       setRemoved((current) => current.filter((part) => part.id !== id));
-      scheduleSolutionRefresh(dispatch);
+
+      if (othersRemain || !removalSnapshot) {
+        scheduleSolutionRefresh(dispatch);
+      }
     },
     [dispatch],
   );
@@ -308,6 +323,16 @@ const SolvedParts = () => {
                 isForbidden={isForbidden}
                 isRequired={requiredIds.has(item.id)}
                 isInstalled={installedIds.has(item.id)}
+                installedCount={installedCounts.get(item.id)}
+                onInstalledCount={(next) =>
+                  dispatch(
+                    setInstalledCount({
+                      id: item.id,
+                      count: next,
+                      full: next >= item.count,
+                    }),
+                  )
+                }
                 onToggleInstalled={() =>
                   dispatch(
                     toggleInstalledPart({

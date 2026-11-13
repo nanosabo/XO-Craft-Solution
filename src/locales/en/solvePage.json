@@ -9,7 +9,7 @@
   "refreshing": "Recalculating...",
   "parts": {
     "title": "Recommended Parts List",
-    "subtitle": "Click a part to mark it as installed. Hover to swap it for a similar one or drop it from the solution."
+    "subtitle": "Click a part to mark the whole amount as installed. Lower the number on the card if you mounted fewer. Hover to swap or remove it."
   },
   "totals": {
     "weight": {
@@ -54,6 +54,11 @@
   },
   "replaced": {
     "title": "Instead of: {{names}}"
+  },
+  "installed": {
+    "partial": "Installed {{count}} of {{total}}",
+    "less": "Mounted fewer",
+    "more": "Mounted more"
   },
   "similar": {
     "action": "Similar",
