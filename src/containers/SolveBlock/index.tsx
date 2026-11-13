@@ -19,7 +19,9 @@ const plain = (value: string) => value.replace(/\u00a0/g, " ");
 
 const SolveBlock = () => {
   const { t, i18n } = useTranslation("solvePage");
-  const { solvedResult, refreshing } = useAppSelector(selectLoaderState);
+  const { solvedResult, refreshing, droppedParts } = useAppSelector(
+    selectLoaderState,
+  );
   const { parts: requiredParts, forbidden } = useAppSelector(
     selectRequiredPartsState,
   );
@@ -80,6 +82,9 @@ const SolveBlock = () => {
       ...(dropped.length
         ? ["", plain(t("export.removed")), ...dropped.map(lineFor)]
         : []),
+      ...(droppedParts.length
+        ? ["", plain(t("takeoff.title")), ...droppedParts.map(lineFor)]
+        : []),
     ].join("\n");
 
     try {
@@ -93,7 +98,7 @@ const SolveBlock = () => {
         mark("failed");
       }
     }
-  }, [forbiddenNames, i18n.language, solvedResult, t]);
+  }, [droppedParts, forbiddenNames, i18n.language, solvedResult, t]);
 
   const exportLabel =
     exportState === "copied"

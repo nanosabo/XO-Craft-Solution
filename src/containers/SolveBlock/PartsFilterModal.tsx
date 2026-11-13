@@ -1,7 +1,7 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import { logWarning } from "@src/helpers/errorLog";
-import { setLoaderSolvingStatus } from "@src/store/slices/loader.slice";
+import { selectLoaderState } from "@src/store/slices/loader.slice";
 import {
   addPart,
   decrementPartCount,
@@ -21,7 +21,6 @@ import debounce from "lodash.debounce";
 import { FC, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { SearchedPart } from "../ColumnInputs/RequiredParts";
 import styles from "./styles/PartsFilterModal.module.scss";
 
@@ -32,8 +31,8 @@ interface Props {
 const PartsFilterModal: FC<Props> = ({ onClose }) => {
   const { t, i18n } = useTranslation("solvePage");
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const titleId = useId();
+  const { refreshing } = useAppSelector(selectLoaderState);
   const { parts, forbidden, switched } = useAppSelector(
     selectRequiredPartsState,
   );
@@ -102,12 +101,6 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
   const clearCurrent = () => {
     for (const part of current) dispatch(removePart(part.id));
     scheduleSolutionRefresh(dispatch);
-  };
-
-  const onSolve = () => {
-    onClose();
-    dispatch(setLoaderSolvingStatus());
-    navigate("/loading");
   };
 
   return createPortal(
@@ -209,6 +202,7 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                     debouncedSearch.cancel();
                     setQuery("");
                     setResults([]);
+                    scheduleSolutionRefresh(dispatch);
                   }}
                 >
                   {t("filter.add")}
@@ -244,9 +238,8 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                       type="button"
                       className={styles.step}
                       onClick={() => {
-                        const removesPart = part.count <= 1;
                         dispatch(decrementPartCount(part.id));
-                        if (removesPart) scheduleSolutionRefresh(dispatch);
+                        scheduleSolutionRefresh(dispatch);
                       }}
                     >
                       −
@@ -256,7 +249,10 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                       type="button"
                       className={styles.step}
                       disabled={part.count >= part.maxCount}
-                      onClick={() => dispatch(inсrementPartCount(part.id))}
+                      onClick={() => {
+                        dispatch(inсrementPartCount(part.id));
+                        scheduleSolutionRefresh(dispatch);
+                      }}
                     >
                       +
                     </button>
@@ -287,9 +283,13 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
           >
             {t("filter.clear")}
           </button>
-          <button type="button" className={styles.solve} onClick={onSolve}>
-            {t("filter.solve")}
-          </button>
+          <p
+            className={classNames(styles.status, {
+              [styles.statusOn]: refreshing,
+            })}
+          >
+            {refreshing ? t("refreshing") : t("filter.live")}
+          </p>
         </div>
       </motion.div>
     </motion.div>,

@@ -2,6 +2,9 @@ import PartItem from "@src/components/PartItem";
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import {
+  clearDroppedParts,
+  forgetRemovedPart,
+  noteRemovedPart,
   selectLoaderState,
   setSolvedResult,
   solvedPart,
@@ -30,7 +33,7 @@ interface RemovedPart extends solvedPart {
 
 const SolvedParts = () => {
   const { t, i18n } = useTranslation("solvePage");
-  const { solvedResult } = useAppSelector(selectLoaderState);
+  const { solvedResult, droppedParts } = useAppSelector(selectLoaderState);
   const { parts: requiredParts, forbidden } = useAppSelector(
     selectRequiredPartsState,
   );
@@ -90,15 +93,24 @@ const SolvedParts = () => {
   }, [removed]);
 
   const rememberRemoved = useCallback((part: solvedPart) => {
+    dispatch(
+      noteRemovedPart({
+        id: part.id,
+        name: part.name,
+        eng_name: part.eng_name,
+        count: part.count,
+      }),
+    );
     setRemoved((current) => [
       { ...part, until: Date.now() + REMOVED_TTL },
       ...current.filter((item) => item.id !== part.id),
     ]);
-  }, []);
+  }, [dispatch]);
 
   const undoRemoved = useCallback(
     (id: string) => {
       dispatch(returnPart(id));
+      dispatch(forgetRemovedPart(id));
       setRemoved((current) => current.filter((part) => part.id !== id));
       scheduleSolutionRefresh(dispatch);
     },
@@ -167,6 +179,60 @@ const SolvedParts = () => {
 
   return (
     <>
+      <AnimatePresence>
+        {droppedParts.length > 0 && (
+          <motion.section
+            className={styles.takeoff}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+          >
+            <div className={styles.takeoffHead}>
+              <div>
+                <p>{t("takeoff.title")}</p>
+                <span>{t("takeoff.subtitle")}</span>
+              </div>
+              <button
+                type="button"
+                className={styles.takeoffHide}
+                onClick={() => dispatch(clearDroppedParts())}
+              >
+                {t("takeoff.hide")}
+              </button>
+            </div>
+            <div className={styles.takeoffList}>
+              {droppedParts.map((part, index) => {
+                const name = partLabel(part);
+
+                return (
+                  <motion.div
+                    key={part.id}
+                    className={styles.takeoffItem}
+                    title={`${part.count}× ${name}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.2,
+                      ease: "easeOut",
+                      delay: Math.min(index, 10) * 0.035,
+                    }}
+                  >
+                    <img
+                      src={getPartImageUrl(part.id)}
+                      alt=""
+                      draggable={false}
+                    />
+                    <p>{name}</p>
+                    <b>{part.count}×</b>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
+
       {trayOpen && (
         <div className={styles.undo}>
           <span className={styles.undoLabel}>{t("undo.label")}</span>

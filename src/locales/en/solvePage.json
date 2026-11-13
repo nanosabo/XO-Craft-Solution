@@ -39,6 +39,11 @@
     "label": "Removed",
     "action": "Restore"
   },
+  "takeoff": {
+    "title": "Remove from the vehicle",
+    "subtitle": "Everything that left the solution. Later recalculations add to this list until you hide it.",
+    "hide": "Hide"
+  },
   "restore": {
     "title": "Return the original part"
   },
@@ -68,7 +73,7 @@
   "filter": {
     "action": "Filter",
     "title": "Parts filter",
-    "subtitle": "Add required parts or drop unwanted ones, then recalculate.",
+    "subtitle": "Add required parts or drop unwanted ones. The solution recalculates on its own.",
     "search": "Name or size",
     "quick": "Name or size...",
     "unpin": "Remove from required",
@@ -80,7 +85,7 @@
     "add": "Add",
     "remove": "Remove",
     "clear": "Clear",
-    "solve": "Recalculate",
+    "live": "The solution updates on its own",
     "close": "Close"
   }
 }

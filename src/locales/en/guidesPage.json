@@ -64,7 +64,7 @@
           {
             "title": "When a part is missing",
             "paragraphs": [
-              "Hover a row and choose Similar. A replacement stays in the same category and inside the tolerances from Settings. Exclude from solution drops a part, and Recalculate builds the list again. A removed part can be put back."
+              "Hover a row and choose Similar. A replacement stays in the same category and inside the tolerances from Settings. Exclude from solution drops a part, and the list recalculates right away. A removed part can be put back."
             ],
             "steps": []
           }

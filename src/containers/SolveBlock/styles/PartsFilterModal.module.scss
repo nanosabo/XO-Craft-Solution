@@ -288,21 +288,17 @@
   gap: 8px;
 }
 
-.clear,
-.solve {
+.clear {
   height: 36px;
   padding: 0 14px;
+  border: 1px solid rgba($white, 0.15);
   border-radius: 8px;
+  background: transparent;
+  color: $white;
   @include body;
   line-height: 34px;
   white-space: nowrap;
   cursor: pointer;
-}
-
-.clear {
-  border: 1px solid rgba($white, 0.15);
-  background: transparent;
-  color: $white;
 
   &:hover:not(:disabled) {
     border-color: rgba(#ff5a5a, 0.7);
@@ -315,13 +311,15 @@
   }
 }
 
-.solve {
+.status {
   margin-left: auto;
-  border: 1px solid transparent;
-  background: $primary;
-  color: $white;
+  height: 36px;
+  color: $default;
+  @include caption;
+  line-height: 36px;
+  white-space: nowrap;
+}
 
-  &:hover {
-    background: #1a86ff;
-  }
+.statusOn {
+  color: $primary;
 }
