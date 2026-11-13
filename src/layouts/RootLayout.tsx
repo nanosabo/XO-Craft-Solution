@@ -1,4 +1,5 @@
 import AppOpenLog from "@src/components/AppOpenLog";
+import NotificationModeSync from "@src/components/NotificationModeSync";
 import ErrorBoundary from "@src/components/ErrorBoundary";
 import GlobalErrorHandler from "@src/components/GlobalErrorHandler";
 import UpdaterBridge from "@src/components/UpdaterBridge";
@@ -22,6 +23,7 @@ const RootLayout: FC<PropsWithChildren> = ({ children }) => {
           <Header />
           <main>{children}</main>
         </ErrorBoundary>
+        <NotificationModeSync />
         <UpdaterBridge />
         <UpdateToast />
       </HashRouter>

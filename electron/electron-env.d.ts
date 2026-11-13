@@ -31,6 +31,7 @@ interface Window {
       enabled: boolean,
     ): Promise<{ enabled: boolean; available: boolean }>;
     getIsMirror(): Promise<boolean>;
+    getIsDev(): Promise<boolean>;
     getUpdateInfo(): Promise<{
       version: string;
       releaseNotes: string | null;
@@ -59,6 +60,21 @@ interface Window {
       body: string;
       icon?: string;
     }): Promise<boolean>;
+    setSystemNotifications(enabled: boolean): void;
+    onToast(
+      listener: (toast: {
+        id: string;
+        title: string;
+        body: string;
+        icon?: string;
+        closeLabel: string;
+        clearLabel: string;
+      }) => void,
+    ): () => void;
+    notifyToastReady(): void;
+    getIdleSeconds(): Promise<number>;
+    focusFromToast(): void;
+    resizeToast(height: number): void;
     openExternal(url: string): Promise<boolean>;
     openUserData(): Promise<boolean>;
     pickNotificationSound(): Promise<

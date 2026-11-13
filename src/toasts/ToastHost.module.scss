@@ -1,0 +1,135 @@
+@import "@styles/theme";
+
+.viewport {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  overflow: hidden;
+}
+
+.stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 12px;
+}
+
+.slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 240ms ease,
+    opacity 180ms ease;
+}
+
+.slotOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.clip > .card,
+.clip > .clearAll {
+  margin-bottom: 8px;
+}
+
+.slot:last-child .clip > .card,
+.slot:last-child .clip > .clearAll {
+  margin-bottom: 0;
+}
+
+.card,
+.clearAll {
+  position: relative;
+  z-index: 1;
+  background: $secondary;
+  border: 1px solid rgba($white, 0.1);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.clearAll {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: $white;
+  font-size: 13px;
+  line-height: 32px;
+  text-align: center;
+  cursor: pointer;
+
+  &:hover {
+    background: $input;
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin-top: 1px;
+  object-fit: contain;
+  background: $input;
+  border-radius: 8px;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  color: $white;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.body {
+  display: -webkit-box;
+  margin-top: 2px;
+  overflow: hidden;
+  color: $default;
+  font-size: 13px;
+  line-height: 17px;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: $default;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+
+  svg {
+    display: block;
+    margin: 5px auto 0;
+  }
+
+  &:hover {
+    color: $white;
+    background: rgba($white, 0.08);
+  }
+}
+

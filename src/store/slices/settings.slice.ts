@@ -34,6 +34,8 @@ export interface SettingsState {
   crossoutLogsPath: string | null;
   /** Page opened after the first load. */
   startScreen: StartScreen;
+  /** When on, alerts use the operating system instead of the in-app toasts. */
+  systemNotifications: boolean;
 }
 
 export const SETTINGS_STORAGE_KEY = "settings";
@@ -59,6 +61,7 @@ export const createDefaultSettings = (): SettingsState => ({
   considerExcludedParts: false,
   crossoutLogsPath: null,
   startScreen: "craft",
+  systemNotifications: false,
 });
 
 const loadSettings = (): SettingsState => {
@@ -116,6 +119,7 @@ const loadSettings = (): SettingsState => {
       startScreen: isStartScreen(parsed.startScreen)
         ? parsed.startScreen
         : defaults.startScreen,
+      systemNotifications: parsed.systemNotifications === true,
       inventory:
         parsed.inventory && typeof parsed.inventory === "object"
           ? parsed.inventory
@@ -233,6 +237,10 @@ export const settingsSlice = createSlice({
       state.startScreen = action.payload;
       saveSettings(state);
     },
+    setSystemNotifications(state, action: PayloadAction<boolean>) {
+      state.systemNotifications = action.payload;
+      saveSettings(state);
+    },
     resetSettings() {
       const defaults = createDefaultSettings();
       saveSettings(defaults);
@@ -257,6 +265,7 @@ export const {
   setConsiderExcludedParts,
   setCrossoutLogsPath,
   setStartScreen,
+  setSystemNotifications,
   resetSettings,
 } = settingsSlice.actions;
 

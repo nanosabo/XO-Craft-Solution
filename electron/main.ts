@@ -9,7 +9,6 @@ import {
   net,
   shell,
   Tray,
-  Notification,
   screen,
 } from "electron";
 import type { OpenDialogOptions } from "electron";
@@ -94,10 +93,20 @@ import {
   APP_LOG_PROTOCOL,
 } from "../src/helpers/appLogLink";
 import locales from "./locales.json";
+import {
+  bindToastAnchor,
+  destroyToasts,
+  initToasts,
+  showAppNotification,
+} from "./toasts";
 import axios from "axios";
 
 installMainLogging();
 installIpcErrorLogging();
+
+if (process.platform === "linux") {
+  app.commandLine.appendSwitch("enable-transparent-visuals");
+}
 
 app.setAppUserModelId("xo.craft.solution");
 
@@ -177,6 +186,7 @@ app.on("open-url", (event, url) => {
 
 app.on("before-quit", () => {
   closeCrossoutBrowser();
+  destroyToasts();
 });
 
 let win: BrowserWindow | null;
@@ -206,6 +216,12 @@ interface Part {
 }
 
 let lang: UiLanguage = "ru";
+
+initToasts({
+  getWindow: () => win ?? null,
+  getLanguage: () => lang,
+  iconPath,
+});
 
 const PARTS_URL = "https://nanosabo.github.io/xocs-imgs/actual_parts.json";
 const partsCachePath = path.join(app.getPath("userData"), "actual_parts.json");
@@ -351,6 +367,8 @@ function createWindow() {
     },
   });
 
+  if (win) bindToastAnchor(win);
+
   win.webContents.on("render-process-gone", (_event, details) => {
     writeLog("error", "renderer", "Renderer process gone", details);
   });
@@ -441,13 +459,10 @@ ipcMain.on("close", () => {
   // const win = BrowserWindow.fromWebContents(e.sender);
   // win?.close();
   win?.hide();
-  const notification = new Notification({
+  showAppNotification({
     title: locales[lang].hide.title,
     body: locales[lang].hide.body,
-    icon: iconPath,
   });
-
-  notification.show();
 });
 
 ipcMain.on("openDiscordExternal", () => {
@@ -773,6 +788,8 @@ ipcMain.handle("get-is-mirror", () => {
   return isMirror;
 });
 
+ipcMain.handle("get-is-dev", () => IS_DEV);
+
 ipcMain.handle("get-update-info", () => {
   return readUpdateInfo();
 });
@@ -819,35 +836,7 @@ ipcMain.handle(
     _,
     { title, body, icon }: { title: string; body: string; icon?: string },
   ) => {
-    if (!Notification.isSupported()) return false;
-
-    let notificationIcon: Electron.NativeImage | string = iconPath;
-
-    if (icon) {
-      try {
-        const image = nativeImage.createFromDataURL(icon);
-
-        if (!image.isEmpty()) {
-          notificationIcon = image;
-        }
-      } catch {
-        /* Fall back to the application icon. */
-      }
-    }
-
-    const notification = new Notification({
-      title,
-      body,
-      icon: notificationIcon,
-    });
-
-    notification.on("click", () => {
-      win?.show();
-      win?.focus();
-    });
-
-    notification.show();
-    return true;
+    return showAppNotification({ title, body, icon });
   },
 );
 
@@ -1454,13 +1443,7 @@ app.whenReady().then(async () => {
     getWindow: () => win,
     getLanguage: () => lang,
     notify: (title, body) => {
-      if (!Notification.isSupported()) return;
-
-      new Notification({
-        title,
-        body,
-        icon: nativeImage.createFromPath(iconPath),
-      }).show();
+      showAppNotification({ title, body });
     },
   });
 

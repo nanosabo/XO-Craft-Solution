@@ -18,7 +18,7 @@
   },
   "general": {
     "title": "General settings",
-    "subtitle": "Interface language, start screen, launch at startup, updates and app data.",
+    "subtitle": "Interface language, start screen, launch at startup, notifications, updates and app data.",
     "installed": {
       "title": "Solution",
       "subtitle": "Parts already mounted on the craft can stay in the selection.",
@@ -54,6 +54,16 @@
       "openAtLogin": "Launch at system startup",
       "openAtLoginHint": "The app opens after you sign in.",
       "unavailable": "Launch at startup only works in the installed version of the app."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Covers the market, hiding to the tray, and a ready update.",
+      "system": "Use the system's own notifications",
+      "systemHint": "On — the operating system shows them. Off — they appear in the bottom-right corner of the monitor where the app is open, above other windows, with a transparent background.",
+      "test": "Test a notification",
+      "testHint": "Each click adds one more notification.",
+      "testTitle": "Test notification {{n}}",
+      "testBody": "This is what notification number {{n}} looks like."
     },
     "updates": {
       "title": "Updates",

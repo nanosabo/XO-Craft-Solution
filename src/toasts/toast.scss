@@ -1,0 +1,23 @@
+@import "@styles/theme";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  background-image: none;
+}
+
+body {
+  font-family: "TT Commons", sans-serif;
+  color: $white;
+  user-select: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

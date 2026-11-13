@@ -4,6 +4,7 @@ import {
   selectSettingsState,
   setAutoUpdate,
   setStartScreen,
+  setSystemNotifications,
 } from "@src/store/slices/settings.slice";
 import { normalizeUiLanguage, type UiLanguage } from "@src/helpers/contentLanguage";
 import useAppVersion from "./useAppVersion";
@@ -11,6 +12,7 @@ import AboutSection from "./general/AboutSection";
 import DataSection from "./general/DataSection";
 import LanguageSection from "./general/LanguageSection";
 import StartScreenSection from "./general/StartScreenSection";
+import NotificationsSection from "./general/NotificationsSection";
 import StartupSection from "./general/StartupSection";
 import UpdatesSection from "./general/UpdatesSection";
 import styles from "./styles/Settings.module.scss";
@@ -18,7 +20,8 @@ import styles from "./styles/Settings.module.scss";
 const GeneralSettings = () => {
   const { t, i18n } = useTranslation("settingsPage");
   const dispatch = useAppDispatch();
-  const { autoUpdate, startScreen } = useAppSelector(selectSettingsState);
+  const { autoUpdate, startScreen, systemNotifications } =
+    useAppSelector(selectSettingsState);
   const version = useAppVersion();
 
   const language = normalizeUiLanguage(i18n.language);
@@ -43,6 +46,11 @@ const GeneralSettings = () => {
       />
 
       <StartupSection />
+
+      <NotificationsSection
+        systemNotifications={systemNotifications}
+        onChange={(enabled) => dispatch(setSystemNotifications(enabled))}
+      />
 
       <UpdatesSection
         version={version}

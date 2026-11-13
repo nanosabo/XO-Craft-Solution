@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setLaunchAtLogin: (enabled: boolean) =>
     ipcRenderer.invoke("set-launch-at-login", enabled),
   getIsMirror: () => ipcRenderer.invoke("get-is-mirror"),
+  getIsDev: () => ipcRenderer.invoke("get-is-dev") as Promise<boolean>,
   getUpdateInfo: () => ipcRenderer.invoke("get-update-info"),
   getReleaseFeed: () => ipcRenderer.invoke("get-release-feed"),
   checkForUpdates: (automatic?: boolean) =>
@@ -46,6 +47,41 @@ contextBridge.exposeInMainWorld("electronAPI", {
     body: string;
     icon?: string;
   }) => ipcRenderer.invoke("show-notification", payload),
+  setSystemNotifications: (enabled: boolean) =>
+    ipcRenderer.send("set-system-notifications", enabled),
+  onToast: (
+    listener: (toast: {
+      id: string;
+      title: string;
+      body: string;
+      icon?: string;
+      closeLabel: string;
+      clearLabel: string;
+    }) => void,
+  ) => {
+    const wrapped = (
+      _: Electron.IpcRendererEvent,
+      toast: {
+        id: string;
+        title: string;
+        body: string;
+        icon?: string;
+        closeLabel: string;
+        clearLabel: string;
+      },
+    ) => {
+      listener(toast);
+    };
+
+    ipcRenderer.on("toast-push", wrapped);
+
+    return () => ipcRenderer.removeListener("toast-push", wrapped);
+  },
+  notifyToastReady: () => ipcRenderer.send("toast-ready"),
+  getIdleSeconds: () =>
+    ipcRenderer.invoke("get-idle-seconds") as Promise<number>,
+  focusFromToast: () => ipcRenderer.send("toast-focus"),
+  resizeToast: (height: number) => ipcRenderer.send("toast-resize", height),
   openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
   openUserData: () => ipcRenderer.invoke("open-user-data"),
   pickNotificationSound: () => ipcRenderer.invoke("pick-notification-sound"),
@@ -260,11 +296,15 @@ function useLoading() {
 
 // ----------------------------------------------------------------------
 
-const { appendLoading, removeLoading } = useLoading();
-domReady().then(appendLoading);
+const toastHost = new URLSearchParams(window.location.search).has("toast");
 
-window.onmessage = (ev) => {
-  ev.data.payload === "removeLoading" && removeLoading();
-};
+if (!toastHost) {
+  const { appendLoading, removeLoading } = useLoading();
+  domReady().then(appendLoading);
 
-setTimeout(removeLoading, 4999);
+  window.onmessage = (ev) => {
+    ev.data.payload === "removeLoading" && removeLoading();
+  };
+
+  setTimeout(removeLoading, 4999);
+}
