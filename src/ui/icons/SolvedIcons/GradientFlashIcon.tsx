@@ -23,8 +23,8 @@ const GradientFlashIcon = () => {
           y2="89.9995"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0077FF" />
-          <stop offset="1" stopColor="#0077FF" stopOpacity="0" />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
         <clipPath id="clip0_202_2558">
           <rect width="90" height="90" fill="white" />

@@ -90,6 +90,18 @@
     border-color: rgba(#ff5a5a, 0.7);
   }
 
+  &.replaced:not(.active) {
+    border-color: rgba(#f5a524, 0.7);
+    background:
+      linear-gradient(180deg, rgba(#f5a524, 0.2), transparent 58%),
+      rgba(22, 25, 27, 0.92);
+  }
+
+  &.replaced:hover,
+  &.replaced:focus-within {
+    border-color: #f5a524;
+  }
+
   img {
     width: 68px;
     height: 68px;

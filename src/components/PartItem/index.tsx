@@ -19,6 +19,8 @@ type Props = {
   count: number;
   isForbidden?: boolean;
   isRequired?: boolean;
+  isReplaced?: boolean;
+  replacedTitle?: string;
   onShowAnalogs?: () => void;
   onRestoreOriginal?: () => void;
   onExcluded?: () => void;
@@ -32,6 +34,8 @@ const PartItem: FC<Props> = memo(
     count,
     isForbidden,
     isRequired,
+    isReplaced,
+    replacedTitle,
     onShowAnalogs,
     onRestoreOriginal,
     onExcluded,
@@ -87,7 +91,9 @@ const PartItem: FC<Props> = memo(
           [styles.active]: isActive,
           [styles.forbidden]: isForbidden,
           [styles.required]: isRequired && !isForbidden,
+          [styles.replaced]: isReplaced && !isForbidden,
         })}
+        title={isReplaced ? replacedTitle : undefined}
         onClick={onClick}
       >
         <p title={partName}>{partName}</p>

@@ -75,9 +75,45 @@
   border: 1px solid rgba($primary, 0.28);
   border-radius: 12px;
   background: rgba($primary, 0.12);
+  color: $primary;
 
   svg {
     width: 30px;
     height: 30px;
+  }
+}
+
+.exceeded {
+  border-color: rgba(#ff5a5a, 0.45);
+  background:
+    radial-gradient(
+      90% 160% at 100% 0%,
+      rgba(#ff5a5a, 0.28) 0%,
+      rgba(#ff5a5a, 0.05) 46%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, rgba($white, 0.045), transparent 48%),
+    rgba(22, 25, 27, 0.92);
+
+  &::before {
+    background: #ff5a5a;
+  }
+
+  .text p {
+    color: #ffb4b4;
+  }
+
+  .text b {
+    color: #ff8a8a;
+
+    span {
+      color: rgba(#ffb4b4, 0.75);
+    }
+  }
+
+  .icon {
+    border-color: rgba(#ff5a5a, 0.4);
+    background: rgba(#ff5a5a, 0.14);
+    color: #ff5a5a;
   }
 }

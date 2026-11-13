@@ -1,6 +1,7 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { clearDroppedParts, selectLoaderState } from "@src/store/slices/loader.slice";
 import { selectRequiredPartsState } from "@src/store/slices/requiredParts.slice";
+import { selectSolveInputsState } from "@src/store/slices/solveInputs.slice";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { CopyIcon, SlidersIcon } from "@src/ui/icons";
 import { getPartImageUrl } from "@src/containers/Settings/types";
@@ -9,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SolvedParts from "../SolvedParts";
-import SolveTotal from "../SolveTotal";
+import SolveTotal, { excessOver, weightExcess } from "../SolveTotal";
 import PartsFilterModal from "./PartsFilterModal";
 import RequiredPartSearch from "./RequiredPartSearch";
 import styles from "./styles/SolveBlock.module.scss";
@@ -27,6 +28,7 @@ const SolveBlock = () => {
   const { parts: requiredParts, forbidden } = useAppSelector(
     selectRequiredPartsState,
   );
+  const { tonnage, maxPowerScores } = useAppSelector(selectSolveInputsState);
   const [exportState, setExportState] = useState<ExportState>("idle");
   const [filterOpen, setFilterOpen] = useState(false);
   const timer = useRef<number | null>(null);
@@ -73,12 +75,27 @@ const SolveBlock = () => {
       forbiddenNames.has(item.eng_name),
     );
 
+    const weightOver = weightExcess(solvedResult.totalWeight, tonnage);
+    const powerOver =
+      maxPowerScores > 0
+        ? excessOver(solvedResult.totalPower, maxPowerScores)
+        : 0;
+    const limits = [
+      weightOver > 0
+        ? plain(t("totals.weight.exceededFull", { over: weightOver }))
+        : "",
+      powerOver > 0
+        ? plain(t("totals.power.exceededFull", { over: powerOver }))
+        : "",
+    ].filter(Boolean);
+
     const text = [
       plain(t("header.title")),
       stat("durability", solvedResult.totalDurability),
       stat("weight", solvedResult.totalWeight),
       stat("power", solvedResult.totalPower),
       stat("partsUsed", solvedResult.totalParts),
+      ...limits,
       "",
       ...kept.map(lineFor),
       ...(dropped.length
@@ -100,7 +117,15 @@ const SolveBlock = () => {
         mark("failed");
       }
     }
-  }, [droppedParts, forbiddenNames, i18n.language, solvedResult, t]);
+  }, [
+    droppedParts,
+    forbiddenNames,
+    i18n.language,
+    maxPowerScores,
+    solvedResult,
+    t,
+    tonnage,
+  ]);
 
   const exportLabel =
     exportState === "copied"

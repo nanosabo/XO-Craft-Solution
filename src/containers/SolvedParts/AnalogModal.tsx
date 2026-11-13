@@ -1,16 +1,17 @@
 import classNames from "classnames";
 import { motion } from "framer-motion";
-import { FC, useEffect, useId, useMemo } from "react";
+import { FC, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { solvedPart } from "@src/store/slices/loader.slice";
 import { selectSettingsState } from "@src/store/slices/settings.slice";
 import { useAppSelector } from "@src/store/store";
 import { CloseIcon } from "@src/ui/icons";
-import { getAnalogMatches, formatDelta } from "../Settings/analog/helpers";
+import { getAnalogMatches, getSizeMatches, formatDelta, hasPartSize } from "../Settings/analog/helpers";
 import PartImage from "../Settings/components/PartImage";
 import PartStats from "../Settings/components/PartStats";
 import { contentLanguage } from "@src/helpers/contentLanguage";
+import { formatPartSize } from "@electron/partSearch";
 import { getPartName, Part } from "../Settings/types";
 import useParts from "../Settings/useParts";
 import styles from "./styles/AnalogModal.module.scss";
@@ -38,6 +39,7 @@ const AnalogModal: FC<Props> = ({
   );
   const { parts, isLoading, error } = useParts();
   const titleId = useId();
+  const [mode, setMode] = useState<"stats" | "size">("stats");
 
   const sourcePart = useMemo(
     () => parts.find((part) => part.id === source.id) ?? null,
@@ -57,7 +59,12 @@ const AnalogModal: FC<Props> = ({
   const matches = useMemo(() => {
     if (!sourcePart) return [];
 
-    return getAnalogMatches(parts, sourcePart, analog).filter(({ part }) => {
+    const found =
+      mode === "size"
+        ? getSizeMatches(parts, sourcePart)
+        : getAnalogMatches(parts, sourcePart, analog);
+
+    return found.filter(({ part }) => {
       if (forbiddenIds.has(part.id) || forbiddenNames.has(part.eng_name)) {
         return false;
       }
@@ -78,6 +85,7 @@ const AnalogModal: FC<Props> = ({
     forbiddenNames,
     inventory,
     inventoryEnabled,
+    mode,
     parts,
     solutionCounts,
     source.count,
@@ -134,6 +142,27 @@ const AnalogModal: FC<Props> = ({
           </button>
         </div>
 
+        <div className={styles.tabs} role="tablist">
+          <button
+            type="button"
+            className={classNames(styles.tab, {
+              [styles.tabOn]: mode === "stats",
+            })}
+            onClick={() => setMode("stats")}
+          >
+            {t("similar.byStats")}
+          </button>
+          <button
+            type="button"
+            className={classNames(styles.tab, {
+              [styles.tabOn]: mode === "size",
+            })}
+            onClick={() => setMode("size")}
+          >
+            {t("similar.bySize")}
+          </button>
+        </div>
+
         <div className={styles.current}>
           <PartImage id={source.id} />
 
@@ -145,6 +174,11 @@ const AnalogModal: FC<Props> = ({
                 : sourceName}
             </p>
             {sourcePart && <PartStats part={sourcePart} />}
+            {sourcePart && formatPartSize(sourcePart) && (
+              <span className={styles.sizeLabel}>
+                {formatPartSize(sourcePart)}
+              </span>
+            )}
           </div>
 
           <span className={styles.count}>
@@ -152,18 +186,26 @@ const AnalogModal: FC<Props> = ({
           </span>
         </div>
 
-        <p className={styles.tolerances}>
-          {t("similar.tolerances", {
-            power: analog.power,
-            weight: analog.weight,
-            durability: analog.durability,
-          })}
-        </p>
+        {mode === "stats" && (
+          <p className={styles.tolerances}>
+            {t("similar.tolerances", {
+              power: analog.power,
+              weight: analog.weight,
+              durability: analog.durability,
+            })}
+          </p>
+        )}
 
         {!isLoading && !error && sourcePart && (
           <div className={styles.listHeader}>
             <p>{t("similar.matches", { count: matches.length })}</p>
-            <span>{t("similar.sameCategory")}</span>
+            <span>
+              {mode === "size"
+                ? sourcePart && hasPartSize(sourcePart)
+                  ? t("similar.sameSize")
+                  : t("similar.noSize")
+                : t("similar.sameCategory")}
+            </span>
           </div>
         )}
 
@@ -174,7 +216,11 @@ const AnalogModal: FC<Props> = ({
         ) : !sourcePart ? (
           <p className={styles.state}>{t("similar.notFound")}</p>
         ) : matches.length === 0 ? (
-          <p className={styles.state}>{t("similar.noMatches")}</p>
+          <p className={styles.state}>
+            {mode === "size" && sourcePart && !hasPartSize(sourcePart)
+              ? t("similar.noSize")
+              : t("similar.noMatches")}
+          </p>
         ) : (
           <div className={styles.list}>
             {matches.map(
@@ -188,6 +234,11 @@ const AnalogModal: FC<Props> = ({
                     <div className={styles.rowInfo}>
                       <p title={name}>{name}</p>
                       <PartStats part={part} />
+                      {mode === "size" && formatPartSize(part) && (
+                        <span className={styles.sizeLabel}>
+                          {formatPartSize(part)}
+                        </span>
+                      )}
                     </div>
 
                     <div className={styles.deltas}>

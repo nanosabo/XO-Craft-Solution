@@ -63,6 +63,31 @@
   }
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba($bg, 0.55);
+}
+
+.tab {
+  flex: 1;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  color: $default;
+  @include caption;
+  line-height: 32px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.tabOn {
+  background: rgba($white, 0.08);
+  color: $white;
+}
+
 .current {
   display: flex;
   align-items: center;

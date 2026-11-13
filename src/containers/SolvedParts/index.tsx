@@ -240,12 +240,28 @@ const SolvedParts = () => {
           {orderedSolution.map((item) => {
             const isForbidden = forbiddenNames.has(item.eng_name);
 
+            const replacedNames = item.origins?.map((origin) => {
+              const name = (
+                contentLanguage(i18n.language) === "ru"
+                  ? origin.name
+                  : origin.eng_name
+              ).trim();
+
+              return origin.count > 1 ? `${origin.count}× ${name}` : name;
+            });
+
             return (
               <PartItem
                 key={item.id}
                 {...item}
                 isForbidden={isForbidden}
                 isRequired={requiredIds.has(item.id)}
+                isReplaced={Boolean(replacedNames?.length)}
+                replacedTitle={
+                  replacedNames?.length
+                    ? t("replaced.title", { names: replacedNames.join(", ") })
+                    : undefined
+                }
                 onShowAnalogs={
                   isForbidden ? undefined : () => setAnalogPart(item)
                 }

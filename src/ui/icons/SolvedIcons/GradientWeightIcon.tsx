@@ -48,8 +48,8 @@ const GradientWeightIcon = () => {
           y2="90"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0077FF" />
-          <stop offset="1" stopColor="#0077FF" stopOpacity="0" />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
         <linearGradient
           id="paint1_linear_202_2534"
@@ -59,8 +59,8 @@ const GradientWeightIcon = () => {
           y2="25.6845"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0077FF" />
-          <stop offset="1" stopColor="#0077FF" stopOpacity="0" />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
         <linearGradient
           id="paint2_linear_202_2534"
@@ -70,8 +70,8 @@ const GradientWeightIcon = () => {
           y2="17.6581"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0077FF" />
-          <stop offset="1" stopColor="#0077FF" stopOpacity="0" />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
         <linearGradient
           id="paint3_linear_202_2534"
@@ -81,8 +81,8 @@ const GradientWeightIcon = () => {
           y2="65.9208"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0077FF" />
-          <stop offset="1" stopColor="#0077FF" stopOpacity="0" />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
         <linearGradient
           id="paint4_linear_202_2534"
@@ -92,8 +92,8 @@ const GradientWeightIcon = () => {
           y2="66.2455"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0077FF" />
-          <stop offset="1" stopColor="#0077FF" stopOpacity="0" />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
         <linearGradient
           id="paint5_linear_202_2534"
@@ -103,8 +103,8 @@ const GradientWeightIcon = () => {
           y2="78.7632"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0077FF" />
-          <stop offset="1" stopColor="#0077FF" stopOpacity="0" />
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
         <clipPath id="clip0_202_2534">
           <rect width="90" height="90" fill="white" />

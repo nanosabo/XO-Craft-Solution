@@ -14,11 +14,15 @@
   "totals": {
     "weight": {
       "title": "Total Mass",
-      "prefix": "kg"
+      "prefix": "kg",
+      "exceeded": "Over by {{over}} kg",
+      "exceededFull": "Tonnage exceeded by {{over}} kg"
     },
     "power": {
       "title": "Total Power",
-      "prefix": "ps"
+      "prefix": "ps",
+      "exceeded": "Over by {{over}}",
+      "exceededFull": "Power score exceeded by {{over}}"
     },
     "durability": {
       "title": "Total Durability",
@@ -48,6 +52,9 @@
   "restore": {
     "title": "Return the original part"
   },
+  "replaced": {
+    "title": "Instead of: {{names}}"
+  },
   "similar": {
     "action": "Similar",
     "title": "Similar parts",
@@ -55,6 +62,10 @@
     "current": "Current part",
     "matches": "Matching analogs: {{count}}",
     "sameCategory": "Only parts from the same category are matched.",
+    "sameSize": "Same size, sides in any order",
+    "byStats": "By stats",
+    "bySize": "By size",
+    "noSize": "This part has no size",
     "noMatches": "No analogs fit the configured tolerances",
     "notFound": "Could not find the part in the catalog",
     "loading": "Loading parts...",
