@@ -254,7 +254,9 @@ const ensureToastWindow = () => {
     windowOptions.vibrancy = "under-window";
     windowOptions.visualEffectState = "active";
   }
-  if (process.platform === "win32") windowOptions.backgroundMaterial = "acrylic";
+  // Acrylic and mica paint the whole stack, including the empty area above
+  // the cards, so Windows shows a tall gray panel behind a short toast.
+  if (process.platform === "win32") windowOptions.backgroundMaterial = "none";
 
   toastWin = new BrowserWindow(windowOptions);
   toastWin.setAlwaysOnTop(true, "screen-saver");
