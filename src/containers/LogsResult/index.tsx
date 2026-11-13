@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { buildAppLogLink } from "@src/helpers/appLogLink";
@@ -237,7 +237,7 @@ const cachedTableReady = (
     battleTone &&
     nicksMarked &&
     timeReady &&
-    statWeapons.every((row) => Boolean(row.image)) &&
+    statWeapons.every((row) => "rating" in row && Boolean(row.image)) &&
     battleWeapons.every((item) => Boolean(item.image))
   );
 };
@@ -597,66 +597,48 @@ const buildAlliesShot = (
   }
 };
 
-const StarDefs = () => (
-  <svg
-    className={styles.starDefs}
-    width="0"
-    height="0"
-    viewBox="0 0 20 20"
-    aria-hidden="true"
-  >
-    <defs>
-      <linearGradient id="xocs-grad-orange" x1="0" x2="100%" y1="0" y2="0">
-        <stop offset="0%" stopColor="gray" />
-        <stop offset="80%" stopColor="#5f3dc4" />
-      </linearGradient>
-      <mask id="xocs-stars-mask">
-        {[0, 20, 40, 60, 80].map((x) => (
-          <use key={x} href="#xocs-star" x={x} />
-        ))}
-      </mask>
-      <symbol viewBox="0 0 32 32" id="xocs-star">
-        <path fill="#fff" d={STAR_PATH} />
-      </symbol>
-      <linearGradient id="xocs-white-star-mask" x1="0" x2="100%" y1="0" y2="0">
-        <stop offset="0%" stopColor="#151620" />
-        <stop offset="100%" stopColor="#151620" />
-      </linearGradient>
-      <mask id="xocs-stars-mask-back">
-        {[0, 20, 40, 60, 80].map((x) => (
-          <use key={x} href="#xocs-star" x={x} />
-        ))}
-      </mask>
-    </defs>
-  </svg>
-);
+const STAR_SIZE = 16;
+const STAR_GAP = 3;
+const STAR_STEP = STAR_SIZE + STAR_GAP;
+const STAR_ROW = STAR_SIZE * 5 + STAR_GAP * 4;
 
 const StarRating = ({ value }: { value: number }) => {
-  const fill = Math.max(0, Math.min(100, value));
+  const clipId = `stars-${useId().replace(/:/g, "")}`;
+  const stars = Math.max(0, Math.min(5, value));
+  const full = stars >= 5 ? 5 : Math.floor(stars);
+  const fraction = stars >= 5 ? 0 : stars - full;
+  const fill = stars >= 5 ? STAR_ROW : full * STAR_STEP + fraction * STAR_SIZE;
 
   return (
-    <span className={styles.logStars} title={`${Math.round(value)}%`}>
+    <span className={styles.logStars} title={String(stars)}>
       <svg
         className={styles.logStarsSvg}
-        viewBox="0 0 100 20"
+        viewBox={`0 0 ${STAR_ROW} ${STAR_SIZE}`}
         aria-hidden="true"
       >
-        <g mask="url(#xocs-stars-mask-back)">
-          <rect width="100%" height="100%" fill="url(#xocs-white-star-mask)" />
-        </g>
-      </svg>
-      <svg
-        className={classNames(styles.logStarsSvg, styles.logStarsFill)}
-        viewBox="0 0 100 20"
-        aria-hidden="true"
-      >
-        <g mask="url(#xocs-stars-mask)">
-          <rect
-            width={`${fill}%`}
-            height="100%"
-            fill="url(#xocs-grad-orange)"
-          />
-        </g>
+        <defs>
+          <clipPath id={clipId}>
+            {Array.from({ length: 5 }, (_, index) => (
+              <path
+                key={index}
+                d={STAR_PATH}
+                transform={`translate(${index * STAR_STEP} 0) scale(${STAR_SIZE / 32})`}
+              />
+            ))}
+          </clipPath>
+        </defs>
+        <rect
+          width={STAR_ROW}
+          height={STAR_SIZE}
+          fill="rgba(255, 255, 255, 0.18)"
+          clipPath={`url(#${clipId})`}
+        />
+        <rect
+          width={fill}
+          height={STAR_SIZE}
+          fill="#0077ff"
+          clipPath={`url(#${clipId})`}
+        />
       </svg>
     </span>
   );
@@ -794,16 +776,23 @@ const LogsResult = () => {
         const battleCount = (value: CrossoutLogTable | null) =>
           value?.rows.filter((row) => row.battle).length ?? 0;
         const incomingBattles = battleCount(result.table) > 0;
-        const table =
-          staleTable && battleCount(result.table) < battleCount(staleTable)
-            ? staleTable
-            : result.table;
+        const keepRows = Boolean(
+          staleTable && battleCount(result.table) < battleCount(staleTable),
+        );
+        const table = keepRows && staleTable
+          ? {
+              ...staleTable,
+              stats: result.table.stats ?? staleTable.stats,
+              nickname: result.table.nickname || staleTable.nickname,
+              partyGrouped: true,
+            }
+          : result.table;
 
         applyLoadedTable(table, Boolean(range));
 
         const current = summaryRef.current;
 
-        if (!range && current && current.logId === id && incomingBattles) {
+        if (!range && current && current.logId === id && (incomingBattles || keepRows)) {
           void window.electronAPI
             .crossoutStatsCacheSave({
               summary: current,
@@ -1637,7 +1626,6 @@ const LogsResult = () => {
 
             {view === "stats" && filteredStats.length > 0 && logTable.stats && (
               <div className={styles.logStats} ref={statsShotRef}>
-                <StarDefs />
 
                 <div className={classNames(styles.logTableWrap, styles.logStatsWrap)}>
                   <table className={styles.logStatsTable}>

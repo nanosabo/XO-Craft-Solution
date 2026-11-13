@@ -100,6 +100,11 @@ interface ApiTotals {
 
 interface ApiWeapon extends ApiTotals {
   key: string;
+  /** Server average for this weapon. Already per round, so it is not divided. */
+  avgDamage: number | null;
+  raitPerc: number | null;
+  /** Filled stars out of 5. May be fractional. */
+  raitStar: number | null;
 }
 
 interface ApiPlayer extends ApiTotals {
@@ -152,6 +157,21 @@ const asCount = (value: unknown): number => {
   const number = Number(value);
 
   return Number.isFinite(number) ? number : 0;
+};
+
+const asOptionalNumber = (value: unknown): number | null => {
+  if (value === undefined || value === null || value === "") return null;
+
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : null;
+};
+
+const formatRating = (value: number): string => {
+  const rounded = Math.round(value * 10) / 10;
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+
+  return `${text}%`;
 };
 
 const dictionary = (value: unknown): Record<string, string> => {
@@ -712,7 +732,15 @@ const readPlayers = (value: unknown): ApiPlayer[] => {
 
           if (!key) return [];
 
-          return [{ key, ...readTotals(weapon) }];
+          return [
+            {
+              key,
+              ...readTotals(weapon),
+              avgDamage: asOptionalNumber(weapon.avg_damage),
+              raitPerc: asOptionalNumber(weapon.rait_perc),
+              raitStar: asOptionalNumber(weapon.rait_star),
+            },
+          ];
         })
       : [];
 
@@ -814,20 +842,61 @@ const readBattles = (
   });
 };
 
-/** Same non-zero party id as the log owner. Teammates from matchmaking stay outside. */
-const partyAllies = (players: ApiPlayer[], owner: string): Set<string> => {
+/**
+ * Premade group of the log owner. The player total's `party` is often unique
+ * now; the shared id is the one on each round in `sharedBattle.ownRounds`.
+ * Party 0 is matchmaking, not a group.
+ */
+const partyAllies = (
+  players: ApiPlayer[],
+  owner: string,
+  shared?: unknown,
+): Set<string> => {
   const ownerKey = owner.trim().toLowerCase();
-  const ownerPlayer = players.find(
-    (player) => player.name.trim().toLowerCase() === ownerKey,
-  );
-  const party = ownerPlayer?.party ?? 0;
   const allies = new Set<string>();
 
   if (ownerKey) allies.add(ownerKey);
 
+  const ownerPlayer = players.find(
+    (player) => player.name.trim().toLowerCase() === ownerKey,
+  );
+  const party = ownerPlayer?.party ?? 0;
+
   if (party !== 0) {
     for (const player of players) {
       if (player.party === party) allies.add(player.name.trim().toLowerCase());
+    }
+  }
+
+  if (!Array.isArray(shared)) return allies;
+
+  for (const item of shared) {
+    const battle = asRecord(item);
+    const ownRounds = battle?.ownRounds;
+    const rounds = Array.isArray(ownRounds) ? ownRounds : [];
+    const groups = new Map<number, string[]>();
+
+    for (const round of rounds) {
+      const record = asRecord(round);
+      const nick = asText(record?.nickname);
+      const roundParty = asCount(record?.party);
+
+      if (!nick || roundParty === 0) continue;
+
+      const list = groups.get(roundParty) ?? [];
+
+      list.push(nick);
+      groups.set(roundParty, list);
+    }
+
+    for (const list of groups.values()) {
+      const withOwner = list.some(
+        (nick) => nick.trim().toLowerCase() === ownerKey,
+      );
+
+      if (!withOwner) continue;
+
+      for (const nick of list) allies.add(nick.trim().toLowerCase());
     }
   }
 
@@ -881,16 +950,30 @@ const buildStats = (
       const weaponName = parts.map((part) => part.name).join(", ");
 
       images.push(...parts.map((part) => part.key));
+      const row = statRow(
+        "weapon",
+        weaponName,
+        weaponName,
+        team,
+        weapon,
+        parts.map((part) => weaponImageSrc(part.key)).filter(Boolean),
+      );
+      const shownDamage =
+        weapon.round > 0 ? Math.round(weapon.damage / weapon.round) : 0;
+      const diff =
+        weapon.avgDamage === null || weapon.round <= 0
+          ? null
+          : Math.round(shownDamage - weapon.avgDamage);
+
+      if (weapon.raitPerc !== null) row.cells[1] = formatRating(weapon.raitPerc);
+
       rows.push({
-        ...statRow(
-          "weapon",
-          weaponName,
-          weaponName,
-          team,
-          weapon,
-          parts.map((part) => weaponImageSrc(part.key)).filter(Boolean),
-        ),
+        ...row,
         keys: parts.map((part) => part.key),
+        stars: weapon.raitStar,
+        rating: weapon.raitPerc,
+        delta: diff === null ? "" : String(Math.abs(diff)),
+        deltaKind: diff === null ? null : diff < 0 ? "down" : "up",
       });
     }
   }
@@ -1216,19 +1299,21 @@ export const loadCrossoutLogTable = async (
       });
       const nickname = asText(log?.nick);
       const uploaded = asCount(log?.time);
+      const players = readPlayers(result.battles);
       const table: CrossoutLogTable = {
         type: slug,
         date: uploaded > 0 ? dayStamp(uploaded) : "",
         times: buildTimes(battles),
         stats: buildStats(
-          readPlayers(result.battles),
+          players,
           names,
           language,
-          partyAllies(readPlayers(result.battles), nickname),
+          partyAllies(players, nickname, log?.sharedBattle),
           nickname,
         ),
         rows: buildRows(visible, names, language),
         nickname,
+        partyGrouped: true,
       };
 
       if (expectedBattles > 0 && !hasRange && battles.length < expectedBattles) {

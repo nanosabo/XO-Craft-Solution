@@ -1532,32 +1532,17 @@
 }
 
 .logStars {
-  position: relative;
   display: inline-block;
-  width: 84px;
-  height: 17px;
+  width: 92px;
+  height: 16px;
   flex: none;
   vertical-align: middle;
 }
 
 .logStarsSvg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 84px;
-  height: 17px;
   display: block;
-}
-
-.logStarsFill {
-  z-index: 2;
-}
-
-.starDefs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
+  width: 92px;
+  height: 16px;
 }
 
 .logWeaponStrip {

@@ -95,6 +95,7 @@ const normalizeTable = (value: unknown): CrossoutLogTable | null => {
     stats: normalizeStat(raw.stats),
     rows: raw.rows,
     ...(nickname ? { nickname } : {}),
+    ...(raw.partyGrouped === true ? { partyGrouped: true } : {}),
   };
 };
 

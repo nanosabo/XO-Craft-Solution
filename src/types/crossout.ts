@@ -275,12 +275,14 @@ export interface CrossoutLogStatRow {
   images: string[];
   /** Weapon keys, in the same order as `images`. */
   keys?: string[];
-  /** Star rating fill percentage (0-100) for weapon rows. */
+  /** Filled stars out of 5. A fraction fills part of the next star. */
   stars: number | null;
+  /** Rating percent shown beside the stars. Missing on tables saved earlier. */
+  rating?: number | null;
   team: string;
   /** Average damage without the delta suffix. */
   damage: string;
-  /** Difference from the server average, for example `6554` or `-350`. */
+  /** Difference from the weapon's average damage, without a sign. */
   delta: string;
   deltaKind: "up" | "down" | null;
   /** Values aligned with `CrossoutLogStat.headers`. */
@@ -310,6 +312,8 @@ export interface CrossoutLogTable {
   rows: CrossoutLogRow[];
   /** Log owner from the public API. Empty for older cached tables. */
   nickname?: string;
+  /** Party allies were taken from round groups, not only the player total. */
+  partyGrouped?: boolean;
 }
 
 export type CrossoutLogSummaryResult =
