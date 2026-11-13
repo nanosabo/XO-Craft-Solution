@@ -219,6 +219,11 @@ const CustomSelect: React.FC<CustomSelectProps> = memo(
                 [styles.menuUp]: menuPosition.up,
                 [styles.menuFit]: menuFit,
               })}
+              onMouseDown={(event) => {
+                // The menu is portaled to document.body. A mousedown here must
+                // not reach outside-click handlers on the parent dialog.
+                event.stopPropagation();
+              }}
               style={{
                 left: menuPosition.left,
                 width: menuPosition.width,
