@@ -5,6 +5,7 @@ export { default as SettingsIcon } from "./SettingsIcon";
 export { default as InfoIcon } from "./InfoIcon";
 export { default as GuideIcon } from "./GuideIcon";
 export { default as DiscordIcon } from "./DiscordIcon";
+export { default as GithubIcon } from "./GithubIcon";
 export { default as HeaderDiscordIcon } from "./HeaderDiscordIcon";
 export { default as HistoryIcon } from "./HistoryIcon";
 export { default as SearchIcon } from "./SearchIcon";

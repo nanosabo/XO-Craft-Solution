@@ -93,6 +93,12 @@
     "market": "Market analytics uses publicly available price and lot data.",
     "free": "The project is free and developed by the community."
   },
+  "feedback": {
+    "title": "Found a bug or have a suggestion?",
+    "text": "Write to me on GitHub Issues or Discord. Tell me what happened and what you expected, so it is easier to see what to fix.",
+    "github": "GitHub Issues",
+    "discord": "Discord"
+  },
   "footer": {
     "version": "XO Craft Solution · version {{version}}",
     "madeBy": "Made by the Crossout community"

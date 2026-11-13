@@ -10,7 +10,9 @@ import {
   CartIcon,
   CraftIcon,
   ExternalIcon,
+  GithubIcon,
   GuideIcon,
+  HeaderDiscordIcon,
   HistoryIcon,
   LogsIcon,
   InventoryIcon,
@@ -263,6 +265,33 @@ const About = () => {
               </ul>
             </section>
           </div>
+
+          <section className={styles.feedback}>
+            <h3>{t("feedback.title")}</h3>
+            <p>{t("feedback.text")}</p>
+            <div className={styles.links}>
+              <button
+                type="button"
+                className={styles.linkButton}
+                onClick={() =>
+                  openExternal(
+                    "https://github.com/nanosabo/XO-Craft-Solution/issues",
+                  )
+                }
+              >
+                <GithubIcon />
+                {t("feedback.github")}
+              </button>
+              <button
+                type="button"
+                className={styles.linkButton}
+                onClick={() => openExternal("https://discord.gg/cwtHShAfZx")}
+              >
+                <HeaderDiscordIcon />
+                {t("feedback.discord")}
+              </button>
+            </div>
+          </section>
 
           <footer className={styles.footer}>
             <span>{t("footer.version", { version })}</span>

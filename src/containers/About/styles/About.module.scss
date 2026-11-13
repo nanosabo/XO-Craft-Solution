@@ -628,6 +628,28 @@
   }
 }
 
+.feedback {
+  margin-top: 12px;
+  padding: 16px 18px;
+  background: rgba(26, 29, 32, 0.82);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 12px;
+
+  h3 {
+    color: $white;
+    @include subtitle2;
+    font-weight: 600;
+  }
+
+  p {
+    max-width: 640px;
+    margin-top: 4px;
+    color: $default;
+    @include caption;
+    line-height: 1.45;
+  }
+}
+
 .notes {
   display: flex;
   flex-direction: column;
