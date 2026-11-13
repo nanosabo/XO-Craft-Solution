@@ -93,7 +93,7 @@
       }
     },
     "placeholder": "Введите значение...",
-    "searchPlaceholder": "Поиск по названию..."
+    "searchPlaceholder": "Название или размер..."
   },
   "errors": {
     "type": "Значение должно быть числом",

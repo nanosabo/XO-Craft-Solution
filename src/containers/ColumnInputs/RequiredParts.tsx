@@ -16,12 +16,16 @@ import { logWarning } from "@src/helpers/errorLog";
 import InputIcons from "@src/ui/icons/InputIcons";
 import { SearchIcon } from "@src/ui/icons";
 import Tooltip from "@src/components/Tooltip";
+import { formatPartSize } from "@electron/partSearch";
 
 export interface SearchedPart {
   id: string;
   name: string;
   eng_name: string;
   maxCount: number;
+  size_x?: number;
+  size_y?: number;
+  size_z?: number;
 }
 
 const RequiredParts = () => {
@@ -150,6 +154,7 @@ const RequiredParts = () => {
                 name={item.name}
                 eng_name={item.eng_name}
                 id={item.id}
+                size={formatPartSize(item)}
                 withControls={false}
                 onClickAdd={() => onAdd(item)}
               />

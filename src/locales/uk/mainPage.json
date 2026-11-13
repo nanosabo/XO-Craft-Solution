@@ -93,7 +93,7 @@
       }
     },
     "placeholder": "Введіть значення...",
-    "searchPlaceholder": "Пошук за назвою..."
+    "searchPlaceholder": "Назва або розмір..."
   },
   "errors": {
     "type": "Значення має бути числом",

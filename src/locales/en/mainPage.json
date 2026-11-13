@@ -93,7 +93,7 @@
       }
     },
     "placeholder": "Enter value...",
-    "searchPlaceholder": "Search by name..."
+    "searchPlaceholder": "Name or size..."
   },
   "errors": {
     "type": "Value must be a number",

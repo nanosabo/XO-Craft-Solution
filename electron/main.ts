@@ -18,6 +18,7 @@ import path from "node:path";
 import { spawn } from "child_process";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { applyDurabilityBonuses } from "./durabilityBonus";
+import { matchesRequiredPartQuery, parsePartSearch } from "./partSearch";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
 import { isUsingMirror } from "./api";
@@ -199,6 +200,9 @@ interface Part {
   weight: number;
   maxCount: number;
   build_hp: number;
+  size_x?: number;
+  size_y?: number;
+  size_z?: number;
 }
 
 let lang: UiLanguage = "ru";
@@ -271,12 +275,16 @@ const loadParts = async (): Promise<Part[]> => {
 
 let partsRequest: Promise<Part[]> | null = null;
 
+const catalogHasSizes = (parts: Part[]) =>
+  parts.some((part) => typeof part.size_x === "number");
+
 /** Loads the parts once; safe to call before the window is ready. */
 const ensureParts = (): Promise<Part[]> => {
   if (!partsRequest) {
     partsRequest = loadParts().then((parts) => {
-      // Allow a retry after a failed download (e.g. the user reconnects).
-      if (parts.length === 0) {
+      // Allow a retry after a failed download, and after a catalog that was
+      // saved before part sizes were published.
+      if (parts.length === 0 || !catalogHasSizes(parts)) {
         partsRequest = null;
       }
 
@@ -1382,13 +1390,15 @@ ipcMain.handle("getParts", async () => {
 });
 
 ipcMain.handle("search-required-parts", async (_, value) => {
-  const parts = await ensureParts();
+  let parts = await ensureParts();
+  const query = String(value ?? "");
 
-  return parts.filter(
-    (part) =>
-      part.name.toLowerCase().includes(value.toLowerCase()) ||
-      part.eng_name.toLowerCase().includes(value.toLowerCase()),
-  );
+  if (parsePartSearch(query).sizes && !catalogHasSizes(parts)) {
+    partsRequest = null;
+    parts = await ensureParts();
+  }
+
+  return parts.filter((part) => matchesRequiredPartQuery(part, query));
 });
 
 let tray;

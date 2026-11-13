@@ -97,6 +97,14 @@
   line-height: 18px;
 }
 
+.size {
+  flex-shrink: 0;
+  color: $default;
+  font-variant-numeric: tabular-nums;
+  @include caption;
+  line-height: 18px;
+}
+
 .stepper {
   display: flex;
   flex-shrink: 0;

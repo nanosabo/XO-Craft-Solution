@@ -18,6 +18,7 @@ type Props = {
   eng_name: string;
   id: string;
   count?: number;
+  size?: string;
   onClickAdd?: () => void;
   max?: number;
   onlyDelete?: boolean;
@@ -30,6 +31,7 @@ const SearchedDetail: FC<Props> = ({
   eng_name,
   id,
   count,
+  size,
   max,
   onClickAdd,
 }) => {
@@ -56,6 +58,7 @@ const SearchedDetail: FC<Props> = ({
           alt={partName}
         />
         <p>{partName}</p>
+        {size && <span className={styles.size}>{size}</span>}
       </div>
 
       {withControls && (

@@ -8,6 +8,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { SearchIcon } from "@src/ui/icons";
 import { getPartImageUrl } from "../Settings/types";
+import { formatPartSize } from "@electron/partSearch";
 import debounce from "lodash.debounce";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -153,6 +154,7 @@ const RequiredPartSearch = () => {
             visible.map((part) => {
               const count = countFor(part);
               const limit = Math.max(1, part.maxCount || 1);
+              const size = formatPartSize(part);
 
               return (
                 <div key={part.id} className={styles.hit}>
@@ -164,6 +166,7 @@ const RequiredPartSearch = () => {
                   <span className={styles.name} title={partName(part)}>
                     {partName(part)}
                   </span>
+                  {size && <span className={styles.size}>{size}</span>}
                   <div className={styles.stepper}>
                     <button
                       type="button"

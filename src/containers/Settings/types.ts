@@ -12,6 +12,9 @@ export interface Part {
   weight: number;
   maxCount: number;
   build_hp: number;
+  size_x?: number;
+  size_y?: number;
+  size_z?: number;
 }
 
 export const getPartName = (part: Part, language: string) => {

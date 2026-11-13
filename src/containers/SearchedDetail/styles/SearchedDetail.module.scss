@@ -48,6 +48,13 @@
     @include caption;
     line-height: 16px;
   }
+
+  .size {
+    flex-shrink: 0;
+    color: $default;
+    @include caption;
+    line-height: 16px;
+  }
 }
 
 .controls {

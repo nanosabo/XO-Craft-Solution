@@ -14,6 +14,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { CloseIcon, SearchIcon, TrashIcon } from "@src/ui/icons";
 import { getPartImageUrl } from "@src/containers/Settings/types";
+import { formatPartSize } from "@electron/partSearch";
 import classNames from "classnames";
 import { motion } from "framer-motion";
 import debounce from "lodash.debounce";
@@ -183,12 +184,16 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
           )}
 
           {searching &&
-            visibleResults.map((part) => (
+            visibleResults.map((part) => {
+              const size = formatPartSize(part);
+
+              return (
               <div key={part.id} className={styles.row}>
                 <img src={getPartImageUrl(part.id)} alt="" draggable={false} />
                 <p className={styles.name} title={partName(part)}>
                   {partName(part)}
                 </p>
+                {size && <span className={styles.size}>{size}</span>}
                 <button
                   type="button"
                   className={styles.add}
@@ -209,7 +214,8 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                   {t("filter.add")}
                 </button>
               </div>
-            ))}
+              );
+            })}
 
           {!searching && current.length === 0 && (
             <p className={styles.empty}>
