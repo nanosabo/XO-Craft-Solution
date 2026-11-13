@@ -58,6 +58,14 @@ export const vehicleSchema = yup.object({
   durabilityCabin: yup.boolean().default(false),
 
   coDriver: yup.boolean().default(false),
+
+  talismans: yup
+    .tuple([
+      yup.number().oneOf([0, 7, 9]).required().default(0),
+      yup.number().oneOf([0, 7, 9]).required().default(0),
+    ])
+    .required()
+    .default([0, 0]),
 });
 
 // Типизация на основе схемы

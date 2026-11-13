@@ -17,6 +17,7 @@ import fs from "fs";
 import path from "node:path";
 import { spawn } from "child_process";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
+import { applyDurabilityBonuses } from "./durabilityBonus";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
 import { isUsingMirror } from "./api";
@@ -1265,10 +1266,10 @@ ipcMain.handle(
     // warehouse or the HP filter excludes every part. In that case the result
     // consists of the required parts only.
     if (partsPrepared.length === 0) {
-      let totalDurability = requiredStats.durability;
-
-      if (inputs.durabilityCabin) totalDurability *= 1.1;
-      if (inputs.coDriver) totalDurability *= 1.05;
+      let totalDurability = applyDurabilityBonuses(
+        requiredStats.durability,
+        inputs,
+      );
       totalDurability += inputs.durability;
 
       const requiredSolution = requiredParts
@@ -1351,10 +1352,10 @@ ipcMain.handle(
 
           /* ---------------- totals ---------------- */
 
-          let totalDurability = parsed.maxDurability + requiredStats.durability;
-
-          if (inputs.durabilityCabin) totalDurability *= 1.1;
-          if (inputs.coDriver) totalDurability *= 1.05;
+          let totalDurability = applyDurabilityBonuses(
+            parsed.maxDurability + requiredStats.durability,
+            inputs,
+          );
           totalDurability += inputs.durability;
 
           resolve({

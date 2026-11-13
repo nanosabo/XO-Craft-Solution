@@ -1,16 +1,14 @@
 @import "@styles/theme";
 
 .button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: 7px;
+  text-align: center;
+  @include body;
+  line-height: 24px;
 
-  @include subtitle;
-
-  transition: opacity 0.2s ease-in-out, transform 0.1s ease-in-out;
+  transition: background-color 0.2s ease-in-out;
 
   &.white {
     background-color: $white;
@@ -22,11 +20,12 @@
     color: $white;
   }
 
-  &:hover {
-    opacity: 0.8;
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
   }
 
-  &:active {
-    transform: scale(0.95);
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
 }

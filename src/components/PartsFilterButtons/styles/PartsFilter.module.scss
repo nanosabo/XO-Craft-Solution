@@ -3,63 +3,95 @@
 .root {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .parts {
   display: flex;
-  align-items: center;
-  padding: 6px;
-  border-radius: 8px;
-  background-color: $secondary;
   width: 100%;
-  gap: 12px;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba($bg, 0.55);
 }
 
 .button {
-  @include body;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: $white;
-  padding: 4px 12px;
   width: 100%;
-  border-radius: 4px;
-  background-color: transparent;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: transparent;
+  color: $default;
+  text-align: center;
+  cursor: pointer;
+  @include caption;
+  line-height: 32px;
+
+  .count {
+    display: inline-block;
+    min-width: 16px;
+    height: 16px;
+    margin-left: 6px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: rgba($white, 0.12);
+    font-size: 12px;
+    line-height: 16px;
+    vertical-align: 1px;
+  }
 
   transition:
     background-color 0.2s ease-in-out,
     color 0.2s ease-in-out;
 
   &:disabled {
-    background: $white;
-    color: $secondary;
-    font-weight: 500;
+    background: rgba($white, 0.1);
+    color: $white;
     cursor: default;
   }
 
   &:hover:not(:disabled) {
-    background-color: rgba($white, 0.1);
+    background: rgba($white, 0.06);
+    color: $white;
   }
+}
+
+.forbiddenTab:disabled {
+  background: rgba(#ff5a5a, 0.16);
+  color: #ffb4b4;
 }
 
 .clear_button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 38px;
-  background-color: $primary;
-  border-radius: 4px;
-  transition: background-color 0.2s ease-in-out;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba($white, 0.12);
+  border-radius: 10px;
+  background: transparent;
+  color: $default;
+  cursor: pointer;
 
-  &:hover {
-    background-color: lighten($primary, 10%);
+  transition:
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(#ff5a5a, 0.7);
+    background: rgba(#ff5a5a, 0.12);
+    color: #ffb4b4;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
 
   svg {
-    color: $white;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
   }
 }

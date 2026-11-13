@@ -1,5 +1,12 @@
 @import "@styles/theme";
 
+.empty {
+  padding: 8px 4px 0;
+  color: $default;
+  @include caption;
+  line-height: 18px;
+}
+
 .required_wrapper {
   display: flex;
   flex: 1;
@@ -7,62 +14,76 @@
   min-height: 0;
 }
 
-.required_wrapper:has(.required div:nth-child(5)) {
-  -webkit-mask-image:
-    linear-gradient(to bottom, transparent 10px, #000 60px),
-    linear-gradient(270deg, #000 10px, transparent 10px);
-  -webkit-mask-position-y: -50px;
-  -webkit-mask-size: 100% calc(100% + 60px);
-  -webkit-mask-repeat: no-repeat;
-
-  transition: -webkit-mask-position-y 0.15s linear;
-
-  &.scrolled {
-    -webkit-mask-position-y: 0px;
-  }
-}
-
 .required {
   display: flex;
-  flex-direction: column;
-  width: 100%;
   flex: 1;
-  overflow: auto;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
   min-height: 0;
-  padding-right: 12px;
-  padding-bottom: 20px;
+  padding-right: 4px;
+  padding-bottom: 8px;
+  overflow: auto;
 
-  mask-image:
-    linear-gradient(to top, transparent, black),
-    linear-gradient(to left, transparent 10px, black 10px);
-  mask-size: 100% 20000px;
-  mask-position: left bottom;
   -webkit-mask-image:
-    linear-gradient(to top, transparent, black),
-    linear-gradient(to left, transparent 10px, black 10px);
-  -webkit-mask-size: 100% 20000px;
-  -webkit-mask-position: left bottom;
-
+    linear-gradient(to bottom, transparent 4px, #000 36px),
+    linear-gradient(to top, transparent 4px, #000 36px);
+  -webkit-mask-size:
+    100% calc(100% + 36px),
+    100% calc(100% + 36px);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position:
+    0 -36px,
+    0 0;
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 4px, #000 36px),
+    linear-gradient(to top, transparent 4px, #000 36px);
+  mask-size:
+    100% calc(100% + 36px),
+    100% calc(100% + 36px);
+  mask-repeat: no-repeat;
+  mask-position:
+    0 -36px,
+    0 0;
+  mask-composite: intersect;
   transition:
-    mask-position 0.3s ease-in-out,
-    -webkit-mask-position 0.3s ease-in-out;
+    -webkit-mask-position 0.2s ease-in-out,
+    mask-position 0.2s ease-in-out;
 
-  &:hover {
-    mask-position: left top;
-    -webkit-mask-position: left top;
+  &.fadeTop {
+    -webkit-mask-position:
+      0 0,
+      0 0;
+    mask-position:
+      0 0,
+      0 0;
+  }
+
+  &.fadeBottom {
+    -webkit-mask-position:
+      0 -36px,
+      0 -36px;
+    mask-position:
+      0 -36px,
+      0 -36px;
+  }
+
+  &.fadeTop.fadeBottom {
+    -webkit-mask-position:
+      0 0,
+      0 -36px;
+    mask-position:
+      0 0,
+      0 -36px;
   }
 
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 8px;
   }
 
   &::-webkit-scrollbar-thumb {
     border: 4px solid rgba($primary, 0.5);
-    border-radius: 4px;
-  }
-
-  &:has(div:nth-child(5)) {
-    padding-right: 8px;
+    border-radius: 8px;
   }
 }

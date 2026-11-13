@@ -26,7 +26,11 @@ const MainPageHeader = () => {
 
   return (
     <div className={styles.header}>
-      <PageTitle title={t("header.title")} subtitle={t("header.subtitle")} />
+      <PageTitle
+        className={styles.title}
+        title={t("header.title")}
+        subtitle={t("header.subtitle")}
+      />
       <BigButton onClick={onClickSolve}>{t("solve.title")}</BigButton>
     </div>
   );

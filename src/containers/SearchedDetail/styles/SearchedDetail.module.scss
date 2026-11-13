@@ -2,39 +2,87 @@
 
 .wrapper {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid rgba($white, 0.06);
+  border-radius: 10px;
+  background: rgba($white, 0.03);
 
   &.withoutControls {
+    border-color: transparent;
+    background: transparent;
     cursor: pointer;
-    padding: 12px;
-    transition: background-color 0.1s ease-in-out;
+    transition: background-color 0.15s ease-in-out;
 
     &:hover {
-      background-color: rgba($bg, 0.5);
+      background: rgba($primary, 0.12);
+    }
+  }
+
+  &.forbidden {
+    border-color: rgba(#ff5a5a, 0.28);
+    background: rgba(#ff5a5a, 0.08);
+
+    p {
+      color: #ffb4b4;
     }
   }
 }
 
 .info {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 
   p {
+    min-width: 0;
+    overflow: hidden;
+    color: $white;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     @include caption;
-    max-width: 150px;
+    line-height: 16px;
   }
 }
 
 .controls {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 
   span {
-    width: 16px;
+    width: 18px;
+    color: $white;
     text-align: center;
-    @include subtitle;
+    font-variant-numeric: tabular-nums;
+    @include caption;
+    line-height: 24px;
+  }
+}
+
+.remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: rgba(#ff5a5a, 0.16);
+  color: #ffb4b4;
+  cursor: pointer;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: rgba(#ff5a5a, 0.28);
   }
 }

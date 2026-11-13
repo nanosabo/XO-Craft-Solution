@@ -1,5 +1,17 @@
+@import "@styles/theme";
+
 .header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.header .title {
+  margin-bottom: 0;
+
+  p {
+    max-width: 620px;
+    margin-top: 4px;
+  }
 }

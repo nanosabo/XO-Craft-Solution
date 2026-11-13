@@ -17,7 +17,7 @@ const SquareSmallButton: FC<Props> = ({
   });
 
   return (
-    <button className={buttonClassName} {...props}>
+    <button type="button" className={buttonClassName} {...props}>
       {children}
     </button>
   );

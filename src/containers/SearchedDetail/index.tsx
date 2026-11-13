@@ -1,5 +1,6 @@
 import DetailSearchPicture from "@src/components/DetailSearchPicture";
 import SquareSmallButton from "@src/ui/SquareSmallButton";
+import { TrashIcon } from "@src/ui/icons";
 import { FC } from "react";
 import styles from "./styles/SearchedDetail.module.scss";
 import classNames from "classnames";
@@ -32,7 +33,7 @@ const SearchedDetail: FC<Props> = ({
   max,
   onClickAdd,
 }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation("mainPage");
   const dispathch = useAppDispatch();
 
   const handleIncrement = () => dispathch(inсrementPartCount(id));
@@ -45,6 +46,7 @@ const SearchedDetail: FC<Props> = ({
     <div
       className={classNames(styles.wrapper, {
         [styles.withoutControls]: !withControls,
+        [styles.forbidden]: onlyDelete,
       })}
       onClick={!withControls && onClickAdd ? onClickAdd : undefined}
     >
@@ -58,14 +60,21 @@ const SearchedDetail: FC<Props> = ({
 
       {withControls && (
         <div className={styles.controls}>
-          <SquareSmallButton variant="white" onClick={handleDecrement}>
-            -
-          </SquareSmallButton>
-
-          {!onlyDelete && (
+          {onlyDelete ? (
+            <button
+              type="button"
+              className={styles.remove}
+              title={t("filterSearch.remove")}
+              onClick={handleDecrement}
+            >
+              <TrashIcon />
+            </button>
+          ) : (
             <>
+              <SquareSmallButton variant="white" onClick={handleDecrement}>
+                -
+              </SquareSmallButton>
               <span>{count}</span>
-
               <SquareSmallButton
                 variant="primary"
                 onClick={handleIncrement}

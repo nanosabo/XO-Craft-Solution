@@ -3,39 +3,232 @@
 .wrapper {
   display: grid;
   flex: 1;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  grid-column-gap: 32px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+  align-content: start;
+  gap: 16px;
   min-height: 0;
+  margin-bottom: 18px;
+}
+
+.fields {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px;
+  background: rgba(22, 25, 27, 0.92);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 16px;
+}
+
+.grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-auto-rows: auto;
+  align-content: start;
+  align-items: center;
+  row-gap: 8px;
+  column-gap: 44px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: rgba($white, 0.08);
+  }
 }
 
 .block {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 14px;
+  min-width: 0;
   min-height: 0;
+  padding: 16px 14px 12px;
+  overflow: visible;
+  background: rgba(22, 25, 27, 0.92);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 16px;
 }
 
-.searched {
-  position: absolute;
+.filter {
+  height: 0;
+  min-height: 100%;
+}
+
+.filterHead {
   display: flex;
-  flex-direction: column;
-  top: 80px;
-  left: 0;
-  width: 100%;
-  max-height: 300px;
-  overflow-y: auto;
-  background-color: $secondary;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  align-items: center;
+  gap: 8px;
 
-  &::-webkit-scrollbar {
-    width: 4px;
+  p {
+    color: rgba($white, 0.86);
+    @include caption;
+    line-height: 18px;
   }
 
-  &::-webkit-scrollbar-thumb {
-    border: 4px solid rgba($primary, 0.5);
-    border-radius: 4px;
+  span {
+    display: inline-block;
+    height: 16px;
+    line-height: 16px;
+    cursor: help;
   }
+
+  p + span svg path {
+    fill: $yellow;
+  }
+}
+
+.filterSearch {
+  position: relative;
+  display: block;
+
+  svg {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px 0 36px;
+    border: 1px solid rgba($white, 0.1);
+    border-radius: 10px;
+    background: rgba($bg, 0.55);
+    color: $white;
+    @include body;
+    line-height: 36px;
+
+    &::placeholder {
+      color: $default;
+    }
+
+    &:focus {
+      border-color: $primary;
+    }
+  }
+}
+
+.filterHint {
+  color: $default;
+  @include caption;
+  line-height: 16px;
+}
+
+.filterHintForbidden {
+  color: #ffb4b4;
+}
+
+.filterEmpty {
+  padding: 8px 4px 0;
+  color: $default;
+  @include caption;
+  line-height: 18px;
+}
+
+.talisman {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba($white, 0.08);
+}
+
+.talismanHead {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+
+  p {
+    color: rgba($white, 0.86);
+    @include caption;
+    line-height: 18px;
+  }
+
+  span {
+    display: inline-block;
+    height: 16px;
+    line-height: 16px;
+    cursor: help;
+  }
+
+  p + span svg path {
+    fill: $yellow;
+  }
+
+  b {
+    color: $default;
+    font-weight: 500;
+    @include caption;
+    line-height: 18px;
+
+    &.talismanBonusOn {
+      color: $primary;
+    }
+  }
+}
+
+.talismanSlots {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.talismanSlot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  > span {
+    color: $default;
+    @include caption;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+}
+
+.talismanOptions {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba($bg, 0.55);
+}
+
+.talismanOption {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: transparent;
+  color: $default;
+  text-align: center;
+  cursor: pointer;
+  @include caption;
+  line-height: 28px;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.talismanOptionOn {
+  background: rgba($white, 0.1);
+  color: $white;
+}
+
+.talismanOptionUpgraded {
+  background: rgba($yellow, 0.16);
+  color: $yellow;
 }

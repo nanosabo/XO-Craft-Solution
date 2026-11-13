@@ -19,7 +19,7 @@
               "Max parts count is 80 for a regular build and 180 for a Leviathan.",
               "Current PS is the power score right now. Max PS is the ceiling of the result. 0 means there is no ceiling.",
               "Min part HP drops parts that are too fragile.",
-              "Durability cabin +10% turns on the cabin bonus. The «Grizzly» co-driver adds 5% to durability."
+              "Durability cabin +10% turns on the cabin bonus. The «Grizzly» co-driver adds 5% to durability. Talisman: up to two modules, regular +7% and upgraded +9%."
             ]
           },
           {

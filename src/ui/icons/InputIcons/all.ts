@@ -9,3 +9,4 @@ export { default as MinLoadIcon } from "./MinLoadIcon";
 export { default as MaxLoadIcon } from "./MaxLoadIcon";
 export { default as QuestionIcon } from "./QuestionIcon";
 export { default as DriverIcon } from "./DriverIcon";
+export { default as TalismanIcon } from "./TalismanIcon";

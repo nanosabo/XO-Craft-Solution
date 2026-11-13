@@ -10,7 +10,7 @@ const PartsFilterButton: FC<PropsWithChildren<Props>> = (props) => {
   const classes = classNames(styles.button, className);
 
   return (
-    <button className={classes} {...attrs}>
+    <button type="button" className={classes} {...attrs}>
       {children}
     </button>
   );

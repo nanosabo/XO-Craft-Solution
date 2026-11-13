@@ -4,6 +4,7 @@ import {
   solvedResult,
 } from "@src/store/slices/loader.slice";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
+import { applyDurabilityBonuses } from "@src/helpers/durabilityBonus";
 import { getPartDurability, Part } from "../Settings/types";
 
 interface TotalsParams {
@@ -50,9 +51,7 @@ const buildSolutionTotals = ({
     { parts: 0, power: 0, weight: 0, durability: 0 },
   );
 
-  let totalDurability = stats.durability;
-  if (inputs.durabilityCabin) totalDurability *= 1.1;
-  if (inputs.coDriver) totalDurability *= 1.05;
+  let totalDurability = applyDurabilityBonuses(stats.durability, inputs);
   totalDurability += inputs.durability;
 
   return {

@@ -1,27 +1,21 @@
-import { FC, PropsWithChildren, useRef, useState } from "react";
+import { FC, PropsWithChildren, useRef } from "react";
 import classNames from "classnames";
-import throttle from "lodash.throttle";
 import styles from "./styles/RequiredDetails.module.scss";
+import useScrollFade from "@src/hooks/useScrollFade";
 
 const RequiredDetailsWrapper: FC<PropsWithChildren> = ({ children }) => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const scrollRef = useRef<null | HTMLDivElement>(null);
-
-  const handleScroll = throttle(() => {
-    if (scrollRef.current) {
-      const haveScroll = scrollRef.current.scrollTop > 0;
-      if (haveScroll) setIsScrolled(true);
-      else setIsScrolled(false);
-    }
-  }, 50);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const fade = useScrollFade(scrollRef);
 
   return (
-    <div
-      className={classNames(styles.required_wrapper, {
-        [styles.scrolled]: isScrolled,
-      })}
-    >
-      <div ref={scrollRef} onScroll={handleScroll} className={styles.required}>
+    <div className={styles.required_wrapper}>
+      <div
+        ref={scrollRef}
+        className={classNames(styles.required, {
+          [styles.fadeTop]: fade.top,
+          [styles.fadeBottom]: fade.bottom,
+        })}
+      >
         {children}
       </div>
     </div>

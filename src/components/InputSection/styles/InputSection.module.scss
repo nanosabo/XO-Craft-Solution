@@ -9,13 +9,30 @@
 
 .header {
   display: flex;
+  align-items: center;
   gap: 8px;
+  min-width: 0;
+
+  svg {
+    flex-shrink: 0;
+  }
 
   p {
-    @include body;
+    min-width: 0;
+    color: rgba($white, 0.86);
+    @include caption;
+    line-height: 18px;
 
     & + span svg path {
       fill: $yellow;
     }
+  }
+
+  span {
+    display: inline-block;
+    flex-shrink: 0;
+    height: 16px;
+    line-height: 16px;
+    cursor: help;
   }
 }

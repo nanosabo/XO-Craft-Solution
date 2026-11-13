@@ -1,5 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
+import {
+  emptyTalismans,
+  normalizeTalismans,
+  TalismanSlots,
+} from "@src/helpers/durabilityBonus";
 
 export interface solveInputsState {
   durability: number;
@@ -12,6 +17,7 @@ export interface solveInputsState {
   minPartHp: number;
   durabilityCabin: boolean;
   coDriver: boolean;
+  talismans: TalismanSlots;
 }
 
 const initialState: solveInputsState = {
@@ -25,15 +31,30 @@ const initialState: solveInputsState = {
   minPartHp: 0,
   durabilityCabin: false,
   coDriver: false,
+  talismans: emptyTalismans(),
 };
 
 const storage = localStorage.getItem("solveInputs");
 
+const readStoredInputs = (): solveInputsState => {
+  if (!storage) return initialState;
+
+  try {
+    const parsed = JSON.parse(storage) as Partial<solveInputsState>;
+
+    return {
+      ...initialState,
+      ...parsed,
+      talismans: normalizeTalismans(parsed.talismans),
+    };
+  } catch {
+    return initialState;
+  }
+};
+
 export const solveInputsSlice = createSlice({
   name: "loader",
-  initialState: storage
-    ? (JSON.parse(storage) as solveInputsState)
-    : initialState,
+  initialState: readStoredInputs(),
   reducers: {
     setSolveInput<K extends keyof solveInputsState>(
       state: solveInputsState,
@@ -47,9 +68,18 @@ export const solveInputsSlice = createSlice({
       state[action.payload.key] = action.payload.value;
       localStorage.setItem("solveInputs", JSON.stringify(state));
     },
-    setSolveValues(_, action: PayloadAction<solveInputsState>) {
-      localStorage.setItem("solveInputs", JSON.stringify(action.payload));
-      return action.payload;
+    setSolveValues(
+      _,
+      action: PayloadAction<
+        Omit<solveInputsState, "talismans"> & { talismans?: unknown }
+      >,
+    ) {
+      const next: solveInputsState = {
+        ...action.payload,
+        talismans: normalizeTalismans(action.payload.talismans),
+      };
+      localStorage.setItem("solveInputs", JSON.stringify(next));
+      return next;
     },
   },
 });

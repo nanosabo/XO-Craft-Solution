@@ -1,7 +1,7 @@
 {
   "header": {
-    "title": "Build parameters",
-    "subtitle": "Enter the current characteristics of the build, as well as restrictions for the final solution"
+    "title": "Parts assistant",
+    "subtitle": "Picks parts for the highest durability within a set power score, tonnage and part limit"
   },
   "inputs": {
     "durability": {
@@ -74,6 +74,17 @@
         "subtitle": ""
       }
     },
+    "talisman": {
+      "title": "Talisman",
+      "slot": "Module {{n}}",
+      "none": "None",
+      "stock": "+7%",
+      "upgraded": "+9%",
+      "tooltip": {
+        "title": "The module adds cabin durability. A regular one gives +7%, an upgraded one +9%. You can mount two, including one of each",
+        "subtitle": "The bonuses add up and are applied the same way as the cabin and co-driver bonuses"
+      }
+    },
     "requriedParts": {
       "title": "Parts filter",
       "tooltip": {
@@ -97,9 +108,20 @@
     "title": "Get Solution"
   },
   "required": {
-    "title": "Required"
+    "title": "Required",
+    "empty": "Search above and add a part here",
+    "hint": "These parts must be included",
+    "addHint": "Click a part to require it"
   },
   "forbidden": {
-    "title": "Forbidden"
+    "title": "Unwanted",
+    "empty": "Search above and exclude a part",
+    "hint": "These parts will not be used",
+    "addHint": "Click a part to exclude it"
+  },
+  "filterSearch": {
+    "searching": "Searching...",
+    "noResults": "Nothing found",
+    "remove": "Remove"
   }
 }

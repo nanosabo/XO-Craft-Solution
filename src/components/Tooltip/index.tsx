@@ -9,6 +9,7 @@ type Props = {
   image?: string;
   visible: boolean;
   anchorRef: RefObject<HTMLElement | null>;
+  maxWidth?: number;
 };
 
 const MARGIN = 8;
@@ -19,6 +20,7 @@ const Tooltip: FC<Props> = ({
   image,
   visible,
   anchorRef,
+  maxWidth,
 }) => {
   const tipRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{
@@ -42,7 +44,7 @@ const Tooltip: FC<Props> = ({
       if (!anchor || !tip) return;
 
       const rect = anchor.getBoundingClientRect();
-      const width = rect.width;
+      const width = maxWidth ? Math.min(rect.width, maxWidth) : rect.width;
       const height = tip.offsetHeight;
       let top = rect.top - MARGIN - height;
 
@@ -81,7 +83,7 @@ const Tooltip: FC<Props> = ({
       imageNode?.removeEventListener("load", reveal);
       window.removeEventListener("resize", place);
     };
-  }, [anchorRef, image, subtitle, title, visible]);
+  }, [anchorRef, image, maxWidth, subtitle, title, visible]);
 
   if (!visible) return null;
 
@@ -96,7 +98,11 @@ const Tooltip: FC<Props> = ({
       style={{
         left: box?.left ?? anchorRef.current?.getBoundingClientRect().left ?? 0,
         top: box?.top ?? 0,
-        width: box?.width ?? anchorWidth,
+        width:
+          box?.width ??
+          (maxWidth && anchorWidth
+            ? Math.min(anchorWidth, maxWidth)
+            : anchorWidth),
       }}
     >
       <p>{title}</p>

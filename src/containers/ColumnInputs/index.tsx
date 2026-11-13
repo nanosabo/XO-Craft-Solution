@@ -9,6 +9,7 @@ import {
   solveInputsState,
 } from "@src/store/slices/solveInputs.slice";
 import RequiredParts from "./RequiredParts";
+import TalismanField from "./TalismanField";
 import { useFormContext } from "react-hook-form";
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { VehicleFormData } from "@src/helpers/validation";
@@ -34,41 +35,55 @@ const ColumnInputs = () => {
     });
   }, [data, setValue]);
 
+  const fieldColumns = allColumns.map((inputs) => Object.entries(inputs));
+  const rowCount = Math.max(...fieldColumns.map((column) => column.length));
+
   return (
     <form className={styles.wrapper} onSubmit={handleSubmit(() => {})}>
-      {allColumns.map((inputs, key) => (
-        <div key={key} className={styles.block}>
-          {Object.entries(inputs).map(([name, { icon, type }]) => (
-            <InputSection
-              key={name}
-              register={register(name as keyof VehicleFormData)}
-              icon={icon}
-              type={type}
-              min={
-                typeof data[name as keyof solveInputsState] === "number"
-                  ? 0
-                  : undefined
-              }
-              title={t(`inputs.${name}.title`)}
-              placeholder={t("inputs.placeholder")}
-              tooltipTitle={t(`inputs.${name}.tooltip.title`)}
-              toolTipSubtitle={t(`inputs.${name}.tooltip.subtitle`)}
-              tooltipImage={
-                inputs[name].image
-                  ? `tooltips/${contentLanguage(i18n.language)}/${name}.png`
-                  : undefined
-              }
-              error={
-                errors[name as keyof solveInputsState]
-                  ? t(
-                      `errors.${errors[name as keyof solveInputsState]?.message}`,
-                    )
-                  : undefined
-              }
-            />
-          ))}
+      <div className={styles.fields}>
+        <div className={styles.grid}>
+        {Array.from({ length: rowCount }, (_, index) =>
+          fieldColumns.map((column) => {
+            const field = column[index];
+
+            if (!field) return null;
+
+            const [name, { icon, type, image }] = field;
+
+            return (
+              <InputSection
+                key={name}
+                register={register(name as keyof VehicleFormData)}
+                icon={icon}
+                type={type}
+                min={
+                  typeof data[name as keyof solveInputsState] === "number"
+                    ? 0
+                    : undefined
+                }
+                title={t(`inputs.${name}.title`)}
+                placeholder={t("inputs.placeholder")}
+                tooltipTitle={t(`inputs.${name}.tooltip.title`)}
+                toolTipSubtitle={t(`inputs.${name}.tooltip.subtitle`)}
+                tooltipImage={
+                  image
+                    ? `tooltips/${contentLanguage(i18n.language)}/${name}.png`
+                    : undefined
+                }
+                error={
+                  errors[name as keyof solveInputsState]
+                    ? t(
+                        `errors.${errors[name as keyof solveInputsState]?.message}`,
+                      )
+                    : undefined
+                }
+              />
+            );
+          }),
+        ).flat()}
         </div>
-      ))}
+        <TalismanField />
+      </div>
 
       <RequiredParts />
     </form>
