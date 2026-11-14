@@ -24,6 +24,11 @@
       "title": "Monobank",
       "text": "A jar, if you'd rather support development directly.",
       "action": "Open the jar"
+    },
+    "donations": {
+      "title": "Already supported",
+      "empty": "The jar is still quiet. You can be the first.",
+      "noComment": "No comment"
     }
   },
   "services": {

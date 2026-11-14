@@ -340,6 +340,114 @@
   white-space: nowrap;
 }
 
+.donations {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      90% 140% at 0% 0%,
+      rgba($yellow, 0.1) 0%,
+      transparent 58%
+    ),
+    rgba(17, 19, 22, 0.55);
+}
+
+.donationsTitle {
+  color: $white;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.donationsEmpty {
+  margin-top: 10px;
+  color: rgba($white, 0.62);
+  @include caption;
+}
+
+.donationsList {
+  --donation-row: 96px;
+
+  display: flex;
+  flex-flow: row wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  // Two full rows, the gap between them, and half of the next row.
+  max-height: calc(var(--donation-row) * 2.5 + 8px * 2);
+  margin-top: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba($yellow, 0.45) transparent;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba($yellow, 0.4);
+  }
+}
+
+.donation {
+  display: flex;
+  flex: 0 1 240px;
+  flex-direction: column;
+  gap: 8px;
+  width: 240px;
+  height: var(--donation-row, 96px);
+  max-width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 14px;
+  background: rgba($white, 0.04);
+}
+
+.donationTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.donationComment,
+.donationQuiet {
+  display: -webkit-box;
+  overflow: hidden;
+  color: $white;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.donationQuiet {
+  color: rgba($white, 0.5);
+}
+
+.donationTime {
+  color: $default;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.donationAmount {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba($yellow, 0.16);
+  color: $yellow;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 22px;
+  white-space: nowrap;
+}
+
 .wayAction {
   display: grid;
   grid-column: 2;

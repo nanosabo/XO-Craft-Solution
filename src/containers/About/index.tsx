@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import classNames from "classnames";
 import PageTitle from "@src/components/PageTitle";
+import Donations from "./Donations";
 import { logWarning } from "@src/helpers/errorLog";
 import useAppVersion from "@src/containers/Settings/useAppVersion";
 import useScrollFade from "@src/hooks/useScrollFade";
@@ -186,6 +187,8 @@ const About = () => {
                 </button>
               ))}
             </div>
+
+            <Donations />
           </section>
 
           <section className={styles.services}>
