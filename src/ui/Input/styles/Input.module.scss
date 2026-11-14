@@ -1,6 +1,8 @@
 @import "@styles/theme";
 
 .input {
+  position: relative;
+
   &:not(:has(input[type="checkbox"])) {
     display: flex;
     align-items: center;
@@ -80,8 +82,17 @@
   }
 
   &.error:has(input[type="number"]) {
-    background-color: rgba($red, 0.3);
+    background-color: mix($bg, $red, 88%);
     border-color: $red;
+  }
+
+  &.error input::placeholder {
+    color: transparent;
+  }
+
+  // A filled invalid field cannot show the message inside the box.
+  &.error:has(input:not(:placeholder-shown)) {
+    margin-bottom: 18px;
   }
 }
 
@@ -100,9 +111,23 @@
 
 .error_message {
   position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  font-size: 15px;
-  font-weight: 600;
+  top: 0;
+  right: 14px;
+  bottom: 0;
+  left: 14px;
+  overflow: hidden;
   color: $red;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 34px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.input.error:has(input:not(:placeholder-shown)) .error_message {
+  top: calc(100% + 2px);
+  bottom: auto;
+  height: 16px;
+  line-height: 16px;
 }

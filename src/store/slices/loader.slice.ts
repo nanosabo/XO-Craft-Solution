@@ -559,6 +559,10 @@ export const LoaderSlice = createSlice({
         state.solutionBeforeSolve = state.solvedResult?.solution ?? null;
         state.explicitlyRemoved = [];
         state.removalSnapshot = null;
+        // A new calculation from the craft screen starts clean. Marks stay
+        // only for a recalculation on the result page.
+        state.installedParts = [];
+        saveInstalledParts([]);
         state.status = LoaderStateStatus.SOLVING;
         state.solvedResult = null;
         state.error = null;
