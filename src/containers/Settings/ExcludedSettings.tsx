@@ -63,7 +63,7 @@ const ExcludedSettings = () => {
   };
 
   return (
-    <div className={styles.panel}>
+    <div className={classNames(styles.panel, styles.panelFill)}>
       <div className={styles.panelHeader}>
         <h2>{t("excluded.title")}</h2>
         <p>{t("excluded.subtitle")}</p>
@@ -107,6 +107,7 @@ const ExcludedSettings = () => {
       </SettingsSection>
 
       <SettingsSection
+        className={styles.cardFill}
         title={t("excluded.listTitle")}
         subtitle={t("excluded.listHint")}
       >

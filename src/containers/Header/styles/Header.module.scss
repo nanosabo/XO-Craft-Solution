@@ -1,7 +1,10 @@
 .bar {
   position: relative;
   z-index: 1;
-  display: flex;
+  display: grid;
+  // The menu stays centered while it fits. Long labels push it aside instead
+  // of sliding under the logo or the window buttons.
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
   gap: 18px;
   width: 100%;

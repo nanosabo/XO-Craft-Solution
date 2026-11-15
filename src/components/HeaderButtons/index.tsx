@@ -50,6 +50,7 @@ const HeaderButtons = () => {
       <span className={styles.divider} aria-hidden="true" />
 
       <WindowButton type="hide" />
+      <WindowButton type="maximize" />
       <WindowButton type="close" />
     </div>
   );

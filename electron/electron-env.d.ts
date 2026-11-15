@@ -30,6 +30,11 @@ interface Window {
     setLaunchAtLogin(
       enabled: boolean,
     ): Promise<{ enabled: boolean; available: boolean }>;
+    toggleMaximize(): void;
+    getUiScale(): Promise<number>;
+    setUiScale(scale: number): Promise<number>;
+    getWindowMaximized(): Promise<boolean>;
+    onWindowMaximized(listener: (maximized: boolean) => void): () => void;
     getIsMirror(): Promise<boolean>;
     getIsDev(): Promise<boolean>;
     getUpdateInfo(): Promise<{

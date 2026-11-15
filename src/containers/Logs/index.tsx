@@ -564,71 +564,80 @@ const Logs = () => {
                 </div>
               )}
 
-              {latestLog && (
-                <>
-                  <span className={styles.latestEyebrow}>
-                    {t("upload.latestTitle")}
+              {latestLog ? (
+                <div className={styles.latestBody}>
+                  <div className={styles.latestInfo}>
+                    <span className={styles.latestEyebrow}>
+                      {t("upload.latestTitle")}
+                    </span>
+                    <strong className={styles.latestName}>
+                      {latestLog.session.toLowerCase() === "logs"
+                        ? "combat.log"
+                        : latestLog.session}
+                    </strong>
+                    <span className={styles.latestMeta}>
+                      {formatDate(latestLog.modifiedAt / 1000)}
+                    </span>
+                    <span
+                      className={styles.latestPath}
+                      title={latestLog.filePath}
+                    >
+                      {shortenPath(parentDir(latestLog.filePath))}
+                    </span>
+                  </div>
+                  <div className={styles.latestActions}>
+                    <button
+                      type="button"
+                      className={classNames(
+                        styles.primaryButton,
+                        styles.latestButton,
+                      )}
+                      onClick={() => {
+                        setFilePath(latestLog.filePath);
+                        setUploadError(null);
+                        void upload(latestLog.filePath);
+                      }}
+                    >
+                      {t("upload.latestUpload")}
+                    </button>
+                    <button
+                      type="button"
+                      className={classNames(
+                        styles.secondaryButton,
+                        styles.latestButton,
+                      )}
+                      onClick={() => void pickFile()}
+                      title={filePath ?? t("upload.pick")}
+                    >
+                      {t("upload.pickOther")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={classNames(
+                    styles.pickButton,
+                    filePath && styles.pickButtonSelected,
+                  )}
+                  onClick={() => void pickFile()}
+                  title={filePath ?? t("upload.pick")}
+                >
+                  <span className={styles.pickIcon}>
+                    <FileGlyph />
                   </span>
-                  <strong className={styles.latestName}>
-                    {latestLog.session.toLowerCase() === "logs"
-                      ? "combat.log"
-                      : latestLog.session}
-                  </strong>
-                  <span className={styles.latestMeta}>
-                    {formatDate(latestLog.modifiedAt / 1000)}
+                  <span className={styles.pickCopy}>
+                    <strong>
+                      {filePath ? fileName(filePath) : t("upload.pick")}
+                    </strong>
+                    <span>
+                      {filePath
+                        ? t("upload.selectedHint")
+                        : t("upload.pickHint")}
+                    </span>
                   </span>
-                  <span
-                    className={styles.latestPath}
-                    title={latestLog.filePath}
-                  >
-                    {shortenPath(parentDir(latestLog.filePath))}
-                  </span>
-                  <button
-                    type="button"
-                    className={classNames(styles.primaryButton, styles.latestButton)}
-                    onClick={() => {
-                      setFilePath(latestLog.filePath);
-                      setUploadError(null);
-                      void upload(latestLog.filePath);
-                    }}
-                  >
-                    {t("upload.latestUpload")}
-                  </button>
-                </>
+                </button>
               )}
-
-              <button
-                type="button"
-                className={classNames(
-                  latestLog
-                    ? styles.secondaryButton
-                    : styles.pickButton,
-                  latestLog && styles.latestButton,
-                  !latestLog && filePath && styles.pickButtonSelected,
-                )}
-                onClick={() => void pickFile()}
-                title={filePath ?? t("upload.pick")}
-              >
-                {latestLog ? (
-                  t("upload.pickOther")
-                ) : (
-                  <>
-                    <span className={styles.pickIcon}>
-                      <FileGlyph />
-                    </span>
-                    <span className={styles.pickCopy}>
-                      <strong>
-                        {filePath ? fileName(filePath) : t("upload.pick")}
-                      </strong>
-                      <span>
-                        {filePath
-                          ? t("upload.selectedHint")
-                          : t("upload.pickHint")}
-                      </span>
-                    </span>
-                  </>
-                )}
-              </button>
             </div>
         )}
 

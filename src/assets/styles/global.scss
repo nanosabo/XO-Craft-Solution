@@ -9,6 +9,12 @@ body {
   overflow: hidden;
 }
 
+:root {
+  // Wide but short windows (ultrawide monitors) keep the content readable
+  // instead of stretching rows across the whole screen.
+  --page-max-width: 1760px;
+}
+
 #root {
   display: flex;
   flex-direction: column;

@@ -3,8 +3,12 @@
 .root {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
+  // 12px on the minimal window, up to 32px on wide ones.
+  column-gap: clamp(12px, calc((100vw - 1160px) * 0.1 + 12px), 32px);
+
+  > :last-child {
+    margin-left: auto;
+  }
 }
 
 .buttons {
@@ -27,7 +31,14 @@
   }
 }
 
-.search,
+.search {
+  flex: 1 1 160px;
+  min-width: 160px;
+  max-width: 320px;
+}
+
 .sort {
-  width: 160px;
+  flex: 1 1 160px;
+  min-width: 160px;
+  max-width: 260px;
 }

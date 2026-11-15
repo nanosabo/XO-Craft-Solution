@@ -1,5 +1,7 @@
 export { default as CloseIcon } from "./CloseIcon";
 export { default as HideIcon } from "./HideIcon";
+export { default as MaximizeIcon } from "./MaximizeIcon";
+export { default as RestoreIcon } from "./RestoreIcon";
 export { default as HomeIcon } from "./HomeIcon";
 export { default as SettingsIcon } from "./SettingsIcon";
 export { default as InfoIcon } from "./InfoIcon";

@@ -206,7 +206,23 @@ const loadToastWindow = (window: BrowserWindow) => {
     const url = new URL(devServer);
     url.searchParams.set("toast", "1");
     url.hash = "/toasts";
-    void window.loadURL(url.toString());
+
+    // Chromium shares page zoom per host. The main window scales with its
+    // size, so in dev the toasts load from a loopback literal instead of
+    // "localhost". Packaged builds use file:// where zoom is per window.
+    const hosts =
+      url.hostname === "localhost"
+        ? ["[::1]", "127.0.0.1", url.hostname]
+        : [url.hostname];
+
+    const tryHost = (index: number) => {
+      if (window.isDestroyed() || index >= hosts.length) return;
+
+      url.hostname = hosts[index];
+      window.loadURL(url.toString()).catch(() => tryHost(index + 1));
+    };
+
+    tryHost(0);
     return;
   }
 

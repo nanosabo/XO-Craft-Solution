@@ -381,7 +381,7 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 460px;
+  grid-template-columns: minmax(0, 3fr) minmax(460px, 2fr);
   gap: 16px;
   align-items: stretch;
 }
@@ -530,8 +530,43 @@
   word-break: break-all;
 }
 
-.latest .primaryButton {
+.latest {
+  container-type: inline-size;
+}
+
+.latestBody,
+.latestInfo,
+.latestActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.latestBody {
+  flex: 1;
+}
+
+.latestActions {
   margin-top: auto;
+}
+
+@container (min-width: 720px) {
+  .latestBody {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .latestInfo {
+    flex: 1;
+  }
+
+  .latestActions {
+    flex: none;
+    width: 260px;
+    margin-top: 0;
+  }
 }
 
 .latestButton {

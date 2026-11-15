@@ -1,8 +1,7 @@
 @import "@styles/theme";
 
 .nav {
-  position: absolute;
-  left: 50%;
+  position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
@@ -12,5 +11,4 @@
   background: rgba($white, 0.03);
   border: 1px solid rgba($white, 0.08);
   border-radius: 12px;
-  transform: translateX(-50%);
 }

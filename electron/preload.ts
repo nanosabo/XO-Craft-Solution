@@ -23,6 +23,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getLaunchAtLogin: () => ipcRenderer.invoke("get-launch-at-login"),
   setLaunchAtLogin: (enabled: boolean) =>
     ipcRenderer.invoke("set-launch-at-login", enabled),
+  toggleMaximize: () => ipcRenderer.send("toggle-maximize"),
+  getUiScale: () => ipcRenderer.invoke("get-ui-scale") as Promise<number>,
+  setUiScale: (scale: number) =>
+    ipcRenderer.invoke("set-ui-scale", scale) as Promise<number>,
+  getWindowMaximized: () =>
+    ipcRenderer.invoke("get-window-maximized") as Promise<boolean>,
+  onWindowMaximized: (listener: (maximized: boolean) => void) => {
+    const wrapped = (_: Electron.IpcRendererEvent, maximized: boolean) => {
+      listener(maximized);
+    };
+
+    ipcRenderer.on("window-maximized", wrapped);
+
+    return () => ipcRenderer.removeListener("window-maximized", wrapped);
+  },
   getIsMirror: () => ipcRenderer.invoke("get-is-mirror"),
   getIsDev: () => ipcRenderer.invoke("get-is-dev") as Promise<boolean>,
   getUpdateInfo: () => ipcRenderer.invoke("get-update-info"),

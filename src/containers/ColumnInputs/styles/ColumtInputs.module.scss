@@ -4,6 +4,8 @@
   display: grid;
   flex: 1;
   grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+  // The row follows the form; the filter card matches its height.
+  grid-template-rows: auto;
   align-content: start;
   gap: 16px;
   min-height: 0;
@@ -24,10 +26,9 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-auto-rows: auto;
-  align-content: start;
   align-items: center;
-  row-gap: 8px;
+  // 8px on the minimal window, up to 22px on tall ones.
+  row-gap: clamp(8px, calc((100vh - 650px) * 0.08 + 8px), 22px);
   column-gap: 44px;
 
   &::before {

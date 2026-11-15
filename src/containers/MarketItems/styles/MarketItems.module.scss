@@ -1,14 +1,15 @@
 @import "@styles/theme";
 
-$market-columns: 240px // Название
-  95px // Продажа
-  95px // Покупка
-  95px // Предложения
-  100px // Запросы
-  90px // Спред
-  95px // ROI
-  120px // Производство
-  110px; // Прибыль
+// The minimums add up to the minimal window; wider windows share the rest.
+$market-columns: minmax(240px, 2.4fr) // Название
+  minmax(95px, 1fr) // Продажа
+  minmax(95px, 1fr) // Покупка
+  minmax(95px, 1fr) // Предложения
+  minmax(100px, 1fr) // Запросы
+  minmax(90px, 1fr) // Спред
+  minmax(95px, 1fr) // ROI
+  minmax(120px, 1.2fr) // Производство
+  minmax(110px, 1.1fr); // Прибыль
 
 .wrapper {
   flex: 1;
@@ -34,7 +35,11 @@ $market-columns: 240px // Название
 
 .root {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  // At least 6 cards per row; wider windows add columns instead of stretching.
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(200px, calc((100% - 5 * 10px) / 6)), 1fr)
+  );
   gap: 10px;
 }
 

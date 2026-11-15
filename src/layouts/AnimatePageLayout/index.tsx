@@ -15,7 +15,9 @@ const AnimatePageLayout: FC<PropsWithChildren<Props>> = ({ children, fill }) => 
       animate="animate"
       exit="exit"
       style={{
-        width: 1072,
+        width: "100%",
+        maxWidth: "var(--page-max-width)",
+        marginInline: "auto",
         ...(fill
             ? {
               flex: 1,

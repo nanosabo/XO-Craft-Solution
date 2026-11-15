@@ -3,6 +3,7 @@
 .brand {
   position: relative;
   flex-shrink: 0;
+  justify-self: start;
   height: 42px;
 
   svg {

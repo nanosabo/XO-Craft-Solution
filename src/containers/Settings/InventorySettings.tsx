@@ -39,7 +39,7 @@ const InventorySettings = () => {
   };
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} ${styles.panelFill}`}>
       <div className={styles.panelHeader}>
         <h2>{t("inventory.title")}</h2>
         <p>{t("inventory.subtitle")}</p>
@@ -51,6 +51,7 @@ const InventorySettings = () => {
       />
 
       <SettingsSection
+        className={styles.cardFill}
         title={t("inventory.listTitle")}
         subtitle={t("inventory.listHint")}
       >

@@ -18,7 +18,7 @@
   },
   "general": {
     "title": "General settings",
-    "subtitle": "Interface language, start screen, launch at startup, notifications, updates and app data.",
+    "subtitle": "Interface language and scale, start screen, launch at startup, notifications, updates and app data.",
     "installed": {
       "title": "Solution",
       "subtitle": "Parts already mounted on the craft can stay in the selection.",
@@ -40,6 +40,12 @@
       "ru": "Русский",
       "uk": "Українська",
       "en": "English"
+    },
+    "scale": {
+      "title": "Interface scale",
+      "subtitle": "Size of text and controls. “Auto” fits the interface to the window size.",
+      "hint": "Applies once the window is bigger than its minimal size. The minimal window always uses the standard scale.",
+      "auto": "Auto"
     },
     "startScreen": {
       "title": "Start screen",

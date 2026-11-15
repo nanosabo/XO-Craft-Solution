@@ -7,6 +7,7 @@ const WindowActions = () => {
       <div className={styles.drag} />
       <div className={styles.window_actions}>
         <WindowButton type="hide" />
+        <WindowButton type="maximize" />
         <WindowButton type="close" />
       </div>
     </>

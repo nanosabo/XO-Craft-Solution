@@ -69,6 +69,15 @@ import {
 } from "./crossoutLogApi";
 import { closeCrossoutBrowser } from "./crossoutBrowser";
 import {
+  bindWindowScale,
+  getUiScale,
+  MIN_HEIGHT,
+  MIN_WIDTH,
+  readWindowState,
+  setUiScale,
+  writeWindowState,
+} from "./windowScale";
+import {
   installWeaponScheme,
   registerWeaponProtocol,
 } from "./weaponImages";
@@ -319,46 +328,20 @@ export const getContentLanguage = () => contentLanguage(lang);
 
 const statePath = path.join(app.getPath("userData"), "window-state.json");
 
-interface WindowState {
-  x?: number;
-  y?: number;
-}
-
 const RELEASE_REPO = "nanosabo/XO-Craft-Solution";
 
-const WIDTH = 1160;
-const HEIGHT = 650;
-
 function createWindow() {
-  let x: number | undefined;
-  let y: number | undefined;
-
-  try {
-    if (fs.existsSync(statePath)) {
-      const state: WindowState = JSON.parse(fs.readFileSync(statePath, "utf8"));
-
-      const display = screen.getDisplayMatching({
-        x: state.x || 0,
-        y: state.y || 0,
-        width: WIDTH,
-        height: HEIGHT,
-      });
-
-      if (display) {
-        x = state.x;
-        y = state.y;
-      }
-    }
-  } catch (err) {
-    console.error("Failed to load window state:", err);
-  }
+  const { bounds, maximized } = readWindowState(statePath);
 
   win = new BrowserWindow({
-    width: 1160,
-    height: 650,
-    x,
-    y,
-    resizable: false,
+    ...bounds,
+    minWidth: MIN_WIDTH,
+    minHeight: MIN_HEIGHT,
+    resizable: true,
+    maximizable: true,
+    fullscreenable: false,
+    show: false,
+    backgroundColor: "#111316",
     autoHideMenuBar: true,
     frame: false,
     webPreferences: {
@@ -366,6 +349,10 @@ function createWindow() {
       devTools: IS_DEV,
     },
   });
+
+  bindWindowScale(win, statePath);
+  if (maximized) win.maximize();
+  win.once("ready-to-show", () => win?.show());
 
   if (win) bindToastAnchor(win);
 
@@ -454,6 +441,21 @@ ipcMain.on("minimize", (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   win?.minimize();
 });
+
+ipcMain.on("toggle-maximize", (e) => {
+  const target = BrowserWindow.fromWebContents(e.sender);
+  if (!target) return;
+
+  if (target.isMaximized()) target.unmaximize();
+  else target.maximize();
+});
+
+ipcMain.handle("get-ui-scale", () => getUiScale());
+ipcMain.handle("set-ui-scale", (_e, scale: number) => setUiScale(scale));
+
+ipcMain.handle("get-window-maximized", (e) =>
+  Boolean(BrowserWindow.fromWebContents(e.sender)?.isMaximized()),
+);
 
 ipcMain.on("close", () => {
   // const win = BrowserWindow.fromWebContents(e.sender);
@@ -1465,11 +1467,7 @@ app.whenReady().then(async () => {
     {
       label: "Выход",
       click: () => {
-        if (win) {
-          const bounds = win.getBounds();
-          const state: WindowState = { x: bounds.x, y: bounds.y };
-          fs.writeFileSync(statePath, JSON.stringify(state));
-        }
+        if (win) writeWindowState(win, statePath);
         app.quit();
         win = null;
       },

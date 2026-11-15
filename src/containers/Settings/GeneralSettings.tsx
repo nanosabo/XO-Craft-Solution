@@ -11,6 +11,7 @@ import useAppVersion from "./useAppVersion";
 import AboutSection from "./general/AboutSection";
 import DataSection from "./general/DataSection";
 import LanguageSection from "./general/LanguageSection";
+import ScaleSection from "./general/ScaleSection";
 import StartScreenSection from "./general/StartScreenSection";
 import NotificationsSection from "./general/NotificationsSection";
 import StartupSection from "./general/StartupSection";
@@ -39,6 +40,8 @@ const GeneralSettings = () => {
       </div>
 
       <LanguageSection language={language} onChange={changeLanguage} />
+
+      <ScaleSection />
 
       <StartScreenSection
         startScreen={startScreen}
