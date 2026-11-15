@@ -137,15 +137,34 @@ export const writeWindowState = (win: BrowserWindow, statePath: string) => {
 export const bindWindowScale = (win: BrowserWindow, statePath: string) => {
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const applyZoom = () => {
+  let zoomTimer: ReturnType<typeof setTimeout> | undefined;
+  let ownZoomAt = 0;
+
+  const applyZoom = (force = false) => {
     if (win.isDestroyed()) return;
 
-    const { width, height } = win.getContentBounds();
+    const content = win.getContentBounds();
+    const outer = win.getBounds();
+    // A restored or refocused window can briefly report a smaller content box.
+    // The outer size stays put, so the zoom is taken from whichever is larger.
+    const width = Math.max(content.width, outer.width);
+    const height = Math.max(content.height, outer.height);
+
+    if (width < MIN_WIDTH || height < MIN_HEIGHT) return;
+
     const zoom = zoomForSize(width, height, getUiScale());
 
-    if (Math.abs(win.webContents.getZoomFactor() - zoom) > 0.001) {
-      win.webContents.setZoomFactor(zoom);
+    if (!force && Math.abs(win.webContents.getZoomFactor() - zoom) <= 0.001) {
+      return;
     }
+
+    ownZoomAt = Date.now();
+    win.webContents.setZoomFactor(zoom);
+  };
+
+  const settleZoom = (force = false) => {
+    if (zoomTimer) clearTimeout(zoomTimer);
+    zoomTimer = setTimeout(() => applyZoom(force), 150);
   };
 
   const sendMaximized = () => {
@@ -160,12 +179,19 @@ export const bindWindowScale = (win: BrowserWindow, statePath: string) => {
   };
 
   const onResize = () => {
-    applyZoom();
+    // While the window is hidden or minimized Windows can report a smaller
+    // size. A zoom taken from that size stays until the setting is toggled.
+    if (win.isVisible() && !win.isMinimized()) {
+      applyZoom();
+      settleZoom();
+    }
+
     scheduleSave();
   };
 
   const onMaximizeChange = () => {
     applyZoom();
+    settleZoom();
     sendMaximized();
     scheduleSave();
   };
@@ -175,18 +201,29 @@ export const bindWindowScale = (win: BrowserWindow, statePath: string) => {
   win.on("move", scheduleSave);
   win.on("maximize", onMaximizeChange);
   win.on("unmaximize", onMaximizeChange);
+  win.on("show", () => settleZoom(true));
+  win.on("restore", () => settleZoom(true));
+  win.on("focus", () => settleZoom(true));
   win.on("close", () => {
     if (saveTimer) clearTimeout(saveTimer);
+    if (zoomTimer) clearTimeout(zoomTimer);
     writeWindowState(win, statePath);
   });
   scaleListeners.add(applyZoom);
   win.on("closed", () => scaleListeners.delete(applyZoom));
   win.webContents.on("did-finish-load", () => {
     applyZoom();
+    settleZoom();
     sendMaximized();
   });
-  // Ctrl+wheel and Ctrl+= would fight the automatic scale.
-  win.webContents.on("zoom-changed", () => applyZoom());
+  // Ctrl+wheel and Ctrl+= would fight the automatic scale. Chromium also
+  // resets the zoom when the window comes back; reapply once the size is real.
+  win.webContents.on("zoom-changed", () => {
+    if (!win.isVisible() || win.isMinimized()) return;
+    if (Date.now() - ownZoomAt < 300) return;
+
+    settleZoom(true);
+  });
   win.webContents.on("before-input-event", (event, input) => {
     if (!(input.control || input.meta) || input.type !== "keyDown") return;
 
