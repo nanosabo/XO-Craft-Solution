@@ -372,7 +372,7 @@
   display: flex;
   flex-flow: row wrap;
   align-content: flex-start;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 8px;
   // Two full rows, the gap between them, and half of the next row.
   max-height: calc(var(--donation-row) * 2.5 + 8px * 2);
@@ -394,12 +394,14 @@
 
 .donation {
   display: flex;
-  flex: 0 1 240px;
+  flex: 0 1 auto;
   flex-direction: column;
   gap: 8px;
-  width: 240px;
-  height: var(--donation-row, 96px);
-  max-width: 100%;
+  width: max-content;
+  min-width: min(240px, 100%);
+  max-width: min(360px, 100%);
+  min-height: var(--donation-row, 96px);
+  height: auto;
   padding: 12px 14px;
   border: 1px solid rgba($white, 0.08);
   border-radius: 14px;
@@ -415,15 +417,11 @@
 
 .donationComment,
 .donationQuiet {
-  display: -webkit-box;
-  overflow: hidden;
   color: $white;
   font-size: 15px;
   font-weight: 500;
   line-height: 1.4;
   overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .donationQuiet {
