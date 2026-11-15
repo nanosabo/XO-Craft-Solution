@@ -597,6 +597,7 @@ const buildAlliesShot = (
   }
 };
 
+const BATTLE_PAGE_SIZE = 10;
 const STAR_SIZE = 16;
 const STAR_GAP = 3;
 const STAR_STEP = STAR_SIZE + STAR_GAP;
@@ -671,6 +672,8 @@ const LogsResult = () => {
   const linksTimerRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const barSentinelRef = useRef<HTMLDivElement>(null);
+  const battlesSentinelRef = useRef<HTMLDivElement>(null);
+  const [battleLimit, setBattleLimit] = useState(BATTLE_PAGE_SIZE);
   const [barStuck, setBarStuck] = useState(false);
   const [statsQuery, setStatsQuery] = useState("");
   const [mapQuery, setMapQuery] = useState("");
@@ -1014,21 +1017,24 @@ const LogsResult = () => {
     return value;
   };
 
-  const mapLabel = (map: string) => {
-    if (!map) return "";
+  const mapLabel = useCallback(
+    (map: string) => {
+      if (!map) return "";
 
-    const normalized = normalizeMap(map);
-    const option = CROSSOUT_MAPS.find(
-      (item) =>
-        item.value === normalized ||
-        normalizeMap(item.ru) === normalized ||
-        normalizeMap(item.en) === normalized,
-    );
+      const normalized = normalizeMap(map);
+      const option = CROSSOUT_MAPS.find(
+        (item) =>
+          item.value === normalized ||
+          normalizeMap(item.ru) === normalized ||
+          normalizeMap(item.en) === normalized,
+      );
 
-    if (!option) return map;
+      if (!option) return map;
 
-    return isRu ? option.ru : option.en;
-  };
+      return isRu ? option.ru : option.en;
+    },
+    [isRu],
+  );
 
   const logTypeLabel = (key: string, fallback: string) => {
     const slug = key.toLowerCase().trim().replace(/[\s-]+/g, "_");
@@ -1250,6 +1256,40 @@ const LogsResult = () => {
 
     return mirroredBattleColumns(labels);
   }, [filteredBattles]);
+
+  // Cut on battle boundaries so rowSpan cells of a battle stay together.
+  const visibleBattles = useMemo(() => {
+    let seen = 0;
+    const end = filteredBattles.findIndex(
+      (row) => Boolean(row.battle) && ++seen > battleLimit,
+    );
+
+    return end === -1 ? filteredBattles : filteredBattles.slice(0, end);
+  }, [filteredBattles, battleLimit]);
+  const hasMoreBattles = visibleBattles.length < filteredBattles.length;
+
+  useEffect(() => {
+    setBattleLimit(BATTLE_PAGE_SIZE);
+  }, [logId, mapQuery, timeFiltered, timeFrom, timeTo]);
+
+  useEffect(() => {
+    const sentinel = battlesSentinelRef.current;
+
+    if (view !== "battles" || !hasMoreBattles || !sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setBattleLimit((prev) => prev + BATTLE_PAGE_SIZE);
+        }
+      },
+      { root: scrollRef.current, rootMargin: "600px" },
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [view, hasMoreBattles, battleLimit]);
 
   const copyScreenshot = async () => {
     const root = statsShotRef.current;
@@ -1792,7 +1832,7 @@ const LogsResult = () => {
                     </colgroup>
                   )}
                   <tbody>
-                    {filteredBattles.map((row, rowIndex) => {
+                    {visibleBattles.map((row, rowIndex) => {
                       if (row.battle) {
                         return (
                           <tr
@@ -1917,6 +1957,13 @@ const LogsResult = () => {
                     })}
                   </tbody>
                 </table>
+                {hasMoreBattles && (
+                  <div
+                    ref={battlesSentinelRef}
+                    className={styles.logBattlesSentinel}
+                    aria-hidden="true"
+                  />
+                )}
               </div>
             )}
           </div>
