@@ -1,5 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { isStartScreen, type StartScreen } from "@src/helpers/startScreen";
+import {
+  DEFAULT_TEAM_COLORS,
+  isHexColor,
+  type Team,
+  type TeamColors,
+} from "@src/helpers/teamColors";
 import { RootState } from "../store";
 
 export type NotificationSignal = "coins" | "radar" | "soft" | "custom";
@@ -36,6 +42,8 @@ export interface SettingsState {
   startScreen: StartScreen;
   /** When on, alerts use the operating system instead of the in-app toasts. */
   systemNotifications: boolean;
+  /** Nickname row colors of the combat log tables. */
+  teamColors: TeamColors;
 }
 
 export const SETTINGS_STORAGE_KEY = "settings";
@@ -62,6 +70,7 @@ export const createDefaultSettings = (): SettingsState => ({
   crossoutLogsPath: null,
   startScreen: "craft",
   systemNotifications: false,
+  teamColors: { ...DEFAULT_TEAM_COLORS },
 });
 
 const loadSettings = (): SettingsState => {
@@ -97,6 +106,8 @@ const loadSettings = (): SettingsState => {
         ? parsed.crossoutLogsPath.trim()
         : "";
 
+    const teamColors: Partial<TeamColors> = parsed.teamColors ?? {};
+
     return {
       ...defaults,
       ...parsed,
@@ -120,6 +131,14 @@ const loadSettings = (): SettingsState => {
         ? parsed.startScreen
         : defaults.startScreen,
       systemNotifications: parsed.systemNotifications === true,
+      teamColors: {
+        ally: isHexColor(teamColors.ally)
+          ? teamColors.ally
+          : defaults.teamColors.ally,
+        enemy: isHexColor(teamColors.enemy)
+          ? teamColors.enemy
+          : defaults.teamColors.enemy,
+      },
       inventory:
         parsed.inventory && typeof parsed.inventory === "object"
           ? parsed.inventory
@@ -241,6 +260,16 @@ export const settingsSlice = createSlice({
       state.systemNotifications = action.payload;
       saveSettings(state);
     },
+    setTeamColor(state, action: PayloadAction<{ team: Team; color: string }>) {
+      if (!isHexColor(action.payload.color)) return;
+
+      state.teamColors[action.payload.team] = action.payload.color.toLowerCase();
+      saveSettings(state);
+    },
+    resetTeamColors(state) {
+      state.teamColors = { ...DEFAULT_TEAM_COLORS };
+      saveSettings(state);
+    },
     resetSettings() {
       const defaults = createDefaultSettings();
       saveSettings(defaults);
@@ -266,6 +295,8 @@ export const {
   setCrossoutLogsPath,
   setStartScreen,
   setSystemNotifications,
+  setTeamColor,
+  resetTeamColors,
   resetSettings,
 } = settingsSlice.actions;
 

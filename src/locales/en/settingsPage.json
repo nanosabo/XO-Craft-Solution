@@ -170,6 +170,19 @@
     "considerOnNotice": "Hidden parts are used in every calculation again. The list is kept — turn this off to leave them out.",
     "considerOffNotice": "Hidden parts stay out of calculations. Turn this on to bring them back without clearing the list."
   },
+  "logs": {
+    "colors": {
+      "title": "Team colors",
+      "subtitle": "Ally and enemy colors in the stats and battles tables. Pick the nickname row color, the border and weapon rows follow it.",
+      "ally": "Allies",
+      "allyHint": "Your team.",
+      "enemy": "Enemies",
+      "enemyHint": "The opposing team.",
+      "previewPlayer": "Player name",
+      "previewWeapon": "Weapon",
+      "reset": "Reset colors"
+    }
+  },
   "analog": {
     "title": "Analog criteria",
     "subtitle": "Set the maximum stat deviations at which a part is considered a suitable analog.",

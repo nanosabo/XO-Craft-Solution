@@ -440,6 +440,87 @@
   }
 }
 
+.teamColor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.teamPreview {
+  --team-color: var(--team-ally);
+  --team-accent: var(--team-ally-accent);
+  display: flex;
+  flex-direction: column;
+  width: 150px;
+  overflow: hidden;
+  border-radius: 8px;
+  // Same card background as the log tables, so the tint matches.
+  background: rgba(22, 25, 27, 0.92);
+  border: 1px solid rgba($white, 0.08);
+  @include caption;
+
+  &[data-team="enemy"] {
+    --team-color: var(--team-enemy);
+    --team-accent: var(--team-enemy-accent);
+  }
+
+  span {
+    padding: 4px 10px;
+    box-shadow: inset 2px 0 0 var(--team-accent);
+    white-space: nowrap;
+  }
+
+  span:first-child {
+    color: $white;
+    font-weight: 500;
+    background: var(--team-color);
+  }
+
+  span:last-child {
+    color: rgba($white, 0.85);
+    background: color-mix(in srgb, var(--team-color) 23%, transparent);
+  }
+}
+
+.colorPicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 8px;
+  background: rgba($input, 0.7);
+  color: $default;
+  @include caption;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color 0.2s ease-in-out;
+
+  &:hover,
+  &:focus-within {
+    border-color: rgba($primary, 0.7);
+  }
+
+  input {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    &::-webkit-color-swatch {
+      border: 1px solid rgba($white, 0.15);
+      border-radius: 6px;
+    }
+  }
+}
+
 .dangerButton {
   color: #ff8b8b;
   border-color: rgba($red, 0.25);

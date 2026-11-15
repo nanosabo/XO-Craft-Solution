@@ -5,6 +5,12 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { buildAppLogLink } from "@src/helpers/appLogLink";
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { logWarning } from "@src/helpers/errorLog";
+import {
+  TEAM_COLOR_PROPERTIES,
+  teamColorVars,
+} from "@src/helpers/teamColors";
+import { selectSettingsState } from "@src/store/slices/settings.slice";
+import { useAppSelector } from "@src/store/store";
 import Switch from "@src/containers/Settings/components/Switch";
 import {
   CROSSOUT_MAPS,
@@ -565,6 +571,13 @@ const buildAlliesShot = (
   host.style.cssText = `position:fixed;left:0;top:0;z-index:-1;pointer-events:none;width:${root.offsetWidth}px;`;
 
   const clone = root.cloneNode(true) as HTMLElement;
+  const computed = getComputedStyle(root);
+
+  // The shot is rendered without the log view, which defines the team colors.
+  for (const name of TEAM_COLOR_PROPERTIES) {
+    clone.style.setProperty(name, computed.getPropertyValue(name));
+  }
+
   host.appendChild(clone);
   document.body.appendChild(host);
 
@@ -673,6 +686,8 @@ const LogsResult = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const barSentinelRef = useRef<HTMLDivElement>(null);
   const battlesSentinelRef = useRef<HTMLDivElement>(null);
+  const { teamColors } = useAppSelector(selectSettingsState);
+  const teamStyle = useMemo(() => teamColorVars(teamColors), [teamColors]);
   const [battleLimit, setBattleLimit] = useState(BATTLE_PAGE_SIZE);
   const [barStuck, setBarStuck] = useState(false);
   const [statsQuery, setStatsQuery] = useState("");
@@ -1557,6 +1572,7 @@ const LogsResult = () => {
             className={classNames(styles.logView, {
               [styles.logViewStuck]: barStuck,
             })}
+            style={teamStyle}
           >
             <div ref={barSentinelRef} className={styles.logViewSentinel} />
             <div className={styles.logViewCorners} aria-hidden="true">
