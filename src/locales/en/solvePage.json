@@ -101,6 +101,7 @@
     "subtitleForbidden": "These parts will not be suggested. The solution recalculates on its own.",
     "search": "Name or size",
     "quick": "Name or size...",
+    "quickLabel": "Add a required part",
     "unpin": "Remove from required",
     "required": "Needed",
     "requiredTitle": "Required",

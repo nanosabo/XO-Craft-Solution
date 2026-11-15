@@ -1,7 +1,7 @@
 {
   "header": {
     "title": "Parts assistant",
-    "subtitle": "Suggests what else to add to the current build. The numbers are taken as shown in the game"
+    "subtitle": "Picks parts for the highest durability within a set power score, tonnage and part limit"
   },
   "inputs": {
     "durability": {

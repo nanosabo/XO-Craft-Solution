@@ -137,6 +137,8 @@ const RequiredPartSearch = () => {
   return (
     <div className={styles.root} ref={rootRef}>
       <label className={styles.field}>
+        <span className={styles.label}>{t("filter.quickLabel")}</span>
+        <span className={styles.control}>
         <SearchIcon />
         <input
           value={query}
@@ -152,6 +154,7 @@ const RequiredPartSearch = () => {
             }
           }}
         />
+        </span>
       </label>
 
       {open &&

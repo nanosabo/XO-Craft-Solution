@@ -7,6 +7,18 @@
 }
 
 .field {
+  display: block;
+}
+
+.label {
+  display: block;
+  margin-bottom: 4px;
+  color: $default;
+  @include caption;
+  line-height: 16px;
+}
+
+.control {
   position: relative;
   display: block;
 
