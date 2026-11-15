@@ -1,4 +1,5 @@
 import PartItem from "@src/components/PartItem";
+import { confirmDialog } from "@src/ui/ConfirmDialog/confirmDialog";
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import {
   cancelScheduledSolutionRefresh,
@@ -192,24 +193,31 @@ const SolvedParts = () => {
         contentLanguage(i18n.language) === "ru" ? part.name : part.eng_name
       ).trim();
 
-      if (!window.confirm(t("ban.confirm", { name }))) return;
+      void confirmDialog({
+        title: t("ban.title"),
+        message: t("ban.confirm", { name }),
+        confirmLabel: t("ban.title"),
+        tone: "danger",
+      }).then((accepted) => {
+        if (!accepted) return;
 
-      if (hiddenRef.current.length === 0 && solvedResult) {
-        banCommittedRef.current = false;
-        banSnapshotRef.current = {
-          result: cloneData(solvedResult),
-          installed: cloneData(installedParts),
-        };
-      }
+        if (hiddenRef.current.length === 0 && solvedResult) {
+          banCommittedRef.current = false;
+          banSnapshotRef.current = {
+            result: cloneData(solvedResult),
+            installed: cloneData(installedParts),
+          };
+        }
 
-      dispatch(banExcludedPart(part.id));
-      dispatch(removeRequiredPart(part.id));
-      dispatch(removeInstalledPart(part.id));
-      setHidden((current) => [
-        { ...part, until: Date.now() + REMOVED_TTL },
-        ...current.filter((item) => item.id !== part.id),
-      ]);
-      scheduleSolutionRefresh(dispatch);
+        dispatch(banExcludedPart(part.id));
+        dispatch(removeRequiredPart(part.id));
+        dispatch(removeInstalledPart(part.id));
+        setHidden((current) => [
+          { ...part, until: Date.now() + REMOVED_TTL },
+          ...current.filter((item) => item.id !== part.id),
+        ]);
+        scheduleSolutionRefresh(dispatch);
+      });
     },
     [dispatch, i18n.language, installedParts, solvedResult, t],
   );

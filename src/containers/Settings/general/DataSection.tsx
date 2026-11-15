@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { logWarning } from "@src/helpers/errorLog";
+import { confirmDialog } from "@src/ui/ConfirmDialog/confirmDialog";
 import { invalidateCustomSound } from "@src/helpers/notificationSound";
 import { resetSettings } from "@src/store/slices/settings.slice";
 import { useAppDispatch } from "@src/store/store";
@@ -23,28 +24,42 @@ const DataSection = () => {
   const dispatch = useAppDispatch();
 
   const clearCache = () => {
-    if (!window.confirm(t("general.data.clearCacheConfirm"))) return;
+    void confirmDialog({
+      title: t("general.data.clearCache"),
+      message: t("general.data.clearCacheConfirm"),
+      confirmLabel: t("general.data.clearCache"),
+      tone: "danger",
+    }).then((accepted) => {
+      if (!accepted) return;
 
-    for (const key of CACHE_KEYS) {
-      localStorage.removeItem(key);
-    }
+      for (const key of CACHE_KEYS) {
+        localStorage.removeItem(key);
+      }
 
-    window.location.reload();
+      window.location.reload();
+    });
   };
 
-  const resetAllSettings = async () => {
-    if (!window.confirm(t("general.data.resetConfirm"))) return;
+  const resetAllSettings = () => {
+    void confirmDialog({
+      title: t("general.data.reset"),
+      message: t("general.data.resetConfirm"),
+      confirmLabel: t("general.data.reset"),
+      tone: "danger",
+    }).then(async (accepted) => {
+      if (!accepted) return;
 
-    try {
-      await window.electronAPI.removeNotificationSound();
-    } catch (error) {
-      /* Settings must still reset if the sound file cannot be removed. */
-      logWarning("settings-data", error);
-    }
+      try {
+        await window.electronAPI.removeNotificationSound();
+      } catch (error) {
+        /* Settings must still reset if the sound file cannot be removed. */
+        logWarning("settings-data", error);
+      }
 
-    invalidateCustomSound();
-    dispatch(resetSettings());
-    window.location.reload();
+      invalidateCustomSound();
+      dispatch(resetSettings());
+      window.location.reload();
+    });
   };
 
   return (

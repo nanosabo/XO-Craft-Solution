@@ -38,6 +38,10 @@ import logsPageRu from "./ru/logsPage.json";
 import logsPageEn from "./en/logsPage.json";
 import logsPageUk from "./uk/logsPage.json";
 
+import commonRu from "./ru/common.json";
+import commonEn from "./en/common.json";
+import commonUk from "./uk/common.json";
+
 export const resources = {
   en: {
     loaderPage: loaderPageEn,
@@ -50,6 +54,7 @@ export const resources = {
     guidesPage: guidesPageEn,
     updater: updaterEn,
     logsPage: logsPageEn,
+    common: commonEn,
   },
   uk: {
     loaderPage: loaderPageUk,
@@ -62,6 +67,7 @@ export const resources = {
     guidesPage: guidesPageUk,
     updater: updaterUk,
     logsPage: logsPageUk,
+    common: commonUk,
   },
   ru: {
     loaderPage: loaderPageRu,
@@ -74,5 +80,6 @@ export const resources = {
     guidesPage: guidesPageRu,
     updater: updaterRu,
     logsPage: logsPageRu,
+    common: commonRu,
   },
 };

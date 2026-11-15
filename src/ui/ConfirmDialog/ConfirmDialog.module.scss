@@ -1,0 +1,80 @@
+@import "@styles/theme";
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.dialog {
+  width: min(440px, 100%);
+  padding: 20px;
+  background: rgba($input, 0.98);
+  border: 1px solid rgba($white, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+
+  h2 {
+    color: $white;
+    @include subtitle;
+    font-weight: 600;
+  }
+
+  p {
+    margin-top: 8px;
+    color: $default;
+    @include body;
+    line-height: 22px;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.cancel,
+.confirm {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  line-height: 34px;
+  white-space: nowrap;
+  cursor: pointer;
+  @include body;
+}
+
+.cancel {
+  color: $white;
+  background: rgba($white, 0.04);
+  border: 1px solid rgba($white, 0.14);
+
+  &:hover {
+    background: rgba($white, 0.08);
+  }
+}
+
+.confirm {
+  color: $white;
+  background: $primary;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: #1a86ff;
+  }
+}
+
+.danger {
+  background: #d23b3b;
+
+  &:hover {
+    background: #e14d4d;
+  }
+}

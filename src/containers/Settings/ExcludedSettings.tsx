@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import classNames from "classnames";
 import Input from "@src/ui/Input";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
+import { confirmDialog } from "@src/ui/ConfirmDialog/confirmDialog";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { removeInstalledPart, selectLoaderState } from "@src/store/slices/loader.slice";
 import { removeRequiredPart } from "@src/store/slices/requiredParts.slice";
@@ -57,9 +58,17 @@ const ExcludedSettings = () => {
   };
 
   const clearAll = () => {
-    if (!window.confirm(t("excluded.clearConfirm"))) return;
-    dispatch(clearExcludedParts());
-    refresh();
+    void confirmDialog({
+      title: t("excluded.clear"),
+      message: t("excluded.clearConfirm"),
+      confirmLabel: t("excluded.clear"),
+      tone: "danger",
+    }).then((accepted) => {
+      if (!accepted) return;
+
+      dispatch(clearExcludedParts());
+      refresh();
+    });
   };
 
   return (

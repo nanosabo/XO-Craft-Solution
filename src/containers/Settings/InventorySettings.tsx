@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { confirmDialog } from "@src/ui/ConfirmDialog/confirmDialog";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import {
   clearInventory,
@@ -34,8 +35,16 @@ const InventorySettings = () => {
   });
 
   const clearAll = () => {
-    if (!window.confirm(t("inventory.clearConfirm"))) return;
-    dispatch(clearInventory());
+    void confirmDialog({
+      title: t("inventory.clear"),
+      message: t("inventory.clearConfirm"),
+      confirmLabel: t("inventory.clear"),
+      tone: "danger",
+    }).then((accepted) => {
+      if (!accepted) return;
+
+      dispatch(clearInventory());
+    });
   };
 
   return (
