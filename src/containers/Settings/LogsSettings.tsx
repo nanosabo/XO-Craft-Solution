@@ -1,7 +1,7 @@
 import { selectSettingsState } from "@src/store/slices/settings.slice";
 import { useAppSelector } from "@src/store/store";
 import LogsPathSection from "./general/LogsPathSection";
-import TeamColorsSection from "./logs/TeamColorsSection";
+import TeamColorsSection from "./teamColors/TeamColorsSection";
 import styles from "./styles/Settings.module.scss";
 
 const LogsSettings = () => {
