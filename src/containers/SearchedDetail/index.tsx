@@ -20,6 +20,8 @@ type Props = {
   count?: number;
   size?: string;
   onClickAdd?: () => void;
+  onIncrement?: () => void;
+  onDecrement?: () => void;
   max?: number;
   onlyDelete?: boolean;
 };
@@ -34,13 +36,17 @@ const SearchedDetail: FC<Props> = ({
   size,
   max,
   onClickAdd,
+  onIncrement,
+  onDecrement,
 }) => {
   const { t, i18n } = useTranslation("mainPage");
   const dispathch = useAppDispatch();
 
-  const handleIncrement = () => dispathch(inсrementPartCount(id));
+  const handleIncrement = () =>
+    onIncrement ? onIncrement() : dispathch(inсrementPartCount(id));
 
-  const handleDecrement = () => dispathch(decrementPartCount(id));
+  const handleDecrement = () =>
+    onDecrement ? onDecrement() : dispathch(decrementPartCount(id));
 
   const partName = contentLanguage(i18n.language) === "ru" ? name : eng_name;
 

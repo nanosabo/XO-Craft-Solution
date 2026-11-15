@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import PartsFilterButton from "./PartsFilterButton";
 import styles from "./styles/PartsFilter.module.scss";
+import { selectLoaderState, clearInstalledParts } from "@src/store/slices/loader.slice";
 import {
   clearRequiredParts,
   requiredPartsState,
@@ -12,12 +13,16 @@ import { TrashIcon } from "@src/ui/icons";
 
 const PartsFilterButtons = () => {
   const { switched, parts, forbidden } = useAppSelector(selectRequiredPartsState);
+  const installedCount = useAppSelector(
+    (state) => selectLoaderState(state).installedParts.length,
+  );
   const dispatch = useAppDispatch();
 
   const { t } = useTranslation("mainPage");
 
   const isParts = switched === "parts";
   const isForbidden = switched === "forbidden";
+  const isInstalled = switched === "installed";
   const partsCount = parts.length;
   const forbiddenCount = forbidden.length;
 
@@ -25,8 +30,19 @@ const PartsFilterButtons = () => {
     dispatch(setSwitched(payload));
   };
 
+  const currentCount = isInstalled
+    ? installedCount
+    : isForbidden
+      ? forbiddenCount
+      : partsCount;
+
   const onClear = () => {
-    dispatch(clearRequiredParts());
+    if (isInstalled) {
+      dispatch(clearInstalledParts());
+      return;
+    }
+
+    dispatch(clearRequiredParts(isForbidden ? "forbidden" : "parts"));
   };
 
   return (
@@ -36,15 +52,23 @@ const PartsFilterButtons = () => {
           onClick={onClick.bind(this, "parts")}
           disabled={isParts}
         >
-          {t("required.title")}
+          {t("required.tab")}
           <span className={styles.count}>{partsCount}</span>
+        </PartsFilterButton>
+        <PartsFilterButton
+          className={styles.installedTab}
+          onClick={onClick.bind(this, "installed")}
+          disabled={isInstalled}
+        >
+          {t("mounted.tab")}
+          <span className={styles.count}>{installedCount}</span>
         </PartsFilterButton>
         <PartsFilterButton
           className={styles.forbiddenTab}
           onClick={onClick.bind(this, "forbidden")}
           disabled={isForbidden}
         >
-          {t("forbidden.title")}
+          {t("forbidden.tab")}
           <span className={styles.count}>{forbiddenCount}</span>
         </PartsFilterButton>
       </div>
@@ -53,8 +77,14 @@ const PartsFilterButtons = () => {
         type="button"
         className={styles.clear_button}
         onClick={onClear}
-        title={t("clear")}
-        disabled={partsCount + forbiddenCount === 0}
+        title={t(
+          isInstalled
+            ? "mounted.clear"
+            : isForbidden
+              ? "forbidden.clear"
+              : "required.clear",
+        )}
+        disabled={currentCount === 0}
       >
         <TrashIcon />
       </button>

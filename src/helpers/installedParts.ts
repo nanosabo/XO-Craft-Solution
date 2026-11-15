@@ -63,6 +63,36 @@ export const mergeInstalledParts = (
   return { parts: [...merged.values()], lockedPartIds };
 };
 
+/**
+ * Parts the player listed as already mounted stay visible even when the
+ * solver had nothing to add on top of them.
+ */
+export const withInstalledParts = <
+  T extends { id: string; name: string; eng_name: string; count: number },
+>(
+  solution: T[],
+  required: { id: string }[],
+  installed: { id: string; name: string; eng_name: string; count: number }[],
+): T[] => {
+  const present = new Set(solution.map((part) => part.id));
+  const extras = installed.flatMap((part) => {
+    const count = Math.max(0, Math.round(part.count));
+
+    if (!part.id || count <= 0 || present.has(part.id)) return [];
+
+    return [
+      {
+        id: part.id,
+        name: part.name,
+        eng_name: part.eng_name,
+        count,
+      } as T,
+    ];
+  });
+
+  return placeInstalledParts([...solution, ...extras], required, installed);
+};
+
 /** Required parts stay first. Installed parts follow them. */
 export const placeInstalledParts = <T extends { id: string }>(
   solution: T[],

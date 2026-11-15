@@ -1,10 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { AppError, logError } from "@src/helpers/errorLog";
 import { getLastAppRoute } from "@src/helpers/lastRoute";
-import {
-  mergeInstalledParts,
-  placeInstalledParts,
-} from "@src/helpers/installedParts";
+import { withInstalledParts } from "@src/helpers/installedParts";
 import { partsToRemove } from "@src/helpers/partsToRemove";
 import { RootState } from "../store";
 
@@ -23,6 +20,8 @@ export interface installedPart {
   name: string;
   eng_name: string;
   count: number;
+  /** How many copies the game allows on one vehicle. */
+  maxCount?: number;
   /** False when the player mounted fewer than the recommended amount. */
   full?: boolean;
 }
@@ -40,6 +39,7 @@ const readInstalledParts = (): installedPart[] => {
 
       const part = item as Partial<installedPart>;
       const count = Math.round(Number(part.count));
+      const maxCount = Math.round(Number(part.maxCount));
 
       if (typeof part.id !== "string" || !part.id) return [];
       if (!Number.isFinite(count) || count <= 0) return [];
@@ -50,6 +50,7 @@ const readInstalledParts = (): installedPart[] => {
           name: typeof part.name === "string" ? part.name : "",
           eng_name: typeof part.eng_name === "string" ? part.eng_name : "",
           count,
+          ...(Number.isFinite(maxCount) && maxCount > 0 ? { maxCount } : {}),
           ...(part.full === false || part.full === true
             ? { full: part.full }
             : {}),
@@ -103,6 +104,7 @@ const syncInstalledParts = (
           name: row.name,
           eng_name: row.eng_name,
           count: Math.min(part.count, row.count),
+          ...(part.maxCount ? { maxCount: part.maxCount } : {}),
         },
         wasPartial ? false : part.full,
       ),
@@ -255,30 +257,6 @@ const publishDropped = (state: LoaderState) => {
   state.droppedParts = [...merged.values()];
 };
 
-const withExcludedParts = (
-  forbidden: { id: string; name: string; eng_name: string; count: number; maxCount: number }[],
-  excludedParts: string[],
-) => {
-  const known = new Set(forbidden.map((part) => part.id));
-
-  return [
-    ...forbidden,
-    ...excludedParts.flatMap((id) =>
-      known.has(id)
-        ? []
-        : [
-            {
-              id,
-              name: "",
-              eng_name: `excluded:${id}`,
-              count: 1,
-              maxCount: 0,
-            },
-          ],
-    ),
-  ];
-};
-
 export const solveData = createAsyncThunk(
   "loader/solve",
   async (_, { getState, dispatch }) => {
@@ -294,34 +272,22 @@ export const solveData = createAsyncThunk(
         considerExcludedParts,
       } = state.settings;
       const hiddenParts = considerExcludedParts ? [] : excludedParts;
-      const blocked = withExcludedParts(forbidden, hiddenParts);
-      const shown =
-        state.loader.solvedResult?.solution ??
-        state.loader.solutionBeforeSolve ??
-        [];
-      const required = mergeInstalledParts(
-        parts,
-        state.loader.installedParts,
-        blocked,
-        keepInstalledParts,
-        new Map(shown.map((part) => [part.id, part.count])),
-      );
+      const installed = keepInstalledParts ? state.loader.installedParts : [];
       const result = (await window.ipcRenderer.invoke("solve", {
         inputs,
-        requiredParts: required.parts,
+        requiredParts: parts,
         forbidden: forbidden,
         inventory,
         inventoryEnabled,
-        lockedPartIds: required.lockedPartIds,
+        lockedPartIds: installed
+          .filter((part) => part.full !== false)
+          .map((part) => part.id),
+        installedParts: installed,
         excludedPartIds: hiddenParts,
       })) as solvedResult;
       const ordered = {
         ...result,
-        solution: placeInstalledParts(
-          result.solution,
-          parts,
-          state.loader.installedParts,
-        ),
+        solution: withInstalledParts(result.solution, parts, installed),
       };
       localStorage.setItem("solution", JSON.stringify(ordered));
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -350,32 +316,23 @@ export const refreshSolution = createAsyncThunk(
         considerExcludedParts,
       } = state.settings;
       const hiddenParts = considerExcludedParts ? [] : excludedParts;
-      const blocked = withExcludedParts(forbidden, hiddenParts);
-      const shown = state.loader.solvedResult?.solution ?? [];
-      const required = mergeInstalledParts(
-        parts,
-        state.loader.installedParts,
-        blocked,
-        keepInstalledParts,
-        new Map(shown.map((part) => [part.id, part.count])),
-      );
+      const installed = keepInstalledParts ? state.loader.installedParts : [];
       const result = (await window.ipcRenderer.invoke("solve", {
         inputs: state.solveInputs,
-        requiredParts: required.parts,
+        requiredParts: parts,
         forbidden,
         inventory,
         inventoryEnabled,
-        lockedPartIds: required.lockedPartIds,
+        lockedPartIds: installed
+          .filter((part) => part.full !== false)
+          .map((part) => part.id),
+        installedParts: installed,
         excludedPartIds: hiddenParts,
       })) as solvedResult;
 
       return {
         ...result,
-        solution: placeInstalledParts(
-          result.solution,
-          parts,
-          state.loader.installedParts,
-        ),
+        solution: withInstalledParts(result.solution, parts, installed),
       };
     } catch (error) {
       logError("solve", error);
@@ -478,6 +435,71 @@ export const LoaderSlice = createSlice({
       saveInstalledParts(state.installedParts);
     },
 
+    addInstalledPart(
+      state,
+      action: PayloadAction<{
+        id: string;
+        name: string;
+        eng_name: string;
+        maxCount?: number;
+      }>,
+    ) {
+      const { id, name, eng_name, maxCount } = action.payload;
+      const incoming = Math.round(maxCount ?? 0);
+      const existing = state.installedParts.find((part) => part.id === id);
+      const limit = incoming > 0 ? incoming : existing?.maxCount ?? 0;
+
+      if (existing) {
+        const next = existing.count + 1;
+
+        existing.count = limit > 0 ? Math.min(limit, next) : next;
+        if (limit > 0) existing.maxCount = limit;
+        existing.full = false;
+      } else {
+        state.installedParts.unshift({
+          id,
+          name,
+          eng_name,
+          count: 1,
+          full: false,
+          ...(incoming > 0 ? { maxCount: incoming } : {}),
+        });
+      }
+
+      saveInstalledParts(state.installedParts);
+    },
+    changeInstalledCount(
+      state,
+      action: PayloadAction<{ id: string; delta: number; maxCount?: number }>,
+    ) {
+      const part = state.installedParts.find(
+        (item) => item.id === action.payload.id,
+      );
+
+      if (!part) return;
+
+      const incoming = Math.round(action.payload.maxCount ?? 0);
+
+      if (incoming > 0) part.maxCount = incoming;
+
+      const limit = part.maxCount ?? 0;
+      const next = part.count + action.payload.delta;
+
+      if (next <= 0) {
+        state.installedParts = state.installedParts.filter(
+          (item) => item.id !== action.payload.id,
+        );
+      } else {
+        part.count = limit > 0 ? Math.min(limit, next) : next;
+        part.full = false;
+      }
+
+      saveInstalledParts(state.installedParts);
+    },
+    clearInstalledParts(state) {
+      state.installedParts = [];
+      saveInstalledParts(state.installedParts);
+    },
     setInstalledParts(state, action: PayloadAction<installedPart[]>) {
       state.installedParts = action.payload.map((part) =>
         withFullFlag(
@@ -486,6 +508,9 @@ export const LoaderSlice = createSlice({
             name: part.name,
             eng_name: part.eng_name,
             count: Math.max(1, Math.round(part.count)),
+            ...(part.maxCount
+              ? { maxCount: Math.max(1, Math.round(part.maxCount)) }
+              : {}),
           },
           part.full,
         ),
@@ -559,10 +584,6 @@ export const LoaderSlice = createSlice({
         state.solutionBeforeSolve = state.solvedResult?.solution ?? null;
         state.explicitlyRemoved = [];
         state.removalSnapshot = null;
-        // A new calculation from the craft screen starts clean. Marks stay
-        // only for a recalculation on the result page.
-        state.installedParts = [];
-        saveInstalledParts([]);
         state.status = LoaderStateStatus.SOLVING;
         state.solvedResult = null;
         state.error = null;
@@ -643,6 +664,9 @@ export const {
   setLoaderSolvingStatus,
   setSolvedResult,
   setInstalledParts,
+  addInstalledPart,
+  changeInstalledCount,
+  clearInstalledParts,
   removeInstalledPart,
   setInstalledCount,
   toggleInstalledPart,

@@ -8,7 +8,7 @@ import styles from "./styles/RequiredDetails.module.scss";
 const RequiredDetails = () => {
   const { t } = useTranslation("mainPage");
   const parts = useAppSelector(selectRequiredPartsState);
-  const list = parts[parts.switched];
+  const list = parts.switched === "forbidden" ? parts.forbidden : parts.parts;
 
   return (
     <RequiredDetailsWrapper>

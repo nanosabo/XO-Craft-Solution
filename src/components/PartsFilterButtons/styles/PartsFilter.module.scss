@@ -9,6 +9,7 @@
 .parts {
   display: flex;
   width: 100%;
+  min-width: 0;
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
@@ -16,9 +17,14 @@
 }
 
 .button {
-  width: 100%;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   border-radius: 8px;
   background: transparent;
   color: $default;
@@ -31,7 +37,7 @@
     display: inline-block;
     min-width: 16px;
     height: 16px;
-    margin-left: 6px;
+    margin-left: 4px;
     padding: 0 4px;
     border-radius: 8px;
     background: rgba($white, 0.12);
@@ -59,6 +65,11 @@
 .forbiddenTab:disabled {
   background: rgba(#ff5a5a, 0.16);
   color: #ffb4b4;
+}
+
+.installedTab:disabled {
+  background: rgba(#0ac59a, 0.16);
+  color: #b7f3e4;
 }
 
 .clear_button {

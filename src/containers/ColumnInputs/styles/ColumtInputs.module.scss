@@ -127,6 +127,21 @@
   color: #ffb4b4;
 }
 
+.filterHintInstalled {
+  color: #b7f3e4;
+}
+
+.accounted {
+  margin-top: -6px;
+  color: $default;
+  @include caption;
+  line-height: 16px;
+}
+
+.accountedOver {
+  color: #ffb4b4;
+}
+
 .filterEmpty {
   padding: 8px 4px 0;
   color: $default;

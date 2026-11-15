@@ -1,7 +1,14 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import { logWarning } from "@src/helpers/errorLog";
-import { selectLoaderState } from "@src/store/slices/loader.slice";
+import {
+  addInstalledPart,
+  changeInstalledCount,
+  clearInstalledParts,
+  removeInstalledPart,
+  selectLoaderState,
+} from "@src/store/slices/loader.slice";
+import useParts from "@src/containers/Settings/useParts";
 import {
   setConsiderExcludedParts,
   setInventoryEnabled,
@@ -28,6 +35,8 @@ import { FC, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { SearchedPart } from "../ColumnInputs/RequiredParts";
+
+const STRUCTURAL_CATEGORIES = new Set(["Конструкции", "Простреливаемые"]);
 import styles from "./styles/PartsFilterModal.module.scss";
 
 interface Props {
@@ -38,7 +47,8 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
   const { t, i18n } = useTranslation("solvePage");
   const dispatch = useAppDispatch();
   const titleId = useId();
-  const { refreshing } = useAppSelector(selectLoaderState);
+  const { refreshing, installedParts } = useAppSelector(selectLoaderState);
+  const { parts: catalog } = useParts();
   const { inventoryEnabled, considerExcludedParts, excludedParts } =
     useAppSelector(selectSettingsState);
   const { parts, forbidden, switched } = useAppSelector(
@@ -47,10 +57,17 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchedPart[]>([]);
 
-  const takenIds = useMemo(
-    () => new Set([...parts, ...forbidden].map((part) => part.id)),
-    [forbidden, parts],
-  );
+  const installed = switched === "installed";
+  const takenIds = useMemo(() => {
+    const source = installed ? installedParts : [...parts, ...forbidden];
+
+    return new Set(source.map((part) => part.id));
+  }, [forbidden, installed, installedParts, parts]);
+  const maxCountOf = useMemo(() => {
+    const limits = new Map(catalog.map((part) => [part.id, part.maxCount]));
+
+    return (id: string, stored?: number) => stored || limits.get(id);
+  }, [catalog]);
 
   const debouncedSearch = useMemo(
     () =>
@@ -99,10 +116,23 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
     () => (considerExcludedParts ? new Set<string>() : new Set(excludedParts)),
     [considerExcludedParts, excludedParts],
   );
-  const visibleResults = results.filter(
-    (part) => !takenIds.has(part.id) && !excludedIds.has(part.id),
-  );
-  const current = switched === "parts" ? parts : forbidden;
+  const visibleResults = results.filter((part) => {
+    if (takenIds.has(part.id) || excludedIds.has(part.id)) return false;
+    if (
+      installed &&
+      part.category &&
+      !STRUCTURAL_CATEGORIES.has(part.category)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+  const current = installed
+    ? installedParts
+    : switched === "parts"
+      ? parts
+      : forbidden;
   const searching = query.trim().length > 0;
 
   const partName = (part: { name: string; eng_name: string }) =>
@@ -113,7 +143,9 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
   };
 
   const clearCurrent = () => {
-    for (const part of current) dispatch(removePart(part.id));
+    if (installed) dispatch(clearInstalledParts());
+    else for (const part of current) dispatch(removePart(part.id));
+
     scheduleSolutionRefresh(dispatch);
   };
 
@@ -141,7 +173,15 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
         <div className={styles.header}>
           <div>
             <h3 id={titleId}>{t("filter.title")}</h3>
-            <p>{t("filter.subtitle")}</p>
+            <p>
+              {t(
+                installed
+                  ? "filter.subtitleMounted"
+                  : switched === "forbidden"
+                    ? "filter.subtitleForbidden"
+                    : "filter.subtitle",
+              )}
+            </p>
           </div>
           <button
             type="button"
@@ -172,6 +212,16 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
           >
             {t("filter.required")}
             <span className={styles.tabCount}>{parts.length}</span>
+          </button>
+          <button
+            type="button"
+            className={classNames(styles.tab, styles.tabMounted, {
+              [styles.tabOn]: installed,
+            })}
+            onClick={() => switchTo("installed")}
+          >
+            {t("filter.mounted")}
+            <span className={styles.tabCount}>{installedParts.length}</span>
           </button>
           <button
             type="button"
@@ -230,14 +280,25 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                   type="button"
                   className={styles.add}
                   onClick={() => {
-                    dispatch(
-                      addPart({
-                        id: part.id,
-                        name: part.name,
-                        eng_name: part.eng_name,
-                        maxCount: part.maxCount,
-                      }),
-                    );
+                    if (installed) {
+                      dispatch(
+                        addInstalledPart({
+                          id: part.id,
+                          name: part.name,
+                          eng_name: part.eng_name,
+                          maxCount: part.maxCount,
+                        }),
+                      );
+                    } else {
+                      dispatch(
+                        addPart({
+                          id: part.id,
+                          name: part.name,
+                          eng_name: part.eng_name,
+                          maxCount: part.maxCount,
+                        }),
+                      );
+                    }
                     debouncedSearch.cancel();
                     setQuery("");
                     setResults([]);
@@ -252,18 +313,24 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
 
           {!searching && current.length === 0 && (
             <p className={styles.empty}>
-              {switched === "parts"
-                ? t("filter.emptyRequired")
-                : t("filter.emptyForbidden")}
+              {installed
+                ? t("filter.emptyMounted")
+                : switched === "parts"
+                  ? t("filter.emptyRequired")
+                  : t("filter.emptyForbidden")}
             </p>
           )}
 
           {!searching &&
-            current.map((part) => (
+            current.map((part) => {
+              const limit = maxCountOf(part.id, part.maxCount);
+
+              return (
               <div
                 key={part.id}
                 className={classNames(styles.row, {
                   [styles.forbidden]: switched === "forbidden",
+                  [styles.mounted]: installed,
                 })}
               >
                 <img src={getPartImageUrl(part.id)} alt="" draggable={false} />
@@ -271,13 +338,19 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                   {partName(part)}
                 </p>
 
-                {switched === "parts" && (
+                {(switched === "parts" || installed) && (
                   <div className={styles.stepper}>
                     <button
                       type="button"
                       className={styles.step}
                       onClick={() => {
-                        dispatch(decrementPartCount(part.id));
+                        if (installed) {
+                          dispatch(
+                            changeInstalledCount({ id: part.id, delta: -1 }),
+                          );
+                        } else {
+                          dispatch(decrementPartCount(part.id));
+                        }
                         scheduleSolutionRefresh(dispatch);
                       }}
                     >
@@ -287,9 +360,19 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                     <button
                       type="button"
                       className={styles.step}
-                      disabled={part.count >= part.maxCount}
+                      disabled={limit != null && part.count >= limit}
                       onClick={() => {
-                        dispatch(inсrementPartCount(part.id));
+                        if (installed) {
+                          dispatch(
+                            changeInstalledCount({
+                              id: part.id,
+                              delta: 1,
+                              maxCount: limit,
+                            }),
+                          );
+                        } else {
+                          dispatch(inсrementPartCount(part.id));
+                        }
                         scheduleSolutionRefresh(dispatch);
                       }}
                     >
@@ -303,14 +386,16 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
                   className={styles.remove}
                   title={t("filter.remove")}
                   onClick={() => {
-                    dispatch(removePart(part.id));
+                    if (installed) dispatch(removeInstalledPart(part.id));
+                    else dispatch(removePart(part.id));
                     scheduleSolutionRefresh(dispatch);
                   }}
                 >
                   <TrashIcon />
                 </button>
               </div>
-            ))}
+              );
+            })}
         </div>
 
         <div className={styles.footer}>

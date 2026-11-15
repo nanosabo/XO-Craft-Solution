@@ -135,14 +135,19 @@
 }
 
 .tab {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   height: 32px;
+  padding: 0 6px;
   border-radius: 8px;
   background: transparent;
   color: $default;
   @include caption;
   line-height: 32px;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
 
   transition:
@@ -158,6 +163,11 @@
 .tabForbidden.tabOn {
   background: rgba(#ff5a5a, 0.16);
   color: #ffb4b4;
+}
+
+.tabMounted.tabOn {
+  background: rgba(#0ac59a, 0.16);
+  color: #b7f3e4;
 }
 
 .tabCount {
@@ -218,6 +228,11 @@
 .forbidden {
   border-color: rgba(#ff5a5a, 0.22);
   background: rgba(#ff4d4d, 0.06);
+}
+
+.mounted {
+  border-color: rgba(#0ac59a, 0.28);
+  background: rgba(#0ac59a, 0.06);
 }
 
 .name {

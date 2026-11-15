@@ -21,9 +21,9 @@
     "subtitle": "Interface language and scale, start screen, launch at startup, notifications, updates and app data.",
     "installed": {
       "title": "Solution",
-      "subtitle": "Parts already mounted on the craft can stay in the selection.",
-      "keep": "Keep installed parts in the solution",
-      "keepHint": "A click marks the whole amount and the card glows blue. Lower the number on the card if you mounted fewer. On recalculation the marked amount stays."
+      "subtitle": "Parts already on the build are included in the current numbers and are not added a second time.",
+      "keep": "Account for parts already mounted",
+      "keepHint": "The Mounted list and the marks on result cards. Their mass, durability, power score and count are already in the numbers you typed. The calculation only adds what still fits."
     },
     "logs": {
       "title": "Crossout logs",

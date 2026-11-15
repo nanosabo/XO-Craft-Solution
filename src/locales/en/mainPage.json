@@ -1,21 +1,21 @@
 {
   "header": {
     "title": "Parts assistant",
-    "subtitle": "Picks parts for the highest durability within a set power score, tonnage and part limit"
+    "subtitle": "Suggests what else to add to the current build. The numbers are taken as shown in the game"
   },
   "inputs": {
     "durability": {
       "title": "Current build durability",
       "tooltip": {
-        "title": "The amount of HP of the build only with the base, weapons, chassis and necessary modules",
-        "subtitle": "Located in the build characteristics section"
+        "title": "Durability of the whole build, as shown in the game",
+        "subtitle": "Parts in the Already mounted list are already included"
       }
     },
     "weight": {
       "title": "Current build mass",
       "tooltip": {
-        "title": "Weight of the build only with the base, weapons, chassis and necessary modules",
-        "subtitle": "Located in the build characteristics section"
+        "title": "Mass of the whole build, as shown in the game",
+        "subtitle": "Parts in the Already mounted list are already included"
       }
     },
     "tonnage": {
@@ -28,8 +28,8 @@
     "parts": {
       "title": "Count of already used parts",
       "tooltip": {
-        "title": "Number of parts currently installed on the build",
-        "subtitle": "Located in the build characteristics section"
+        "title": "How many parts are on the build right now, as shown in the game",
+        "subtitle": "Parts in the Already mounted list are already included"
       }
     },
     "maxParts": {
@@ -42,8 +42,8 @@
     "powerScores": {
       "title": "Current build power scores",
       "tooltip": {
-        "title": "The number of Power Scores that the build currently has",
-        "subtitle": "Located in the build characteristics section"
+        "title": "Power score of the whole build, as shown in the game",
+        "subtitle": "Parts in the Already mounted list are already included"
       }
     },
     "maxPowerScores": {
@@ -103,21 +103,37 @@
     "max_parts_less_than_parts": "Cannot be less than the number already used",
     "maxps_less_than_ps_or_not_zero": "Must be greater than current PS or equal to 0"
   },
-  "clear": "Clear required and forbidden parts",
   "solve": {
     "title": "Get Solution"
   },
   "required": {
     "title": "Required",
+    "tab": "Needed",
     "empty": "Search above and add a part here",
-    "hint": "These parts must be included",
-    "addHint": "Click a part to require it"
+    "hint": "These parts are not in the numbers on the left yet: the calculation adds them on top",
+    "addHint": "Click a part to require it",
+    "tooltip": "The part is added to the selection and on top of the current mass, durability and power score",
+    "clear": "Clear required parts"
   },
   "forbidden": {
     "title": "Unwanted",
+    "tab": "Skip",
     "empty": "Search above and exclude a part",
     "hint": "These parts will not be used",
-    "addHint": "Click a part to exclude it"
+    "addHint": "Click a part to exclude it",
+    "tooltip": "The part will not be suggested",
+    "clear": "Clear unwanted parts"
+  },
+  "mounted": {
+    "title": "Mounted",
+    "tab": "Mounted",
+    "empty": "Add the structural parts that are already on the build",
+    "hint": "Their mass, durability, power score and count are already in the numbers on the left. The calculation only adds what still fits.",
+    "addHint": "Click a part that is already on the build",
+    "tooltip": "These parts are already on the build and already included in the numbers on the left. The calculation suggests what else to add",
+    "accounted": "Already included: {{count}} parts · {{weight}} kg · {{power}} PS",
+    "overWeight": "The list is heavier than the current mass ({{weight}} kg). Check the numbers or the parts.",
+    "clear": "Clear mounted parts"
   },
   "filterSearch": {
     "searching": "Searching...",

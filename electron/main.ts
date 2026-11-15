@@ -983,6 +983,16 @@ interface DataToSolve {
   inventoryEnabled?: boolean;
   /** Parts whose count is fixed. The solver must not add any more of them. */
   lockedPartIds?: string[];
+  /**
+   * Parts already on the vehicle. Their weight, power, durability and count
+   * are already inside the typed stats, so they are shown but not added again.
+   */
+  installedParts?: {
+    id: string;
+    count: number;
+    name?: string;
+    eng_name?: string;
+  }[];
   /** Parts the user never wants suggested. Applied even without other filters. */
   excludedPartIds?: string[];
 }
@@ -1173,6 +1183,7 @@ const runSolve = async ({
   inventoryEnabled = false,
   lockedPartIds = [],
   excludedPartIds = [],
+  installedParts = [],
 }: DataToSolve): Promise<SolveResult> => {
     if (!fs.existsSync(exePath)) {
       throw new Error(
@@ -1197,24 +1208,78 @@ const runSolve = async ({
     /* ---------------- helpers ---------------- */
 
     const partsById = new Map(parts.map((p) => [p.id, p]));
+    const mounted = new Map<string, number>();
+    const mountedMeta = new Map<
+      string,
+      { name?: string; eng_name?: string }
+    >();
+
+    for (const part of installedParts ?? []) {
+      const count = Math.max(0, Math.round(part.count));
+
+      if (!part.id || count <= 0) continue;
+
+      mounted.set(part.id, count);
+      mountedMeta.set(part.id, part);
+    }
+
+    // Only the copies that are not already on the vehicle spend budget.
+    const extraOf = (id: string, count: number) =>
+      Math.max(0, count - (mounted.get(id) ?? 0));
+    const reservedOf = (id: string, count = 0) =>
+      Math.max(mounted.get(id) ?? 0, count);
 
     const requiredStats = requiredParts.reduce(
       (acc, rp) => {
         const part = partsById.get(rp.id);
-        if (!part) return acc;
+        const extra = extraOf(rp.id, rp.count);
+
+        if (!part || extra <= 0) return acc;
 
         const durability =
           part.build_hp !== part.durability ? part.build_hp : part.durability;
 
-        acc.parts += rp.count;
-        acc.power += part.power * rp.count;
-        acc.weight += part.weight * rp.count;
-        acc.durability += durability * rp.count;
+        acc.parts += extra;
+        acc.power += part.power * extra;
+        acc.weight += part.weight * extra;
+        acc.durability += durability * extra;
 
         return acc;
       },
       { parts: 0, power: 0, weight: 0, durability: 0 },
     );
+
+    const composeSolution = (added: Map<string, number>) => {
+      const counts = new Map(added);
+
+      const include = (id: string, count: number) => {
+        if (count <= 0) return;
+
+        counts.set(id, (counts.get(id) ?? 0) + count);
+      };
+
+      for (const part of requiredParts) {
+        include(part.id, extraOf(part.id, part.count));
+      }
+
+      for (const [id, count] of mounted) include(id, count);
+
+      return [...counts.entries()].flatMap(([id, count]) => {
+        const part = partsById.get(id);
+        const meta = mountedMeta.get(id);
+
+        if ((!part && !meta) || count <= 0) return [];
+
+        return [
+          {
+            id,
+            name: part?.name || meta?.name || "",
+            eng_name: part?.eng_name || meta?.eng_name || "",
+            count,
+          },
+        ];
+      });
+    };
 
     /* ---------------- limits ---------------- */
 
@@ -1235,8 +1300,8 @@ const runSolve = async ({
     const partsPrepared = parts
       .map((p) => {
         const required = requiredParts.find((rp) => rp.id === p.id);
-        const requiredCount = required?.count ?? 0;
-        let maxCount = p.maxCount - requiredCount;
+        const reserved = reservedOf(p.id, required?.count ?? 0);
+        let maxCount = p.maxCount - reserved;
 
         // The warehouse is optional. When it is enabled, a part that is
         // explicitly present in the warehouse can only be used up to the
@@ -1245,7 +1310,7 @@ const runSolve = async ({
           inventoryEnabled &&
           Object.prototype.hasOwnProperty.call(inventory, p.id)
         ) {
-          const owned = Math.max(0, (inventory[p.id] ?? 0) - requiredCount);
+          const owned = Math.max(0, (inventory[p.id] ?? 0) - reserved);
           maxCount = Math.min(maxCount, owned);
         }
 
@@ -1281,22 +1346,8 @@ const runSolve = async ({
       );
       totalDurability += inputs.durability;
 
-      const requiredSolution = requiredParts
-        .map((rp) => {
-          const part = partsById.get(rp.id);
-          if (!part) return null;
-
-          return {
-            id: rp.id,
-            name: part.name,
-            eng_name: part.eng_name,
-            count: rp.count,
-          };
-        })
-        .filter((part): part is SolveResultPart => part !== null);
-
       return {
-        solution: requiredSolution,
+        solution: composeSolution(new Map()),
         totalDurability: Math.round(totalDurability),
         totalWeight: inputs.weight + requiredStats.weight,
         totalPower: inputs.powerScores + requiredStats.power,
@@ -1323,40 +1374,12 @@ const runSolve = async ({
         try {
           const parsed = JSON.parse(stdout);
 
-          const solutionMap = new Map<
-            string,
-            { id: string; name: string; eng_name: string; count: number }
-          >();
+          const added = new Map<string, number>();
 
-          // solver result
           for (const [id, count] of Object.entries(parsed.solution)) {
-            const part = partsById.get(id);
-            if (!part) continue;
+            const amount = Number(count);
 
-            solutionMap.set(id, {
-              id,
-              name: part.name,
-              eng_name: part.eng_name,
-              count: Number(count),
-            });
-          }
-
-          // add required parts
-          for (const rp of requiredParts) {
-            const part = partsById.get(rp.id);
-            if (!part) continue;
-
-            const existing = solutionMap.get(rp.id);
-            if (existing) {
-              existing.count += rp.count;
-            } else {
-              solutionMap.set(rp.id, {
-                id: rp.id,
-                name: part.name,
-                eng_name: part.eng_name,
-                count: rp.count,
-              });
-            }
+            if (amount > 0) added.set(id, amount);
           }
 
           /* ---------------- totals ---------------- */
@@ -1368,7 +1391,7 @@ const runSolve = async ({
           totalDurability += inputs.durability;
 
           resolve({
-            solution: Array.from(solutionMap.values()),
+            solution: composeSolution(added),
             totalDurability: Math.round(totalDurability),
             totalWeight:
               parsed.totalWeight + inputs.weight + requiredStats.weight,

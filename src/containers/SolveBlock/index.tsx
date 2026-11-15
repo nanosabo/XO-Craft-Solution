@@ -22,9 +22,8 @@ const plain = (value: string) => value.replace(/\u00a0/g, " ");
 const SolveBlock = () => {
   const { t, i18n } = useTranslation("solvePage");
   const dispatch = useAppDispatch();
-  const { solvedResult, refreshing, droppedParts } = useAppSelector(
-    selectLoaderState,
-  );
+  const { solvedResult, refreshing, droppedParts, installedParts } =
+    useAppSelector(selectLoaderState);
   const { parts: requiredParts, forbidden } = useAppSelector(
     selectRequiredPartsState,
   );
@@ -38,6 +37,7 @@ const SolveBlock = () => {
   );
   const requiredCount = requiredParts.length;
   const forbiddenCount = forbidden.length;
+  const installedCount = installedParts.length;
 
   useEffect(
     () => () => {
@@ -211,7 +211,8 @@ const SolveBlock = () => {
             <button
               type="button"
               className={classNames(styles.export, {
-                [styles.filterOn]: requiredCount > 0 || forbiddenCount > 0,
+                [styles.filterOn]:
+                  requiredCount > 0 || forbiddenCount > 0 || installedCount > 0,
               })}
               onClick={() => setFilterOpen(true)}
             >
@@ -220,9 +221,17 @@ const SolveBlock = () => {
               {requiredCount > 0 && (
                 <span
                   className={classNames(styles.filterCount, styles.filterRequired)}
-                  title={t("filter.required")}
+                  title={t("filter.requiredTitle")}
                 >
                   {requiredCount}
+                </span>
+              )}
+              {installedCount > 0 && (
+                <span
+                  className={classNames(styles.filterCount, styles.filterMounted)}
+                  title={t("filter.mounted")}
+                >
+                  {installedCount}
                 </span>
               )}
               {forbiddenCount > 0 && (
@@ -231,7 +240,7 @@ const SolveBlock = () => {
                     styles.filterCount,
                     styles.filterForbidden,
                   )}
-                  title={t("filter.forbidden")}
+                  title={t("filter.forbiddenTitle")}
                 >
                   {forbiddenCount}
                 </span>

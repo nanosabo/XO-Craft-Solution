@@ -10,10 +10,15 @@ export interface requiredPart {
 }
 
 export interface requiredPartsState {
-  switched: "parts" | "forbidden";
+  switched: "parts" | "forbidden" | "installed";
   parts: requiredPart[];
   forbidden: requiredPart[];
 }
+
+const isListed = (
+  state: requiredPartsState,
+): state is requiredPartsState & { switched: "parts" | "forbidden" } =>
+  state.switched === "parts" || state.switched === "forbidden";
 
 const initialState: requiredPartsState = {
   switched: "parts",
@@ -57,6 +62,8 @@ export const requiredPartsSlice = createSlice({
         };
       },
     ) {
+      if (!isListed(state)) return;
+
       state[state.switched] = [
         { ...action.payload, count: 1 },
         ...state[state.switched],
@@ -132,6 +139,8 @@ export const requiredPartsSlice = createSlice({
         payload: string;
       },
     ) {
+      if (!isListed(state)) return;
+
       state[state.switched] = state[state.switched].filter(
         (part) => part.id !== action.payload,
       );
@@ -143,6 +152,8 @@ export const requiredPartsSlice = createSlice({
         payload: string;
       },
     ) {
+      if (!isListed(state)) return;
+
       const part = state[state.switched].find((p) => p.id === action.payload);
       if (part) {
         part.count += 1;
@@ -155,6 +166,8 @@ export const requiredPartsSlice = createSlice({
         payload: string;
       },
     ) {
+      if (!isListed(state)) return;
+
       const part = state[state.switched].find((p) => p.id === action.payload);
       if (part && part.count > 1) {
         part.count -= 1;
@@ -173,9 +186,11 @@ export const requiredPartsSlice = createSlice({
       state.switched = action.payload;
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
-    clearRequiredParts(state) {
-      state.parts = [];
-      state.forbidden = [];
+    clearRequiredParts(
+      state,
+      action: { payload: "parts" | "forbidden" },
+    ) {
+      state[action.payload] = [];
       localStorage.setItem("requiredParts", JSON.stringify(state));
     },
   },
