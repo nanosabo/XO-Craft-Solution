@@ -120,6 +120,8 @@
     "inventory": "Use inventory",
     "inventoryHint": "On — calculations use your stock counts. Off — inventory is ignored and maximum counts are used.",
     "banned": "Show hidden parts",
-    "bannedHint": "On — hidden parts appear in search and are used in calculations. Off — they stay hidden and are not suggested."
+    "bannedHint": "On — hidden parts appear in search and are used in calculations. Off — they stay hidden and are not suggested.",
+    "symmetry": "Symmetry",
+    "symmetryHint": "Left and right parts are suggested in equal pairs. Parts without a pair are not limited: one or three can still be used when the game allows it."
   }
 }

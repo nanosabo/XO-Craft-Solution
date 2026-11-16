@@ -1,6 +1,7 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { clearDroppedParts, selectLoaderState } from "@src/store/slices/loader.slice";
 import { selectRequiredPartsState } from "@src/store/slices/requiredParts.slice";
+import { selectSettingsState } from "@src/store/slices/settings.slice";
 import { selectSolveInputsState } from "@src/store/slices/solveInputs.slice";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import { CopyIcon, SlidersIcon } from "@src/ui/icons";
@@ -28,6 +29,7 @@ const SolveBlock = () => {
     selectRequiredPartsState,
   );
   const { tonnage, maxPowerScores } = useAppSelector(selectSolveInputsState);
+  const { symmetryMode } = useAppSelector(selectSettingsState);
   const [exportState, setExportState] = useState<ExportState>("idle");
   const [filterOpen, setFilterOpen] = useState(false);
   const timer = useRef<number | null>(null);
@@ -212,7 +214,10 @@ const SolveBlock = () => {
               type="button"
               className={classNames(styles.export, {
                 [styles.filterOn]:
-                  requiredCount > 0 || forbiddenCount > 0 || installedCount > 0,
+                  requiredCount > 0 ||
+                  forbiddenCount > 0 ||
+                  installedCount > 0 ||
+                  symmetryMode,
               })}
               onClick={() => setFilterOpen(true)}
             >

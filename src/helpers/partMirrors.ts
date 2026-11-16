@@ -135,6 +135,37 @@ export const buildMirrorMap = (parts: MirrorPart[]): Map<string, string> => {
   return mirrors;
 };
 
+/**
+ * A left and right part stay next to each other, at the place of whichever
+ * side already came first. The rest of the list keeps its order.
+ */
+export const groupMirroredParts = <T extends { id: string }>(
+  items: readonly T[],
+  mirrors: Map<string, string>,
+): T[] => {
+  if (mirrors.size === 0 || items.length < 2) return [...items];
+
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const placed = new Set<string>();
+  const grouped: T[] = [];
+
+  for (const item of items) {
+    if (placed.has(item.id)) continue;
+
+    grouped.push(item);
+    placed.add(item.id);
+
+    const twin = byId.get(mirrors.get(item.id) ?? "");
+
+    if (!twin || placed.has(twin.id)) continue;
+
+    grouped.push(twin);
+    placed.add(twin.id);
+  }
+
+  return grouped;
+};
+
 export const expandIds = (
   ids: Iterable<string>,
   mirrors: Map<string, string>,

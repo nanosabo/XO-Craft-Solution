@@ -35,7 +35,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import classNames from "classnames";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { buildMirrorMap, mirrorPartLabel } from "@src/helpers/partMirrors";
+import {
+  buildMirrorMap,
+  groupMirroredParts,
+  mirrorPartLabel,
+} from "@src/helpers/partMirrors";
 import { getPartImageUrl, Part } from "../Settings/types";
 import useParts from "../Settings/useParts";
 import AnalogModal from "./AnalogModal";
@@ -383,8 +387,8 @@ const SolvedParts = () => {
       (part) => !requiredIds.has(part.id),
     );
 
-    return [...pinned, ...rest];
-  }, [requiredIds, requiredParts, solvedResult]);
+    return groupMirroredParts([...pinned, ...rest], mirrors);
+  }, [mirrors, requiredIds, requiredParts, solvedResult]);
 
   if (solvedResult === null) return null;
 

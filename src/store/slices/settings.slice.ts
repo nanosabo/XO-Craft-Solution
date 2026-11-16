@@ -36,6 +36,11 @@ export interface SettingsState {
   excludedParts: string[];
   /** When on, the hidden list stays saved but is used in calculations again. */
   considerExcludedParts: boolean;
+  /**
+   * Left and right parts are chosen together, in equal counts.
+   * Parts without a pair keep their own limit, including 1 and 3.
+   */
+  symmetryMode: boolean;
   /** Folder that contains combat.log, or the log file itself. */
   crossoutLogsPath: string | null;
   /** Page opened after the first load. */
@@ -67,6 +72,7 @@ export const createDefaultSettings = (): SettingsState => ({
   keepInstalledParts: true,
   excludedParts: [],
   considerExcludedParts: false,
+  symmetryMode: false,
   crossoutLogsPath: null,
   startScreen: "craft",
   systemNotifications: false,
@@ -126,6 +132,7 @@ const loadSettings = (): SettingsState => {
           )
         : [],
       considerExcludedParts: parsed.considerExcludedParts === true,
+      symmetryMode: parsed.symmetryMode === true,
       crossoutLogsPath: logsPath || null,
       startScreen: isStartScreen(parsed.startScreen)
         ? parsed.startScreen
@@ -244,6 +251,10 @@ export const settingsSlice = createSlice({
       state.considerExcludedParts = action.payload;
       saveSettings(state);
     },
+    setSymmetryMode(state, action: PayloadAction<boolean>) {
+      state.symmetryMode = action.payload;
+      saveSettings(state);
+    },
     setCrossoutLogsPath(state, action: PayloadAction<string | null>) {
       const value = action.payload?.trim() ?? "";
 
@@ -292,6 +303,7 @@ export const {
   restoreExcludedPart,
   clearExcludedParts,
   setConsiderExcludedParts,
+  setSymmetryMode,
   setCrossoutLogsPath,
   setStartScreen,
   setSystemNotifications,

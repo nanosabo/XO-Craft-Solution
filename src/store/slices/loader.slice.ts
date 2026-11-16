@@ -270,6 +270,7 @@ export const solveData = createAsyncThunk(
         keepInstalledParts,
         excludedParts,
         considerExcludedParts,
+        symmetryMode,
       } = state.settings;
       const hiddenParts = considerExcludedParts ? [] : excludedParts;
       const installed = keepInstalledParts ? state.loader.installedParts : [];
@@ -284,6 +285,7 @@ export const solveData = createAsyncThunk(
           .map((part) => part.id),
         installedParts: installed,
         excludedPartIds: hiddenParts,
+        symmetryMode,
       })) as solvedResult;
       const ordered = {
         ...result,
@@ -314,6 +316,7 @@ export const refreshSolution = createAsyncThunk(
         keepInstalledParts,
         excludedParts,
         considerExcludedParts,
+        symmetryMode,
       } = state.settings;
       const hiddenParts = considerExcludedParts ? [] : excludedParts;
       const installed = keepInstalledParts ? state.loader.installedParts : [];
@@ -328,6 +331,7 @@ export const refreshSolution = createAsyncThunk(
           .map((part) => part.id),
         installedParts: installed,
         excludedPartIds: hiddenParts,
+        symmetryMode,
       })) as solvedResult;
 
       return {

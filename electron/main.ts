@@ -21,7 +21,8 @@ import {
   buildMirrorMap,
   expandEngNames,
   expandIds,
-} from "@src/helpers/partMirrors";
+  groupMirroredParts,
+} from "../src/helpers/partMirrors";
 import { matchesRequiredPartQuery, parsePartSearch } from "./partSearch";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
@@ -1040,6 +1041,8 @@ interface DataToSolve {
   }[];
   /** Parts the user never wants suggested. Applied even without other filters. */
   excludedPartIds?: string[];
+  /** Left and right parts are taken in equal counts. Other parts stay as they are. */
+  symmetryMode?: boolean;
 }
 
 interface SolveResultPart {
@@ -1220,6 +1223,142 @@ ipcMain.handle("fetchMarketChartData", async (_, id: number) => {
   return buildChartData(chartData !== undefined ? chartData : [], "6m", lang);
 });
 
+interface PreparedPart extends Part {
+  /** Real parts represented by one solver unit. A left/right pair uses 2. */
+  slots?: number;
+}
+
+interface SymmetryBudget {
+  maxPower: number;
+  maxWeight: number;
+  maxParts: number;
+}
+
+interface SymmetryStats {
+  parts: number;
+  power: number;
+  weight: number;
+  durability: number;
+}
+
+const emptySymmetryStats = (): SymmetryStats => ({
+  parts: 0,
+  power: 0,
+  weight: 0,
+  durability: 0,
+});
+
+/** How many copies fit into the budget that is still free. */
+const copiesThatFit = (
+  part: Pick<PreparedPart, "power" | "weight">,
+  count: number,
+  budget: SymmetryBudget,
+) => {
+  let fit = count;
+
+  if (part.power > 0) {
+    fit = Math.min(fit, Math.floor(budget.maxPower / part.power));
+  }
+
+  if (part.weight > 0) {
+    fit = Math.min(fit, Math.floor(budget.maxWeight / part.weight));
+  }
+
+  return Math.max(0, Math.min(fit, budget.maxParts));
+};
+
+/**
+ * Mirror parts become one unit: one left and one right, same count.
+ * A side that is already reserved is topped up when the budget allows it.
+ * Parts without a pair, including limits of 1 and 3, are left unchanged.
+ */
+const applyMirrorSymmetry = (
+  structural: PreparedPart[],
+  mirrors: Map<string, string>,
+  reserved: Map<string, number>,
+  budget: SymmetryBudget,
+) => {
+  const byId = new Map(structural.map((part) => [part.id, part]));
+  const seen = new Set<string>();
+  const parts: PreparedPart[] = [];
+  const extras = new Map<string, number>();
+  const bundles = new Map<string, [string, string]>();
+  const stats = emptySymmetryStats();
+
+  const commit = (part: PreparedPart, count: number) => {
+    if (count <= 0) return;
+
+    extras.set(part.id, (extras.get(part.id) ?? 0) + count);
+    stats.parts += count;
+    stats.power += part.power * count;
+    stats.weight += part.weight * count;
+    stats.durability += part.durability * count;
+    budget.maxPower -= part.power * count;
+    budget.maxWeight -= part.weight * count;
+    budget.maxParts -= count;
+  };
+
+  for (const part of structural) {
+    if (seen.has(part.id)) continue;
+
+    const mirrorId = mirrors.get(part.id);
+
+    if (!mirrorId) {
+      if (part.maxCount > 0) parts.push(part);
+      continue;
+    }
+
+    seen.add(part.id);
+    seen.add(mirrorId);
+
+    const mirror = byId.get(mirrorId);
+
+    // The other side is not available, so this side is not offered on its own.
+    if (!mirror) continue;
+
+    let availA = part.maxCount;
+    let availB = mirror.maxCount;
+    const needA = Math.max(
+      0,
+      (reserved.get(mirror.id) ?? 0) - (reserved.get(part.id) ?? 0),
+    );
+    const needB = Math.max(
+      0,
+      (reserved.get(part.id) ?? 0) - (reserved.get(mirror.id) ?? 0),
+    );
+
+    const catchUp = (item: PreparedPart, avail: number, need: number) => {
+      const count = copiesThatFit(item, Math.min(avail, need), budget);
+
+      commit(item, count);
+
+      return avail - count;
+    };
+
+    availA = catchUp(part, availA, needA);
+    availB = catchUp(mirror, availB, needB);
+
+    const pairMax = Math.min(availA, availB);
+
+    if (pairMax <= 0) continue;
+
+    const id = `symmetry:${part.id}:${mirror.id}`;
+
+    bundles.set(id, [part.id, mirror.id]);
+    parts.push({
+      ...part,
+      id,
+      power: part.power + mirror.power,
+      weight: part.weight + mirror.weight,
+      durability: part.durability + mirror.durability,
+      maxCount: pairMax,
+      slots: 2,
+    });
+  }
+
+  return { parts, extras, bundles, stats };
+};
+
 const runSolve = async ({
   inputs,
   requiredParts,
@@ -1229,6 +1368,7 @@ const runSolve = async ({
   lockedPartIds = [],
   excludedPartIds = [],
   installedParts = [],
+  symmetryMode = false,
 }: DataToSolve): Promise<SolveResult> => {
     if (!fs.existsSync(exePath)) {
       throw new Error(
@@ -1320,21 +1460,24 @@ const runSolve = async ({
 
       for (const [id, count] of mounted) include(id, count);
 
-      return [...counts.entries()].flatMap(([id, count]) => {
-        const part = partsById.get(id);
-        const meta = mountedMeta.get(id);
+      return groupMirroredParts(
+        [...counts.entries()].flatMap(([id, count]) => {
+          const part = partsById.get(id);
+          const meta = mountedMeta.get(id);
 
-        if ((!part && !meta) || count <= 0) return [];
+          if ((!part && !meta) || count <= 0) return [];
 
-        return [
-          {
-            id,
-            name: part?.name || meta?.name || "",
-            eng_name: part?.eng_name || meta?.eng_name || "",
-            count,
-          },
-        ];
-      });
+          return [
+            {
+              id,
+              name: part?.name || meta?.name || "",
+              eng_name: part?.eng_name || meta?.eng_name || "",
+              count,
+            },
+          ];
+        }),
+        mirrors,
+      );
     };
 
     /* ---------------- limits ---------------- */
@@ -1353,11 +1496,11 @@ const runSolve = async ({
 
     /* ---------------- prepare parts ---------------- */
 
-    const partsPrepared = parts
+    const structural = parts
       .map((p) => {
         const required = requiredParts.find((rp) => rp.id === p.id);
         const reserved = reservedOf(p.id, required?.count ?? 0);
-        let maxCount = p.maxCount - reserved;
+        let maxCount = Math.max(0, p.maxCount - reserved);
 
         // The warehouse is optional. When it is enabled, a part that is
         // explicitly present in the warehouse can only be used up to the
@@ -1381,13 +1524,69 @@ const runSolve = async ({
       .filter(
         (p) =>
           (p.category === "Конструкции" || p.category === "Простреливаемые") &&
-          p.durability >= inputs.minPartHp &&
-          p.maxCount > 0,
+          p.durability >= inputs.minPartHp,
       );
+
+    const reservedCounts = new Map(
+      structural.map((part) => {
+        const required = requiredParts.find((item) => item.id === part.id);
+
+        return [part.id, reservedOf(part.id, required?.count ?? 0)] as const;
+      }),
+    );
+
+    const symmetry = symmetryMode
+      ? applyMirrorSymmetry(structural, mirrors, reservedCounts, dataToSolve)
+      : {
+          parts: structural.filter((part) => part.maxCount > 0),
+          extras: new Map<string, number>(),
+          bundles: new Map<string, [string, string]>(),
+          stats: emptySymmetryStats(),
+        };
 
     const inputData = {
       ...dataToSolve,
-      parts: partsPrepared,
+      parts: symmetry.parts,
+    };
+
+    const withSymmetry = (
+      added: Map<string, number>,
+      solved: {
+        durability: number;
+        weight: number;
+        power: number;
+        parts: number;
+      },
+    ): SolveResult => {
+      for (const [id, count] of symmetry.extras) {
+        added.set(id, (added.get(id) ?? 0) + count);
+      }
+
+      let totalDurability = applyDurabilityBonuses(
+        solved.durability + requiredStats.durability + symmetry.stats.durability,
+        inputs,
+      );
+      totalDurability += inputs.durability;
+
+      return {
+        solution: composeSolution(added),
+        totalDurability: Math.round(totalDurability),
+        totalWeight:
+          solved.weight +
+          inputs.weight +
+          requiredStats.weight +
+          symmetry.stats.weight,
+        totalPower:
+          solved.power +
+          inputs.powerScores +
+          requiredStats.power +
+          symmetry.stats.power,
+        totalParts:
+          solved.parts +
+          inputs.parts +
+          requiredStats.parts +
+          symmetry.stats.parts,
+      };
     };
 
     /* ---------------- empty pool ---------------- */
@@ -1395,20 +1594,13 @@ const runSolve = async ({
     // The solver cannot handle an empty parts list, which happens when the
     // warehouse or the HP filter excludes every part. In that case the result
     // consists of the required parts only.
-    if (partsPrepared.length === 0) {
-      let totalDurability = applyDurabilityBonuses(
-        requiredStats.durability,
-        inputs,
-      );
-      totalDurability += inputs.durability;
-
-      return {
-        solution: composeSolution(new Map()),
-        totalDurability: Math.round(totalDurability),
-        totalWeight: inputs.weight + requiredStats.weight,
-        totalPower: inputs.powerScores + requiredStats.power,
-        totalParts: inputs.parts + requiredStats.parts,
-      };
+    if (symmetry.parts.length === 0) {
+      return withSymmetry(new Map(), {
+        durability: 0,
+        weight: 0,
+        power: 0,
+        parts: 0,
+      });
     }
 
     /* ---------------- run solver ---------------- */
@@ -1432,29 +1624,32 @@ const runSolve = async ({
 
           const added = new Map<string, number>();
 
-          for (const [id, count] of Object.entries(parsed.solution)) {
+          for (const [id, count] of Object.entries(
+            parsed.solution as Record<string, number>,
+          )) {
             const amount = Number(count);
 
-            if (amount > 0) added.set(id, amount);
+            if (amount <= 0) continue;
+
+            const pair = symmetry.bundles.get(id);
+
+            if (pair) {
+              added.set(pair[0], (added.get(pair[0]) ?? 0) + amount);
+              added.set(pair[1], (added.get(pair[1]) ?? 0) + amount);
+              continue;
+            }
+
+            added.set(id, amount);
           }
 
-          /* ---------------- totals ---------------- */
-
-          let totalDurability = applyDurabilityBonuses(
-            parsed.maxDurability + requiredStats.durability,
-            inputs,
+          resolve(
+            withSymmetry(added, {
+              durability: parsed.maxDurability,
+              weight: parsed.totalWeight,
+              power: parsed.totalPower,
+              parts: parsed.totalParts,
+            }),
           );
-          totalDurability += inputs.durability;
-
-          resolve({
-            solution: composeSolution(added),
-            totalDurability: Math.round(totalDurability),
-            totalWeight:
-              parsed.totalWeight + inputs.weight + requiredStats.weight,
-            totalPower:
-              parsed.totalPower + inputs.powerScores + requiredStats.power,
-            totalParts: parsed.totalParts + inputs.parts + requiredStats.parts,
-          });
         } catch (err) {
           reject(err);
         }

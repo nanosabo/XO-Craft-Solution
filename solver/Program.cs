@@ -17,6 +17,9 @@ class Part
     public int maxCount { get; set; }
 
     public int build_hp { get; set; }
+
+    // How many real parts one chosen unit stands for. A left/right pair is 2.
+    public int slots { get; set; }
 }
 
 class InputData
@@ -95,9 +98,11 @@ class Program
 
         for (int i = 0; i < n; i++)
         {
+            int slots = input.parts[i].slots < 1 ? 1 : input.parts[i].slots;
+
             power.SetCoefficient(x[i], input.parts[i].power);
             weight.SetCoefficient(x[i], input.parts[i].weight);
-            count.SetCoefficient(x[i], 1);
+            count.SetCoefficient(x[i], slots);
         }
 
         Objective obj = solver.Objective();
@@ -127,10 +132,11 @@ class Program
                 continue;
 
             var part = input.parts[i];
+            int slots = part.slots < 1 ? 1 : part.slots;
 
             result.solution[part.id] = countValue;
 
-            result.totalParts += countValue;
+            result.totalParts += countValue * slots;
             result.totalPower += part.power * countValue;
             result.totalWeight += part.weight * countValue;
         }

@@ -13,6 +13,7 @@ import useParts from "@src/containers/Settings/useParts";
 import {
   setConsiderExcludedParts,
   setInventoryEnabled,
+  setSymmetryMode,
   selectSettingsState,
 } from "@src/store/slices/settings.slice";
 import Switch from "@src/containers/Settings/components/Switch";
@@ -50,7 +51,7 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
   const titleId = useId();
   const { refreshing, installedParts } = useAppSelector(selectLoaderState);
   const { parts: catalog } = useParts();
-  const { inventoryEnabled, considerExcludedParts, excludedParts } =
+  const { inventoryEnabled, considerExcludedParts, excludedParts, symmetryMode } =
     useAppSelector(selectSettingsState);
   const { parts, forbidden, switched } = useAppSelector(
     selectRequiredPartsState,
@@ -256,6 +257,17 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
               label={t("filter.bannedHint")}
               onChange={(shown) => {
                 dispatch(setConsiderExcludedParts(shown));
+                scheduleSolutionRefresh(dispatch);
+              }}
+            />
+          </div>
+          <div className={styles.toggle} title={t("filter.symmetryHint")}>
+            <span>{t("filter.symmetry")}</span>
+            <Switch
+              checked={symmetryMode}
+              label={t("filter.symmetryHint")}
+              onChange={(enabled) => {
+                dispatch(setSymmetryMode(enabled));
                 scheduleSolutionRefresh(dispatch);
               }}
             />
