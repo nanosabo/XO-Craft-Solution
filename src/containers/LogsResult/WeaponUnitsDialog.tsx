@@ -4,13 +4,17 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import CrossoutLogo from "@src/components/CrossoutLogo";
-import type { CrossoutWeaponUnit } from "@src/types/crossout";
+import type {
+  CrossoutWeaponUnit,
+  CrossoutWeaponUnitSummary,
+} from "@src/types/crossout";
 import styles from "./WeaponUnitsDialog.module.scss";
 
 type Props = {
   open: boolean;
   status: "loading" | "ready" | "error";
   units: CrossoutWeaponUnit[];
+  summary: CrossoutWeaponUnitSummary | null;
   nameOf: (unit: CrossoutWeaponUnit) => string;
   onClose: () => void;
 };
@@ -18,8 +22,41 @@ type Props = {
 const isQuiet = (unit: CrossoutWeaponUnit) =>
   unit.important === "0" && unit.average === "0" && unit.total === "0";
 
-const WeaponUnitsDialog = ({ open, status, units, nameOf, onClose }: Props) => {
+const winrateTone = (value: string): "high" | "low" | null => {
+  const match = /(\d+(?:[.,]\d+)?)\s*%/.exec(value);
+
+  if (!match) return null;
+
+  return Number(match[1].replace(",", ".")) >= 50 ? "high" : "low";
+};
+
+const WeaponUnitsDialog = ({
+  open,
+  status,
+  units,
+  summary,
+  nameOf,
+  onClose,
+}: Props) => {
   const { t } = useTranslation("logsPage");
+  const summaryStats = [
+    summary?.rounds
+      ? {
+          kind: "rounds" as const,
+          tone: null,
+          label: t("logStats.unitsRounds"),
+          value: summary.rounds,
+        }
+      : null,
+    summary?.winrate
+      ? {
+          kind: "winrate" as const,
+          tone: winrateTone(summary.winrate),
+          label: t("logStats.unitsWinrate"),
+          value: summary.winrate,
+        }
+      : null,
+  ].filter((item) => item !== null);
 
   useEffect(() => {
     if (!open) return;
@@ -65,6 +102,29 @@ const WeaponUnitsDialog = ({ open, status, units, nameOf, onClose }: Props) => {
             ×
           </button>
         </div>
+
+        {summary && (summary.name || summaryStats.length > 0) && (
+          <div className={styles.summary}>
+            {summary.name && <p className={styles.summaryName}>{summary.name}</p>}
+            {summaryStats.length > 0 && (
+              <dl className={styles.summaryStats}>
+                {summaryStats.map((item) => (
+                  <div
+                    key={item.kind}
+                    className={classNames(
+                      styles[item.kind],
+                      item.tone === "high" && styles.winrateHigh,
+                      item.tone === "low" && styles.winrateLow,
+                    )}
+                  >
+                    <dt>{item.label}</dt>
+                    <dd>{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        )}
 
         {status === "loading" && (
           <div className={styles.loading} role="status" aria-live="polite">

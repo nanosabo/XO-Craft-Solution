@@ -3,7 +3,7 @@ import { getBaseUrls } from "./crossoutInfo";
 import { evaluateCrossout, loadCrossoutPage } from "./crossoutBrowser";
 import { getCrossoutNameCatalog } from "./crossoutLogApi";
 import { weaponImageSrc } from "./weaponImages";
-import { parseWeaponUnitTable } from "./weaponUnitTable";
+import { parseWeaponUnitSummary, parseWeaponUnitTable } from "./weaponUnitTable";
 import type { CrossoutWeaponUnitsResult } from "@src/types/crossout";
 
 const LOG_ID_PATTERN = /^[A-Za-z0-9_-]{4,64}$/;
@@ -106,9 +106,11 @@ export const loadWeaponUnits = async (
       if (rows.length === 0) continue;
 
       const catalog = await getCrossoutNameCatalog();
+      const summary = parseWeaponUnitSummary(fetched.text);
 
       return {
         ok: true,
+        summary,
         units: rows.map((row) => ({
           key: row.key,
           name: catalogName(catalog, language, row.key, row.fallback),

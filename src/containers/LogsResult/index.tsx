@@ -677,6 +677,7 @@ const LogsResult = () => {
   const [weaponUnits, setWeaponUnits] = useState<{
     status: "loading" | "ready" | "error";
     units: CrossoutWeaponUnit[];
+    summary: { name: string; rounds: string; winrate: string } | null;
   } | null>(null);
   const weaponUnitsSeq = useRef(0);
   const [logTableLoading, setLogTableLoading] = useState(false);
@@ -1329,7 +1330,7 @@ const LogsResult = () => {
 
     const seq = ++weaponUnitsSeq.current;
 
-    setWeaponUnits({ status: "loading", units: [] });
+    setWeaponUnits({ status: "loading", units: [], summary: null });
 
     void window.electronAPI
       .crossoutWeaponUnits({
@@ -1341,10 +1342,17 @@ const LogsResult = () => {
       .then((result) => {
         if (seq !== weaponUnitsSeq.current) return;
 
-        setWeaponUnits(
-          result.ok
-            ? { status: "ready", units: result.units }
-            : { status: "error", units: [] },
+        setWeaponUnits((current) =>
+          current
+            ? result.ok
+              ? {
+                  ...current,
+                  status: "ready",
+                  units: result.units,
+                  summary: result.summary,
+                }
+              : { ...current, status: "error", units: [] }
+            : current,
         );
       })
       .catch((unitsError) => {
@@ -1352,7 +1360,9 @@ const LogsResult = () => {
 
         if (seq !== weaponUnitsSeq.current) return;
 
-        setWeaponUnits({ status: "error", units: [] });
+        setWeaponUnits((current) =>
+          current ? { ...current, status: "error", units: [] } : current,
+        );
       });
   };
 
@@ -2065,6 +2075,7 @@ const LogsResult = () => {
         open={weaponUnits != null}
         status={weaponUnits?.status ?? "loading"}
         units={weaponUnits?.units ?? []}
+        summary={weaponUnits?.summary ?? null}
         nameOf={weaponUnitName}
         onClose={closeWeaponUnits}
       />

@@ -202,6 +202,8 @@
     "unitsLoadingHint": "The site checks the browser first. This takes a few seconds",
     "unitsError": "Couldn't load damage by weapon",
     "unitsEmpty": "No damage for this loadout",
+    "unitsRounds": "Rounds",
+    "unitsWinrate": "Winrate",
     "unitsOpen": "Damage of each weapon",
     "unitsClose": "Close"
   },

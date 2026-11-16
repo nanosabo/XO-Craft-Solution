@@ -335,8 +335,15 @@ export interface CrossoutWeaponUnit {
   total: string;
 }
 
+/** Nickname, rounds and winrate for the opened loadout. */
+export interface CrossoutWeaponUnitSummary {
+  name: string;
+  rounds: string;
+  winrate: string;
+}
+
 export type CrossoutWeaponUnitsResult =
-  | { ok: true; units: CrossoutWeaponUnit[] }
+  | { ok: true; units: CrossoutWeaponUnit[]; summary: CrossoutWeaponUnitSummary | null }
   | { ok: false; error: string; errorCode: CrossoutErrorCode };
 
 export interface CrossoutLogHistoryEntry {
