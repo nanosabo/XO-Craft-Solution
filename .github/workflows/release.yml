@@ -61,7 +61,7 @@ jobs:
             release/latest*.yml
 
   release:
-    name: Publish release
+    name: Create draft release
     needs: build
     runs-on: ubuntu-latest
 
@@ -71,7 +71,7 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Publish release
+      - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -143,24 +143,10 @@ jobs:
             exit 1
           fi
 
-          echo "$output" >> "$summary"
-
-          # Publish only after every asset is uploaded, so electron-updater
-          # never sees a release with missing files. Stable releases also
-          # become the repository's "latest" release.
-          publish_args=(--draft=false)
-          if [ "$is_prerelease" = false ]; then
-            publish_args+=(--latest)
-          fi
-
-          if ! publish_output=$(gh release edit "$TAG" "${publish_args[@]}" 2>&1); then
-            {
-              echo "### Publishing failed"
-              echo '```'
-              echo "$publish_output"
-              echo '```'
-            } >> "$summary"
-            exit 1
-          fi
-
-          echo "$publish_output" >> "$summary"
+          {
+            echo "$output"
+            echo
+            echo "### Draft"
+            echo "Release \`$TAG\` is a draft. Edit the notes, then publish it."
+            echo "For a stable tag, set it as the latest release when publishing."
+          } >> "$summary"
