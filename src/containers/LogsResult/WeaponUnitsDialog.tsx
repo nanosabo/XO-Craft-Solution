@@ -126,7 +126,7 @@ const WeaponUnitsDialog = ({
           value: summary.winrate,
         }
       : null,
-  ].filter((item) => item !== null);
+  ].filter((item): item is NonNullable<typeof item> => item !== null);
 
   useEffect(() => {
     if (!open) return;
