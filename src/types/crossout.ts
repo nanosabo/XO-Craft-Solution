@@ -346,6 +346,20 @@ export type CrossoutWeaponUnitsResult =
   | { ok: true; units: CrossoutWeaponUnit[]; summary: CrossoutWeaponUnitSummary | null }
   | { ok: false; error: string; errorCode: CrossoutErrorCode };
 
+export interface CrossoutWeaponUnitsCache {
+  units: CrossoutWeaponUnit[];
+  summary: CrossoutWeaponUnitSummary | null;
+}
+
+export interface CrossoutWeaponUnitsCacheInput {
+  logId: string;
+  type: string;
+  player: string;
+  weapons: string;
+  units?: CrossoutWeaponUnit[];
+  summary?: CrossoutWeaponUnitSummary | null;
+}
+
 export interface CrossoutLogHistoryEntry {
   logId: string;
   nickname: string;

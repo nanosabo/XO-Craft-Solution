@@ -53,6 +53,7 @@ import type {
   CrossoutLogHistoryInput,
   CrossoutStatsCacheInput,
   CrossoutUploadLogParams,
+  CrossoutWeaponUnitsCacheInput,
 } from "@src/types/crossout";
 import {
   clearCrossoutApiKey,
@@ -94,6 +95,12 @@ import {
   getCrossoutStatsCache,
   saveCrossoutStatsCache,
 } from "./crossoutStatsCache";
+import {
+  clearCrossoutWeaponUnitsCache,
+  forgetCrossoutWeaponUnitsCache,
+  getCrossoutWeaponUnitsCache,
+  saveCrossoutWeaponUnitsCache,
+} from "./crossoutWeaponUnitsCache";
 import { findLatestCombatLog } from "./crossoutLogFind";
 import { getLaunchAtLogin, setLaunchAtLogin } from "./launchAtLogin";
 import {
@@ -675,6 +682,19 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  "crossout-weapon-units-cache-get",
+  (_, request: CrossoutWeaponUnitsCacheInput) =>
+    getCrossoutWeaponUnitsCache(request),
+);
+
+ipcMain.handle(
+  "crossout-weapon-units-cache-save",
+  (_, request: CrossoutWeaponUnitsCacheInput) => {
+    saveCrossoutWeaponUnitsCache(request);
+  },
+);
+
+ipcMain.handle(
   "crossout-load-log-table",
   (
     _,
@@ -713,12 +733,14 @@ ipcMain.handle("crossout-history-remove", (_, logId: string) => {
   const id = String(logId ?? "");
 
   forgetCrossoutStatsCache(id);
+  forgetCrossoutWeaponUnitsCache(id);
 
   return removeCrossoutHistory(id);
 });
 
 ipcMain.handle("crossout-history-clear", () => {
   clearCrossoutStatsCache();
+  clearCrossoutWeaponUnitsCache();
 
   return clearCrossoutHistory();
 });

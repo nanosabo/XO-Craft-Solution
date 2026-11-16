@@ -24,7 +24,9 @@ import {
   type CrossoutLogTime,
   type CrossoutNameCatalog,
   type CrossoutWeaponUnit,
+  type CrossoutWeaponUnitSummary,
 } from "@src/types/crossout";
+import { weaponUnitsCacheKey } from "@electron/weaponUnitTable";
 import WeaponUnitsDialog from "./WeaponUnitsDialog";
 import CrossoutLogo from "@src/components/CrossoutLogo";
 import Input from "@src/ui/Input";
@@ -680,6 +682,12 @@ const LogsResult = () => {
     summary: { name: string; rounds: string; winrate: string } | null;
   } | null>(null);
   const weaponUnitsSeq = useRef(0);
+  const weaponUnitsMemory = useRef(
+    new Map<
+      string,
+      { units: CrossoutWeaponUnit[]; summary: CrossoutWeaponUnitSummary | null }
+    >(),
+  );
   const [logTableLoading, setLogTableLoading] = useState(false);
   const [logTableError, setLogTableError] = useState<ResultError | null>(null);
   const [linksCopied, setLinksCopied] = useState(false);
@@ -1328,32 +1336,63 @@ const LogsResult = () => {
 
     if (!summary || !logType || !player || !weapons) return;
 
-    const seq = ++weaponUnitsSeq.current;
+    const request = {
+      logId: summary.logId,
+      type: logType,
+      player,
+      weapons,
+    };
+    const key = weaponUnitsCacheKey(request);
 
-    setWeaponUnits({ status: "loading", units: [], summary: null });
+    if (!key) return;
+
+    const seq = ++weaponUnitsSeq.current;
+    const remembered = weaponUnitsMemory.current.get(key);
+
+    if (remembered) {
+      setWeaponUnits({ status: "ready", ...remembered });
+      return;
+    }
+
+    const show = (
+      units: CrossoutWeaponUnit[],
+      weaponSummary: CrossoutWeaponUnitSummary | null,
+    ) => {
+      const saved = { units, summary: weaponSummary };
+
+      weaponUnitsMemory.current.set(key, saved);
+      setWeaponUnits({ status: "ready", ...saved });
+    };
 
     void window.electronAPI
-      .crossoutWeaponUnits({
-        logId: summary.logId,
-        type: logType,
-        player,
-        weapons,
-      })
-      .then((result) => {
+      .crossoutWeaponUnitsCacheGet(request)
+      .then((cached) => {
         if (seq !== weaponUnitsSeq.current) return;
 
-        setWeaponUnits((current) =>
-          current
-            ? result.ok
-              ? {
-                  ...current,
-                  status: "ready",
-                  units: result.units,
-                  summary: result.summary,
-                }
-              : { ...current, status: "error", units: [] }
-            : current,
-        );
+        if (cached) {
+          show(cached.units, cached.summary);
+          return;
+        }
+
+        setWeaponUnits({ status: "loading", units: [], summary: null });
+
+        return window.electronAPI.crossoutWeaponUnits(request).then((result) => {
+          if (seq !== weaponUnitsSeq.current) return;
+
+          if (!result.ok) {
+            setWeaponUnits((current) =>
+              current ? { ...current, status: "error", units: [] } : current,
+            );
+            return;
+          }
+
+          show(result.units, result.summary);
+          void window.electronAPI.crossoutWeaponUnitsCacheSave({
+            ...request,
+            units: result.units,
+            summary: result.summary,
+          });
+        });
       })
       .catch((unitsError) => {
         logWarning("weapon-units", unitsError);
@@ -1361,7 +1400,9 @@ const LogsResult = () => {
         if (seq !== weaponUnitsSeq.current) return;
 
         setWeaponUnits((current) =>
-          current ? { ...current, status: "error", units: [] } : current,
+          current
+            ? { ...current, status: "error", units: [] }
+            : { status: "error", units: [], summary: null },
         );
       });
   };

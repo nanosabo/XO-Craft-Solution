@@ -128,6 +128,12 @@ interface Window {
       player: string;
       weapons: string;
     }): Promise<import("@src/types/crossout").CrossoutWeaponUnitsResult>;
+    crossoutWeaponUnitsCacheGet(
+      request: import("@src/types/crossout").CrossoutWeaponUnitsCacheInput,
+    ): Promise<import("@src/types/crossout").CrossoutWeaponUnitsCache | null>;
+    crossoutWeaponUnitsCacheSave(
+      request: import("@src/types/crossout").CrossoutWeaponUnitsCacheInput,
+    ): Promise<void>;
     crossoutLoadLogTable(
       logId: string,
       type: string,

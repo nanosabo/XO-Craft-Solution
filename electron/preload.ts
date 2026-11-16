@@ -153,6 +153,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
       "crossout-weapon-units",
       request,
     ) as Promise<import("@src/types/crossout").CrossoutWeaponUnitsResult>,
+  crossoutWeaponUnitsCacheGet: (
+    request: import("@src/types/crossout").CrossoutWeaponUnitsCacheInput,
+  ) =>
+    ipcRenderer.invoke(
+      "crossout-weapon-units-cache-get",
+      request,
+    ) as Promise<import("@src/types/crossout").CrossoutWeaponUnitsCache | null>,
+  crossoutWeaponUnitsCacheSave: (
+    request: import("@src/types/crossout").CrossoutWeaponUnitsCacheInput,
+  ) => ipcRenderer.invoke("crossout-weapon-units-cache-save", request),
   crossoutLoadLogTable: (
     logId: string,
     type: string,

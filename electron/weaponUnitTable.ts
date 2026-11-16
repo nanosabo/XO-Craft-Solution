@@ -20,6 +20,30 @@ export interface WeaponUnitSummary {
   winrate: string;
 }
 
+const WEAPON_KEY = /^[A-Za-z0-9_.-]{1,160}$/;
+
+/** Same loadout always maps to one cache id, whatever order the keys arrived in. */
+export const weaponUnitsCacheKey = (request: {
+  logId: string;
+  type: string;
+  player: string;
+  weapons: string;
+}): string | null => {
+  const logId = request.logId.trim();
+  const type = request.type.trim().toLowerCase();
+  const player = request.player.trim();
+  const weapons = request.weapons
+    .split(",")
+    .map((key) => key.trim())
+    .filter((key) => WEAPON_KEY.test(key))
+    .sort()
+    .join(",");
+
+  if (!logId || !type || !player || !weapons) return null;
+
+  return JSON.stringify([logId, type, player, weapons]);
+};
+
 const decode = (value: string): string =>
   value
     .replace(/&nbsp;/gi, " ")
