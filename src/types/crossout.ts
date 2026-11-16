@@ -324,6 +324,21 @@ export type CrossoutLogTableResult =
   | { ok: true; table: CrossoutLogTable }
   | { ok: false; error: string; errorCode: CrossoutErrorCode };
 
+/** One gun from the "damage by weapon unit" table. */
+export interface CrossoutWeaponUnit {
+  key: string;
+  name: string;
+  image: string;
+  importantPercent: string;
+  important: string;
+  average: string;
+  total: string;
+}
+
+export type CrossoutWeaponUnitsResult =
+  | { ok: true; units: CrossoutWeaponUnit[] }
+  | { ok: false; error: string; errorCode: CrossoutErrorCode };
+
 export interface CrossoutLogHistoryEntry {
   logId: string;
   nickname: string;

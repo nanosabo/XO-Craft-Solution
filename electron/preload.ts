@@ -143,6 +143,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("crossout-names") as Promise<
       import("@src/types/crossout").CrossoutNameCatalog
     >,
+  crossoutWeaponUnits: (request: {
+    logId: string;
+    type: string;
+    player: string;
+    weapons: string;
+  }) =>
+    ipcRenderer.invoke(
+      "crossout-weapon-units",
+      request,
+    ) as Promise<import("@src/types/crossout").CrossoutWeaponUnitsResult>,
   crossoutLoadLogTable: (
     logId: string,
     type: string,

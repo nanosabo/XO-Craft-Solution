@@ -191,7 +191,19 @@
     "received": "Received",
     "frags": "Kills",
     "deaths": "Deaths",
-    "score": "Score"
+    "score": "Score",
+    "unitsTitle": "Damage by weapon",
+    "unitsWeapon": "Weapon",
+    "unitsImportantPercent": "Important %",
+    "unitsImportant": "Important damage",
+    "unitsAverage": "Average damage",
+    "unitsTotal": "Total damage",
+    "unitsLoading": "Loading weapon damage",
+    "unitsLoadingHint": "The site checks the browser first. This takes a few seconds",
+    "unitsError": "Couldn't load damage by weapon",
+    "unitsEmpty": "No damage for this loadout",
+    "unitsOpen": "Damage of each weapon",
+    "unitsClose": "Close"
   },
   "logTypes": {
     "kv": "Clan battles",

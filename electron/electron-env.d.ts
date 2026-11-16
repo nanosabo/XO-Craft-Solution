@@ -122,6 +122,12 @@ interface Window {
       logId: string,
     ): Promise<import("@src/types/crossout").CrossoutLogSummaryResult>;
     crossoutNames(): Promise<import("@src/types/crossout").CrossoutNameCatalog>;
+    crossoutWeaponUnits(request: {
+      logId: string;
+      type: string;
+      player: string;
+      weapons: string;
+    }): Promise<import("@src/types/crossout").CrossoutWeaponUnitsResult>;
     crossoutLoadLogTable(
       logId: string,
       type: string,

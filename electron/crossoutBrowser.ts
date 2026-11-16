@@ -292,6 +292,33 @@ const enqueue = <T>(task: () => Promise<T>): Promise<T> => {
 export const loadCrossoutPage = (url: string): Promise<CrossoutPage> =>
   enqueue(() => load(url));
 
+const sameOrigin = (current: string, url: string): boolean => {
+  try {
+    return new URL(current).origin === new URL(url).origin;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Runs a script in the hidden window. The log page is opened only until the
+ * browser check has passed; later calls reuse that session.
+ */
+export const evaluateCrossout = <T>(url: string, script: string): Promise<T> =>
+  enqueue(async () => {
+    const win = getWindow();
+    const current = win.webContents.getURL();
+    let page: PageState = { title: "", text: "", ready: false };
+
+    if (sameOrigin(current, url)) page = await readPage(win);
+
+    if (!sameOrigin(current, url) || isChallenge(page) || !page.text.trim()) {
+      await load(url);
+    }
+
+    return (await win.webContents.executeJavaScript(script, true)) as T;
+  });
+
 export const extractCrossoutPage = <T>(
   url: string,
   script: string,

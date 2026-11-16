@@ -191,7 +191,19 @@
     "received": "Получено",
     "frags": "Фраг",
     "deaths": "Умер",
-    "score": "Очки"
+    "score": "Очки",
+    "unitsTitle": "Урон по единицам вооружения",
+    "unitsWeapon": "Орудие",
+    "unitsImportantPercent": "Важный в %",
+    "unitsImportant": "Важный урон",
+    "unitsAverage": "Средний урон",
+    "unitsTotal": "Всего урон",
+    "unitsLoading": "Загружаем урон по орудиям",
+    "unitsLoadingHint": "Сайт сначала проверяет браузер, это занимает несколько секунд",
+    "unitsError": "Не удалось получить урон по орудиям",
+    "unitsEmpty": "По этому вооружению нет урона",
+    "unitsOpen": "Урон каждого орудия",
+    "unitsClose": "Закрыть"
   },
   "logTypes": {
     "kv": "Клановые бои",

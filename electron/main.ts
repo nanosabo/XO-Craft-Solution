@@ -68,6 +68,7 @@ import {
   loadCrossoutLogTable,
 } from "./crossoutLogApi";
 import { closeCrossoutBrowser } from "./crossoutBrowser";
+import { loadWeaponUnits } from "./crossoutWeaponUnits";
 import {
   bindWindowScale,
   getUiScale,
@@ -655,6 +656,23 @@ ipcMain.handle("crossout-load-log", (_, logId: string) => {
 });
 
 ipcMain.handle("crossout-names", () => getCrossoutNameCatalog());
+
+ipcMain.handle(
+  "crossout-weapon-units",
+  (
+    _,
+    request: { logId?: string; type?: string; player?: string; weapons?: string },
+  ) =>
+    loadWeaponUnits(
+      {
+        logId: String(request?.logId ?? ""),
+        type: String(request?.type ?? ""),
+        player: String(request?.player ?? ""),
+        weapons: String(request?.weapons ?? ""),
+      },
+      getContentLanguage(),
+    ),
+);
 
 ipcMain.handle(
   "crossout-load-log-table",

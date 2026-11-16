@@ -1506,6 +1506,14 @@
   color: rgba($white, 0.92);
 }
 
+.logStatsWeaponHit {
+  cursor: pointer;
+
+  &:hover td {
+    background: rgba($white, 0.04);
+  }
+}
+
 .logStatsWeaponName {
   flex: 1 1 72px;
   min-width: 72px;

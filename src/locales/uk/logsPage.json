@@ -191,7 +191,19 @@
     "received": "Отримано",
     "frags": "Фраг",
     "deaths": "Загинув",
-    "score": "Очки"
+    "score": "Очки",
+    "unitsTitle": "Шкода по одиницях озброєння",
+    "unitsWeapon": "Гармата",
+    "unitsImportantPercent": "Важлива у %",
+    "unitsImportant": "Важлива шкода",
+    "unitsAverage": "Середня шкода",
+    "unitsTotal": "Усього шкода",
+    "unitsLoading": "Завантажуємо шкоду по гарматах",
+    "unitsLoadingHint": "Сайт спочатку перевіряє браузер, це займає кілька секунд",
+    "unitsError": "Не вдалося отримати шкоду по гарматах",
+    "unitsEmpty": "Для цього озброєння немає шкоди",
+    "unitsOpen": "Шкода кожної гармати",
+    "unitsClose": "Закрити"
   },
   "logTypes": {
     "kv": "Кланові бої",

@@ -23,7 +23,9 @@ import {
   type CrossoutLogTable,
   type CrossoutLogTime,
   type CrossoutNameCatalog,
+  type CrossoutWeaponUnit,
 } from "@src/types/crossout";
+import WeaponUnitsDialog from "./WeaponUnitsDialog";
 import CrossoutLogo from "@src/components/CrossoutLogo";
 import Input from "@src/ui/Input";
 import Select from "@src/ui/Select";
@@ -672,6 +674,11 @@ const LogsResult = () => {
   const [error, setError] = useState<ResultError | null>(null);
   const [logType, setLogType] = useState<string | null>(null);
   const [logTable, setLogTable] = useState<CrossoutLogTable | null>(null);
+  const [weaponUnits, setWeaponUnits] = useState<{
+    status: "loading" | "ready" | "error";
+    units: CrossoutWeaponUnit[];
+  } | null>(null);
+  const weaponUnitsSeq = useRef(0);
   const [logTableLoading, setLogTableLoading] = useState(false);
   const [logTableError, setLogTableError] = useState<ResultError | null>(null);
   const [linksCopied, setLinksCopied] = useState(false);
@@ -1306,6 +1313,54 @@ const LogsResult = () => {
     return () => observer.disconnect();
   }, [view, hasMoreBattles, battleLimit]);
 
+  const closeWeaponUnits = useCallback(() => {
+    weaponUnitsSeq.current += 1;
+    setWeaponUnits(null);
+  }, []);
+
+  useEffect(() => {
+    closeWeaponUnits();
+  }, [logId, logType, closeWeaponUnits]);
+
+  const openWeaponUnits = (player: string, row: CrossoutLogStatRow) => {
+    const weapons = (row.keys ?? []).filter(Boolean).join(",");
+
+    if (!summary || !logType || !player || !weapons) return;
+
+    const seq = ++weaponUnitsSeq.current;
+
+    setWeaponUnits({ status: "loading", units: [] });
+
+    void window.electronAPI
+      .crossoutWeaponUnits({
+        logId: summary.logId,
+        type: logType,
+        player,
+        weapons,
+      })
+      .then((result) => {
+        if (seq !== weaponUnitsSeq.current) return;
+
+        setWeaponUnits(
+          result.ok
+            ? { status: "ready", units: result.units }
+            : { status: "error", units: [] },
+        );
+      })
+      .catch((unitsError) => {
+        logWarning("weapon-units", unitsError);
+
+        if (seq !== weaponUnitsSeq.current) return;
+
+        setWeaponUnits({ status: "error", units: [] });
+      });
+  };
+
+  const weaponUnitName = (unit: CrossoutWeaponUnit) =>
+    (nameCatalog &&
+      catalogName(nameCatalog, namesLanguage, "weapons", unit.key)) ||
+    unit.name;
+
   const copyScreenshot = async () => {
     const root = statsShotRef.current;
 
@@ -1732,6 +1787,18 @@ const LogsResult = () => {
                             : row.team === "green"
                               ? styles.teamGreen
                               : undefined;
+                        const weaponKeys = row.keys?.filter(Boolean) ?? [];
+                        const canOpenUnits =
+                          row.kind === "weapon" && weaponKeys.length > 0;
+                        const playerName = (() => {
+                          for (let index = rowIndex; index >= 0; index -= 1) {
+                            const previous = filteredStats[index];
+
+                            if (previous.kind === "player") return previous.name;
+                          }
+
+                          return "";
+                        })();
 
                         return (
                           <tr
@@ -1740,7 +1807,16 @@ const LogsResult = () => {
                             className={classNames(teamClass, {
                               [styles.logStatsPlayer]: row.kind === "player",
                               [styles.logStatsWeaponRow]: row.kind === "weapon",
+                              [styles.logStatsWeaponHit]: canOpenUnits,
                             })}
+                            title={
+                              canOpenUnits ? t("logStats.unitsOpen") : undefined
+                            }
+                            onClick={
+                              canOpenUnits
+                                ? () => openWeaponUnits(playerName, row)
+                                : undefined
+                            }
                           >
                             {row.cells.map((cell, cellIndex) => {
                               const isWeapon = row.kind === "weapon";
@@ -1985,6 +2061,13 @@ const LogsResult = () => {
           </div>
         )}
       </section>
+      <WeaponUnitsDialog
+        open={weaponUnits != null}
+        status={weaponUnits?.status ?? "loading"}
+        units={weaponUnits?.units ?? []}
+        nameOf={weaponUnitName}
+        onClose={closeWeaponUnits}
+      />
     </div>
   );
 };
