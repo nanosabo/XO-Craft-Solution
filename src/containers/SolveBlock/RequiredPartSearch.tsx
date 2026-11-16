@@ -1,4 +1,6 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
+import { buildMirrorMap, expandIds } from "@src/helpers/partMirrors";
+import useParts from "../Settings/useParts";
 import { logWarning } from "@src/helpers/errorLog";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import {
@@ -23,6 +25,7 @@ const RequiredPartSearch = () => {
   const { excludedParts, considerExcludedParts } = useAppSelector(
     selectSettingsState,
   );
+  const { parts: catalog } = useParts();
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const [readyQuery, setReadyQuery] = useState("");
@@ -74,10 +77,11 @@ const RequiredPartSearch = () => {
     };
   }, []);
 
-  const excludedIds = useMemo(
-    () => (considerExcludedParts ? new Set<string>() : new Set(excludedParts)),
-    [considerExcludedParts, excludedParts],
-  );
+  const excludedIds = useMemo(() => {
+    if (considerExcludedParts) return new Set<string>();
+
+    return expandIds(excludedParts, buildMirrorMap(catalog));
+  }, [catalog, considerExcludedParts, excludedParts]);
   const visible = results.filter(
     (part) => !takenIds.has(part.id) && !excludedIds.has(part.id),
   );

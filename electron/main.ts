@@ -17,6 +17,11 @@ import path from "node:path";
 import { spawn } from "child_process";
 import { solveInputsState } from "@src/store/slices/solveInputs.slice";
 import { applyDurabilityBonuses } from "./durabilityBonus";
+import {
+  buildMirrorMap,
+  expandEngNames,
+  expandIds,
+} from "@src/helpers/partMirrors";
 import { matchesRequiredPartQuery, parsePartSearch } from "./partSearch";
 import { requiredPart } from "@src/store/slices/requiredParts.slice";
 import { fetchItems } from "./fetchItems";
@@ -1239,10 +1244,21 @@ const runSolve = async ({
       );
     }
 
-    const forbiddenNames = forbidden.map((part) => part.eng_name);
-    const excludedIds = new Set(excludedPartIds);
+    const mirrors = buildMirrorMap(loadedParts);
+    const forbiddenNames = expandEngNames(
+      forbidden.map((part) => part.eng_name),
+      loadedParts,
+      mirrors,
+    );
+    const excludedIds = expandIds(excludedPartIds, mirrors);
+    const keptIds = new Set([
+      ...requiredParts.map((part) => part.id),
+      ...(installedParts ?? []).map((part) => part.id),
+    ]);
+    const isBanned = (part: Part) =>
+      excludedIds.has(part.id) || forbiddenNames.has(part.eng_name);
     const parts = loadedParts.filter(
-      (p) => !excludedIds.has(p.id) && !forbiddenNames.includes(p.eng_name),
+      (part) => keptIds.has(part.id) || !isBanned(part),
     );
 
     /* ---------------- helpers ---------------- */
@@ -1354,7 +1370,7 @@ const runSolve = async ({
           maxCount = Math.min(maxCount, owned);
         }
 
-        if (lockedIds.has(p.id)) maxCount = 0;
+        if (lockedIds.has(p.id) || isBanned(p)) maxCount = 0;
 
         return {
           ...p,

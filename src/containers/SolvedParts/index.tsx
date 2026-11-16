@@ -20,6 +20,7 @@ import {
   installedPart,
 } from "@src/store/slices/loader.slice";
 import {
+  excludePart,
   removeRequiredPart,
   returnPart,
   selectRequiredPartsState,
@@ -34,6 +35,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import classNames from "classnames";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { buildMirrorMap, mirrorPartLabel } from "@src/helpers/partMirrors";
 import { getPartImageUrl, Part } from "../Settings/types";
 import useParts from "../Settings/useParts";
 import AnalogModal from "./AnalogModal";
@@ -62,6 +64,7 @@ const SolvedParts = () => {
   );
   const inputs = useAppSelector(selectSolveInputsState);
   const { parts } = useParts();
+  const mirrors = useMemo(() => buildMirrorMap(parts), [parts]);
   const dispatch = useAppDispatch();
 
   const [analogPart, setAnalogPart] = useState<solvedPart | null>(null);
@@ -154,6 +157,20 @@ const SolvedParts = () => {
   }, [hidden]);
 
   const rememberRemoved = useCallback((part: solvedPart) => {
+    const mirror = parts.find((item) => item.id === mirrors.get(part.id));
+
+    if (mirror) {
+      dispatch(
+        excludePart({
+          id: mirror.id,
+          name: mirror.name,
+          eng_name: mirror.eng_name,
+          maxCount: mirror.maxCount,
+        }),
+      );
+      dispatch(removeInstalledPart(mirror.id));
+    }
+
     dispatch(
       noteRemovedPart({
         id: part.id,
@@ -166,7 +183,17 @@ const SolvedParts = () => {
       { ...part, until: Date.now() + REMOVED_TTL },
       ...current.filter((item) => item.id !== part.id),
     ]);
-  }, [dispatch]);
+  }, [dispatch, mirrors, parts]);
+
+  const returnPair = useCallback(
+    (id: string) => {
+      dispatch(returnPart(id));
+      const mirror = mirrors.get(id);
+
+      if (mirror) dispatch(returnPart(mirror));
+    },
+    [dispatch, mirrors],
+  );
 
   const undoRemoved = useCallback(
     (id: string) => {
@@ -174,7 +201,7 @@ const SolvedParts = () => {
       const othersRemain = explicitlyRemoved.some((part) => part.id !== id);
 
       cancelScheduledSolutionRefresh();
-      dispatch(returnPart(id));
+      returnPair(id);
       dispatch(forgetRemovedPart(id));
       setRemoved((current) => current.filter((part) => part.id !== id));
 
@@ -182,7 +209,7 @@ const SolvedParts = () => {
         scheduleSolutionRefresh(dispatch);
       }
     },
-    [dispatch],
+    [dispatch, returnPair],
   );
 
   const clearRemoved = () => setRemoved([]);
@@ -209,9 +236,16 @@ const SolvedParts = () => {
           };
         }
 
-        dispatch(banExcludedPart(part.id));
-        dispatch(removeRequiredPart(part.id));
-        dispatch(removeInstalledPart(part.id));
+        const ids = [part.id];
+        const mirror = mirrors.get(part.id);
+
+        if (mirror) ids.push(mirror);
+
+        for (const id of ids) {
+          dispatch(banExcludedPart(id));
+          dispatch(removeRequiredPart(id));
+          dispatch(removeInstalledPart(id));
+        }
         setHidden((current) => [
           { ...part, until: Date.now() + REMOVED_TTL },
           ...current.filter((item) => item.id !== part.id),
@@ -219,7 +253,7 @@ const SolvedParts = () => {
         scheduleSolutionRefresh(dispatch);
       });
     },
-    [dispatch, i18n.language, installedParts, solvedResult, t],
+    [dispatch, i18n.language, installedParts, mirrors, solvedResult, t],
   );
 
   const undoHidden = useCallback(
@@ -229,6 +263,9 @@ const SolvedParts = () => {
 
       cancelScheduledSolutionRefresh();
       dispatch(restoreExcludedPart(id));
+      const mirror = mirrors.get(id);
+
+      if (mirror) dispatch(restoreExcludedPart(mirror));
       dispatch(cancelPendingRefresh());
       setHidden((current) => current.filter((part) => part.id !== id));
 
@@ -241,7 +278,7 @@ const SolvedParts = () => {
       dispatch(setSolvedResult(snapshot.result));
       dispatch(setInstalledParts(snapshot.installed));
     },
-    [dispatch],
+    [dispatch, mirrors],
   );
 
   const clearHidden = () => {
@@ -351,8 +388,17 @@ const SolvedParts = () => {
 
   if (solvedResult === null) return null;
 
-  const partLabel = (part: solvedPart) =>
-    (contentLanguage(i18n.language) === "ru" ? part.name : part.eng_name).trim();
+  const partLabel = (part: solvedPart) => {
+    const language = contentLanguage(i18n.language);
+    const name = (language === "ru" ? part.name : part.eng_name).trim();
+    const mirror = parts.find((item) => item.id === mirrors.get(part.id));
+
+    if (!mirror) return name;
+
+    const other = (language === "ru" ? mirror.name : mirror.eng_name).trim();
+
+    return mirrorPartLabel(name, other) ?? name;
+  };
 
   return (
     <div className={styles.stage}>
@@ -526,6 +572,7 @@ const SolvedParts = () => {
                 onExcluded={
                   isForbidden ? undefined : () => rememberRemoved(item)
                 }
+                onReturned={isForbidden ? () => returnPair(item.id) : undefined}
                 onBan={
                   isForbidden || requiredIds.has(item.id)
                     ? undefined

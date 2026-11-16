@@ -29,6 +29,7 @@ type Props = {
   onShowAnalogs?: () => void;
   onRestoreOriginal?: () => void;
   onExcluded?: () => void;
+  onReturned?: () => void;
   onBan?: () => void;
 };
 
@@ -49,6 +50,7 @@ const PartItem: FC<Props> = memo(
     onShowAnalogs,
     onRestoreOriginal,
     onExcluded,
+    onReturned,
     onBan,
   }) => {
     const { t, i18n } = useTranslation("solvePage");
@@ -62,7 +64,8 @@ const PartItem: FC<Props> = memo(
     const onClickRemove = (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       if (isForbidden) {
-        dispatch(returnPart(id));
+        if (onReturned) onReturned();
+        else dispatch(returnPart(id));
       } else {
         dispatch(excludePart({ id, name, eng_name, maxCount: 0 }));
         dispatch(removeInstalledPart(id));

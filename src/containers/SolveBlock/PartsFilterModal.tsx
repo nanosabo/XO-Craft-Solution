@@ -1,4 +1,5 @@
 import { contentLanguage } from "@src/helpers/contentLanguage";
+import { buildMirrorMap, expandIds } from "@src/helpers/partMirrors";
 import { scheduleSolutionRefresh } from "@src/helpers/scheduleSolutionRefresh";
 import { logWarning } from "@src/helpers/errorLog";
 import {
@@ -112,10 +113,11 @@ const PartsFilterModal: FC<Props> = ({ onClose }) => {
     debouncedSearch(trimmed, takenIds);
   };
 
-  const excludedIds = useMemo(
-    () => (considerExcludedParts ? new Set<string>() : new Set(excludedParts)),
-    [considerExcludedParts, excludedParts],
-  );
+  const excludedIds = useMemo(() => {
+    if (considerExcludedParts) return new Set<string>();
+
+    return expandIds(excludedParts, buildMirrorMap(catalog));
+  }, [catalog, considerExcludedParts, excludedParts]);
   const visibleResults = results.filter((part) => {
     if (takenIds.has(part.id) || excludedIds.has(part.id)) return false;
     if (

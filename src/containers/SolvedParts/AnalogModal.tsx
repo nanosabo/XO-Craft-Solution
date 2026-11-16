@@ -13,6 +13,7 @@ import PartImage from "../Settings/components/PartImage";
 import PartStats from "../Settings/components/PartStats";
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { formatPartSize } from "@electron/partSearch";
+import { buildMirrorMap, expandIds } from "@src/helpers/partMirrors";
 import { getPartName, Part } from "../Settings/types";
 import useParts from "../Settings/useParts";
 import styles from "./styles/AnalogModal.module.scss";
@@ -67,10 +68,14 @@ const AnalogModal: FC<Props> = ({
         ? getSizeMatches(parts, sourcePart)
         : getAnalogMatches(parts, sourcePart, analog);
 
-    return found.filter(({ part }) => {
-      if (!considerExcludedParts && excludedParts.includes(part.id)) return false;
+    const mirrors = buildMirrorMap(parts);
+    const hiddenIds = expandIds(
+      considerExcludedParts ? forbiddenIds : [...forbiddenIds, ...excludedParts],
+      mirrors,
+    );
 
-      if (forbiddenIds.has(part.id) || forbiddenNames.has(part.eng_name)) {
+    return found.filter(({ part }) => {
+      if (hiddenIds.has(part.id) || forbiddenNames.has(part.eng_name)) {
         return false;
       }
 

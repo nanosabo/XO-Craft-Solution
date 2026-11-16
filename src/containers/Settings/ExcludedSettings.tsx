@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { buildMirrorMap } from "@src/helpers/partMirrors";
 import { useTranslation } from "react-i18next";
 import classNames from "classnames";
 import Input from "@src/ui/Input";
@@ -31,6 +32,7 @@ const ExcludedSettings = () => {
     (state) => selectLoaderState(state).solvedResult != null,
   );
   const { parts, isLoading, error } = useParts();
+  const mirrors = useMemo(() => buildMirrorMap(parts), [parts]);
   const [query, setQuery] = useState("");
   const [onlyExcluded, setOnlyExcluded] = useState(false);
   const { filteredParts, excludedIds, count } = useExcludedParts({
@@ -46,12 +48,19 @@ const ExcludedSettings = () => {
   };
 
   const toggle = (id: string, excluded: boolean) => {
-    if (excluded) {
-      dispatch(restoreExcludedPart(id));
-    } else {
-      dispatch(banExcludedPart(id));
-      dispatch(removeRequiredPart(id));
-      dispatch(removeInstalledPart(id));
+    const ids = [id];
+    const mirror = mirrors.get(id);
+
+    if (mirror) ids.push(mirror);
+
+    for (const partId of ids) {
+      if (excluded) {
+        dispatch(restoreExcludedPart(partId));
+      } else {
+        dispatch(banExcludedPart(partId));
+        dispatch(removeRequiredPart(partId));
+        dispatch(removeInstalledPart(partId));
+      }
     }
 
     refresh();
