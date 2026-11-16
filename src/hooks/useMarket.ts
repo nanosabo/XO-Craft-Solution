@@ -1,5 +1,6 @@
 import {
   IItemAnalytics,
+  MarketStateStatus,
   selectMarketState,
 } from "@src/store/slices/market.slice";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,6 +20,7 @@ const sortMapping: Record<string, (item: IItemAnalytics) => number> = {
 const useMarket = () => {
   const {
     items,
+    status,
     categoryFilter,
     rarityFilter,
     search,
@@ -111,8 +113,23 @@ const useMarket = () => {
   }, [limit, filteredAndSorted.length, view]);
 
   const visibleItems = filteredAndSorted.slice(0, limit);
+  const followedEmpty =
+    followed &&
+    status !== MarketStateStatus.INITIAL &&
+    status !== MarketStateStatus.LOADING &&
+    filteredAndSorted.length === 0
+      ? followedItems.length === 0
+        ? "none"
+        : "filtered"
+      : null;
 
-  return { items: visibleItems, sentinelRef, wrapperRef, view };
+  return {
+    items: visibleItems,
+    sentinelRef,
+    wrapperRef,
+    view,
+    followedEmpty,
+  };
 };
 
 export default useMarket;

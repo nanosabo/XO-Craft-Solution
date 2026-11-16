@@ -11,6 +11,19 @@ $market-columns: minmax(240px, 2.4fr) // Название
   minmax(120px, 1.2fr) // Производство
   minmax(110px, 1.1fr); // Прибыль
 
+.empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  max-width: 460px;
+  margin: 48px auto 0;
+  color: $default;
+  @include body;
+  line-height: 24px;
+  text-align: center;
+}
+
 .wrapper {
   flex: 1;
   min-height: 0;

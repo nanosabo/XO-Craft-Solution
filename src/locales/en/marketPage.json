@@ -118,6 +118,10 @@
       "noPrice": "No data"
     }
   },
+  "followed": {
+    "empty": "You are not watching any items yet. Open an item and add it to the watchlist.",
+    "notFound": "Nothing in the watchlist matches these filters."
+  },
   "chart": {
     "price": "Price",
     "lots": "Volume",
