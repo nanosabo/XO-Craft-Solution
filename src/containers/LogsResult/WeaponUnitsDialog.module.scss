@@ -228,6 +228,60 @@
   }
 }
 
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  line-height: inherit;
+  text-align: inherit;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.table th.center .sortButton {
+  justify-content: center;
+}
+
+.table th.name .sortButton {
+  justify-content: flex-start;
+}
+
+.table th:last-child .sortButton {
+  justify-content: flex-end;
+}
+
+.table th.important .sortButton:hover,
+.table th.important .sortOn {
+  color: #e6c15a;
+}
+
+.sortOn {
+  color: $white;
+}
+
+.sortMark {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.sortDesc {
+  border-top: 5px solid currentColor;
+}
+
+.sortAsc {
+  border-bottom: 5px solid currentColor;
+}
+
 .table th.name,
 .table td.name {
   text-align: left;

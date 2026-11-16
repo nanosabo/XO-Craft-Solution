@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import CrossoutLogo from "@src/components/CrossoutLogo";
@@ -19,8 +19,17 @@ type Props = {
   onClose: () => void;
 };
 
+type SortKey = "name" | "importantPercent" | "important" | "average" | "total";
+type SortDirection = "desc" | "asc";
+
 const isQuiet = (unit: CrossoutWeaponUnit) =>
   unit.important === "0" && unit.average === "0" && unit.total === "0";
+
+const amount = (value: string) => {
+  const parsed = Number(value.replace(/\s/g, "").replace(",", "."));
+
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 const winrateTone = (value: string): "high" | "low" | null => {
   const match = /(\d+(?:[.,]\d+)?)\s*%/.exec(value);
@@ -38,7 +47,68 @@ const WeaponUnitsDialog = ({
   nameOf,
   onClose,
 }: Props) => {
-  const { t } = useTranslation("logsPage");
+  const { t, i18n } = useTranslation("logsPage");
+  const [sort, setSort] = useState<{
+    key: SortKey;
+    direction: SortDirection;
+  } | null>(null);
+  const unitsKey = units.map((unit) => unit.key).join("\0");
+
+  useEffect(() => {
+    setSort(null);
+  }, [unitsKey]);
+
+  const sortedUnits = useMemo(() => {
+    if (!sort) return units;
+
+    const direction = sort.direction === "desc" ? -1 : 1;
+
+    return [...units].sort((left, right) => {
+      const delta =
+        sort.key === "name"
+          ? nameOf(left).localeCompare(nameOf(right), i18n.language, {
+              sensitivity: "base",
+            })
+          : amount(left[sort.key]) - amount(right[sort.key]);
+
+      if (delta !== 0) return delta * direction;
+
+      return nameOf(left).localeCompare(nameOf(right), i18n.language, {
+        sensitivity: "base",
+      });
+    });
+  }, [i18n.language, nameOf, sort, units]);
+
+  const toggleSort = (key: SortKey) => {
+    setSort((current) => {
+      if (current?.key !== key) return { key, direction: "desc" };
+
+      return {
+        key,
+        direction: current.direction === "desc" ? "asc" : "desc",
+      };
+    });
+  };
+
+  const columns: { key: SortKey; label: string; className: string }[] = [
+    { key: "name", label: t("logStats.unitsWeapon"), className: styles.name },
+    {
+      key: "importantPercent",
+      label: t("logStats.unitsImportantPercent"),
+      className: classNames(styles.center, styles.important),
+    },
+    {
+      key: "important",
+      label: t("logStats.unitsImportant"),
+      className: classNames(styles.center, styles.important),
+    },
+    {
+      key: "average",
+      label: t("logStats.unitsAverage"),
+      className: styles.center,
+    },
+    { key: "total", label: t("logStats.unitsTotal"), className: "" },
+  ];
   const summaryStats = [
     summary?.rounds
       ? {
@@ -145,19 +215,49 @@ const WeaponUnitsDialog = ({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.name}>{t("logStats.unitsWeapon")}</th>
-                  <th className={classNames(styles.center, styles.important)}>
-                    {t("logStats.unitsImportantPercent")}
-                  </th>
-                  <th className={classNames(styles.center, styles.important)}>
-                    {t("logStats.unitsImportant")}
-                  </th>
-                  <th className={styles.center}>{t("logStats.unitsAverage")}</th>
-                  <th>{t("logStats.unitsTotal")}</th>
+                  {columns.map((column) => {
+                    const active = sort?.key === column.key;
+
+                    return (
+                      <th
+                        key={column.key}
+                        className={column.className}
+                        aria-sort={
+                          active
+                            ? sort.direction === "desc"
+                              ? "descending"
+                              : "ascending"
+                            : "none"
+                        }
+                      >
+                        <button
+                          type="button"
+                          className={classNames(
+                            styles.sortButton,
+                            active && styles.sortOn,
+                          )}
+                          onClick={() => toggleSort(column.key)}
+                        >
+                          <span>{column.label}</span>
+                          {active && (
+                            <span
+                              className={classNames(
+                                styles.sortMark,
+                                sort.direction === "desc"
+                                  ? styles.sortDesc
+                                  : styles.sortAsc,
+                              )}
+                              aria-hidden
+                            />
+                          )}
+                        </button>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
-                {units.map((unit) => (
+                {sortedUnits.map((unit) => (
                   <tr
                     key={unit.key}
                     className={isQuiet(unit) ? styles.quiet : undefined}
