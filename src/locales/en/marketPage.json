@@ -126,5 +126,11 @@
     "sell_offers": "Sell orders",
     "buy_offers": "Buy orders",
     "loading": "Loading..."
+  },
+  "history": {
+    "open": "Notification history",
+    "title": "Notification history",
+    "empty": "Nothing yet. Market alerts that arrive while the app is running show up here.",
+    "clear": "Clear"
   }
 }

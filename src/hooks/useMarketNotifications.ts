@@ -25,9 +25,12 @@ import {
   MarketNotificationSettings,
   selectSettingsState,
 } from "@src/store/slices/settings.slice";
+import { pushNotificationHistory } from "@src/store/slices/notificationHistory.slice";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 
-const notificationKeys: Record<
+let historySerial = 0;
+
+export const notificationKeys: Record<
   FollowMetric,
   { title: string; body: string }
 > = {
@@ -220,6 +223,18 @@ const useMarketNotifications = () => {
             icon: icon ?? undefined,
           })
           .catch((error) => logWarning("notification", error));
+
+        dispatch(
+          pushNotificationHistory({
+            id: `${trigger.item.id}-${trigger.metric}-${Date.now()}-${historySerial++}`,
+            itemId: trigger.item.id,
+            name: trigger.item.name,
+            metric: trigger.metric,
+            value: rounded,
+            previous,
+            at: Date.now(),
+          }),
+        );
       }
     };
 

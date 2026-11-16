@@ -3,6 +3,7 @@ import WindowButton from "@src/ui/WindowButton";
 import { HeaderDiscordIcon, SettingsIcon } from "@src/ui/icons";
 import styles from "./styles/HeaderButtons.module.scss";
 import SwitchLanguageButton from "../SwitchLanguageButton";
+import NotificationHistory from "../NotificationHistory";
 import PrevSolutionButton from "../PrevSolutionButton";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
@@ -21,6 +22,7 @@ const HeaderButtons = () => {
   return (
     <div className={styles.buttons} data-header-controls>
       <div className={styles.tools}>
+        <NotificationHistory />
         <NavLink
           to="/settings"
           title={t("settings")}
