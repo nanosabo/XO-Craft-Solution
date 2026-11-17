@@ -10,6 +10,10 @@ type Props = {
   visible: boolean;
   anchorRef: RefObject<HTMLElement | null>;
   maxWidth?: number;
+  /** Keeps the tooltip readable even when the anchor is a short word. */
+  minWidth?: number;
+  /** "center" places the tooltip over the middle of the anchor. */
+  align?: "start" | "center";
 };
 
 const MARGIN = 8;
@@ -21,6 +25,8 @@ const Tooltip: FC<Props> = ({
   visible,
   anchorRef,
   maxWidth,
+  minWidth,
+  align = "start",
 }) => {
   const tipRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{
@@ -44,7 +50,8 @@ const Tooltip: FC<Props> = ({
       if (!anchor || !tip) return;
 
       const rect = anchor.getBoundingClientRect();
-      const width = maxWidth ? Math.min(rect.width, maxWidth) : rect.width;
+      const preferred = minWidth ? Math.max(rect.width, minWidth) : rect.width;
+      const width = maxWidth ? Math.min(preferred, maxWidth) : preferred;
       const height = tip.offsetHeight;
       let top = rect.top - MARGIN - height;
 
@@ -54,10 +61,13 @@ const Tooltip: FC<Props> = ({
 
       if (top > lowest) top = Math.max(MARGIN, lowest);
 
-      let left = rect.left;
+      let left =
+        align === "center"
+          ? rect.left + rect.width / 2 - width / 2
+          : rect.left;
       const rightLimit = window.innerWidth - MARGIN - width;
 
-      if (left > rightLimit) left = Math.max(MARGIN, rightLimit);
+      left = Math.min(Math.max(left, MARGIN), Math.max(MARGIN, rightLimit));
 
       setBox({ left, top, width });
     };
@@ -83,7 +93,7 @@ const Tooltip: FC<Props> = ({
       imageNode?.removeEventListener("load", reveal);
       window.removeEventListener("resize", place);
     };
-  }, [anchorRef, image, maxWidth, subtitle, title, visible]);
+  }, [align, anchorRef, image, maxWidth, minWidth, subtitle, title, visible]);
 
   if (!visible) return null;
 
@@ -100,9 +110,13 @@ const Tooltip: FC<Props> = ({
         top: box?.top ?? 0,
         width:
           box?.width ??
-          (maxWidth && anchorWidth
-            ? Math.min(anchorWidth, maxWidth)
+          (anchorWidth
+            ? Math.min(
+                minWidth ? Math.max(anchorWidth, minWidth) : anchorWidth,
+                maxWidth ?? Number.POSITIVE_INFINITY,
+              )
             : anchorWidth),
+        minWidth,
       }}
     >
       <p>{title}</p>

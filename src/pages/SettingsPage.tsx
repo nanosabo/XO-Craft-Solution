@@ -7,6 +7,7 @@ import GeneralSettings from "@src/containers/Settings/GeneralSettings";
 import InventorySettings from "@src/containers/Settings/InventorySettings";
 import LogsSettings from "@src/containers/Settings/LogsSettings";
 import MarketSettings from "@src/containers/Settings/MarketSettings";
+import PriceSettings from "@src/containers/Settings/PriceSettings";
 import SelectionSettings from "@src/containers/Settings/SelectionSettings";
 import SettingsSidebar from "@src/containers/Settings/SettingsSidebar";
 import { SettingsTab } from "@src/containers/Settings/types";
@@ -44,6 +45,7 @@ const SettingsPage = () => {
               {activeTab === "inventory" && <InventorySettings />}
               {activeTab === "excluded" && <ExcludedSettings />}
               {activeTab === "analog" && <AnalogSettings />}
+              {activeTab === "prices" && <PriceSettings />}
               {activeTab === "market" && <MarketSettings />}
               {activeTab === "logs" && <LogsSettings />}
               {activeTab === "general" && <GeneralSettings />}

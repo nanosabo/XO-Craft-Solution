@@ -30,7 +30,7 @@ const MarketSoundSection: FC<Props> = ({ notifications, onUpdate }) => {
   ];
 
   return (
-    <SettingsSection title={t("market.title")}>
+    <SettingsSection title={t("market.soundSection")}>
       <SettingRow
         title={t("market.sound")}
         description={t("market.soundHint")}

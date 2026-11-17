@@ -12,6 +12,7 @@
     "inventory": "Parts inventory",
     "excluded": "Never suggest",
     "analog": "Analog criteria",
+    "prices": "Prices",
     "market": "Notifications",
     "logs": "Logs",
     "general": "General"
@@ -216,9 +217,25 @@
     "loading": "Loading parts...",
     "error": "Could not load the parts list"
   },
+  "prices": {
+    "title": "Market prices",
+    "subtitle": "How the app judges whether now is a good time to buy or sell.",
+    "scale": {
+      "title": "Price scale",
+      "subtitle": "How much history the price scale on the price chart tab uses to judge the usual price.",
+      "period": "Calculate the usual price over",
+      "periodHint": "A shorter period notices market changes faster. A longer one gives a calmer, steadier estimate.",
+      "months": {
+        "2": "2 months",
+        "3": "3 months",
+        "6": "6 months"
+      }
+    }
+  },
   "market": {
-    "title": "Market & notifications",
-    "subtitle": "Sound and notification preferences for market activity.",
+    "title": "Market notifications",
+    "subtitle": "Sound and rules that trigger when prices or lots change.",
+    "soundSection": "Sound & signals",
     "sound": "Notification sound",
     "soundHint": "Played when a watchlist rule triggers.",
     "priceDrop": "Market change notifications",

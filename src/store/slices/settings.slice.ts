@@ -24,11 +24,23 @@ export interface MarketNotificationSettings {
   customSoundName: string | null;
 }
 
+/** How much price history the market price scale treats as "usual". */
+export const PRICE_SCALE_PERIODS = [2, 3, 6] as const;
+
+export type PriceScalePeriod = (typeof PRICE_SCALE_PERIODS)[number];
+
+export const DEFAULT_PRICE_SCALE_PERIOD: PriceScalePeriod = 2;
+
+export const isPriceScalePeriod = (value: unknown): value is PriceScalePeriod =>
+  PRICE_SCALE_PERIODS.includes(value as PriceScalePeriod);
+
 export interface SettingsState {
   inventory: Record<string, number>;
   inventoryEnabled: boolean;
   analog: AnalogTolerances;
   notifications: MarketNotificationSettings;
+  /** Months of history used by the "cheap / usual / expensive" scale. */
+  priceScalePeriod: PriceScalePeriod;
   autoUpdate: boolean;
   /** Marked parts on the solution screen stay through a recalculation. */
   keepInstalledParts: boolean;
@@ -68,6 +80,7 @@ export const createDefaultSettings = (): SettingsState => ({
     signal: "coins",
     customSoundName: null,
   },
+  priceScalePeriod: DEFAULT_PRICE_SCALE_PERIOD,
   autoUpdate: true,
   keepInstalledParts: true,
   excludedParts: [],
@@ -138,6 +151,9 @@ const loadSettings = (): SettingsState => {
         ? parsed.startScreen
         : defaults.startScreen,
       systemNotifications: parsed.systemNotifications === true,
+      priceScalePeriod: isPriceScalePeriod(parsed.priceScalePeriod)
+        ? parsed.priceScalePeriod
+        : defaults.priceScalePeriod,
       teamColors: {
         ally: isHexColor(teamColors.ally)
           ? teamColors.ally
@@ -225,6 +241,10 @@ export const settingsSlice = createSlice({
       state.autoUpdate = action.payload;
       saveSettings(state);
     },
+    setPriceScalePeriod(state, action: PayloadAction<PriceScalePeriod>) {
+      state.priceScalePeriod = action.payload;
+      saveSettings(state);
+    },
     setKeepInstalledParts(state, action: PayloadAction<boolean>) {
       state.keepInstalledParts = action.payload;
       saveSettings(state);
@@ -298,6 +318,7 @@ export const {
   resetAnalogTolerances,
   setNotificationSettings,
   setAutoUpdate,
+  setPriceScalePeriod,
   setKeepInstalledParts,
   banExcludedPart,
   restoreExcludedPart,

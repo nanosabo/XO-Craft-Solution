@@ -21,8 +21,9 @@
   }
 
   p {
-    padding: 16px 16px 12px;
+    padding: 16px 16px 10px;
     @include body;
+    line-height: 1.3;
   }
 
   span {
@@ -30,5 +31,6 @@
     padding: 0px 16px 12px;
     @include caption;
     color: $default;
+    line-height: 1.45;
   }
 }

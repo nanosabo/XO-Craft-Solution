@@ -129,7 +129,23 @@
     "buy": "Buy",
     "sell_offers": "Sell orders",
     "buy_offers": "Buy orders",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "scale": {
+      "current": "Now",
+      "cheap": "cheaper than usual",
+      "normal": "about usual",
+      "expensive": "more expensive than usual",
+      "cheapLabel": "Cheap",
+      "expensiveLabel": "Expensive",
+      "marker": "now",
+      "range": "Usually {{from}} – {{to}}",
+      "rangeTooltip": {
+        "title": "Usual price",
+        "text": "The price stayed within this range half of the time. Below this range is a good time to buy, above it — to sell."
+      },
+      "noData": "Not enough data yet",
+      "noDataHint": "The scale will appear once there is more price history."
+    }
   },
   "history": {
     "open": "Notification history",

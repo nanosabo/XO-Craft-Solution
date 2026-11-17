@@ -6,6 +6,8 @@ export type TimeRange = "1h" | "6h" | "12h" | "1d" | "1w" | "1m" | "2m" | "6m";
 
 export interface ChartData {
   t: string[];
+  /** Raw point timestamps (unix seconds), used for calculations like the price scale. */
+  ts: number[];
   s: number[];
   b: number[];
   so: number[];
@@ -126,7 +128,7 @@ export function buildChartData(
     lang === "uk" ? "uk-UA" : lang === "en" ? "en-US" : "ru-RU";
 
   if (!data.length) {
-    return { t: [], s: [], b: [], so: [], bo: [] };
+    return { t: [], ts: [], s: [], b: [], so: [], bo: [] };
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -142,6 +144,7 @@ export function buildChartData(
 
   const result: ChartData = {
     t: [],
+    ts: [],
     s: [],
     b: [],
     so: [],
@@ -151,6 +154,7 @@ export function buildChartData(
   for (const item of data) {
     if (item.t >= fromTime) {
       result.t.push(formatter.format(new Date(item.t * 1000)));
+      result.ts.push(item.t);
       result.s.push(item.s);
       result.b.push(item.b);
       result.so.push(item.so);

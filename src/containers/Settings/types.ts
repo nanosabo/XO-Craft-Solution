@@ -5,6 +5,7 @@ export type SettingsTab =
   | "inventory"
   | "excluded"
   | "analog"
+  | "prices"
   | "market"
   | "logs"
   | "general";

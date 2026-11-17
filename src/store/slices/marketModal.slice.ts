@@ -58,7 +58,7 @@ const initialState: MarketModalState = {
   cost: null,
   isOwn: false,
   tree: [],
-  chartData: { t: [], s: [], b: [], so: [], bo: [] },
+  chartData: { t: [], ts: [], s: [], b: [], so: [], bo: [] },
   own_recipe: {
     rent: 0,
     resultAmount: 1,

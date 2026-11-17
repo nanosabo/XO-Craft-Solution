@@ -6,6 +6,7 @@ import {
   CraftIcon,
   InventoryIcon,
   LogsIcon,
+  MarketIcon,
   SettingsIcon,
   SlidersIcon,
   UnavaibleIcon,
@@ -40,7 +41,10 @@ const groups: Array<{
   },
   {
     key: "market",
-    items: [{ key: "market", icon: <BellIcon /> }],
+    items: [
+      { key: "prices", icon: <MarketIcon /> },
+      { key: "market", icon: <BellIcon /> },
+    ],
   },
   {
     key: "stats",
