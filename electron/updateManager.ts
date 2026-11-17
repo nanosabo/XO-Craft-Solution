@@ -646,8 +646,10 @@ export const installUpdate = (): boolean => {
   setState({ mode: "now" });
 
   // Let the renderer receive the final state before the window is closed.
+  // Silent: the folder was chosen on the first install, so an in-app update
+  // should not show the installer wizard again. The app starts afterwards.
   setImmediate(() => {
-    autoUpdater.quitAndInstall(false, true);
+    autoUpdater.quitAndInstall(true, true);
   });
 
   return true;
