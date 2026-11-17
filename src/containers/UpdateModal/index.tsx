@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import styles from "./styles/UpdateModal.module.scss";
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { logWarning } from "@src/helpers/errorLog";
 import {
   fetchRelease,
@@ -16,10 +17,12 @@ import { ChevronIcon } from "@src/ui/icons";
 const RETRY_DELAYS = [5000, 15000];
 
 const UpdateModal = () => {
-  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const [pending, setPending] = useState(false);
   const [version, setVersion] = useState("2.0");
   const [body, setBody] = useState("");
   const [isHtml, setIsHtml] = useState(false);
+  const open = pending && location.pathname !== "/loading";
 
   useEffect(() => {
     window.electronAPI
@@ -30,12 +33,12 @@ const UpdateModal = () => {
 
   useEffect(() => {
     showVersion()
-      .then(setOpen)
+      .then(setPending)
       .catch((error) => logWarning("update", error));
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!pending) return;
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -68,14 +71,14 @@ const UpdateModal = () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open]);
+  }, [pending]);
 
   const onClose = () => {
     saveCurrentVersion()
-      .then(() => setOpen(false))
+      .then(() => setPending(false))
       .catch((error) => {
         logWarning("update", error);
-        setOpen(false);
+        setPending(false);
       });
   };
 

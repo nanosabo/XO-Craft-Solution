@@ -1,7 +1,6 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import ColumnInputs from "@src/containers/ColumnInputs";
 import MainPageHeader from "@src/containers/Headers";
-import UpdateModal from "@src/containers/UpdateModal";
 import { VehicleFormData, vehicleSchema } from "@src/helpers/validation";
 import AnimatePageLayout from "@src/layouts/AnimatePageLayout";
 import { AppStateStatus, selectAppState } from "@src/store/slices/app.slice";
@@ -28,7 +27,6 @@ const MainPage = () => {
         <MainPageHeader />
         <ColumnInputs />
       </FormProvider>
-      <UpdateModal />
     </AnimatePageLayout>
   );
 };

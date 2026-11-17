@@ -4,6 +4,7 @@ import ErrorBoundary from "@src/components/ErrorBoundary";
 import GlobalErrorHandler from "@src/components/GlobalErrorHandler";
 import UpdaterBridge from "@src/components/UpdaterBridge";
 import Header from "@src/containers/Header";
+import UpdateModal from "@src/containers/UpdateModal";
 import UpdateToast from "@src/containers/UpdateToast";
 import WindowActions from "@src/containers/WindowActions";
 import { store } from "@src/store/store";
@@ -25,6 +26,7 @@ const RootLayout: FC<PropsWithChildren> = ({ children }) => {
         </ErrorBoundary>
         <NotificationModeSync />
         <UpdaterBridge />
+        <UpdateModal />
         <UpdateToast />
       </HashRouter>
     </Provider>
