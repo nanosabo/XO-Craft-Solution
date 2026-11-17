@@ -56,6 +56,7 @@ $pricey: #fffc4d;
   font-size: 14px;
   line-height: 1.2;
   white-space: nowrap;
+  cursor: help;
 
   &::before {
     content: "";
@@ -78,6 +79,77 @@ $pricey: #fffc4d;
 
 .expensive {
   color: $pricey;
+}
+
+.trends {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.trendsLabel {
+  flex-shrink: 0;
+  color: $default;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: help;
+}
+
+.trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+
+  & + & {
+    padding-left: 10px;
+    border-left: 1px solid rgba($white, 0.12);
+  }
+}
+
+.priceDown {
+  color: $cheap;
+}
+
+.priceUp {
+  color: $pricey;
+}
+
+.priceFlat {
+  color: $default;
+}
+
+.lotsTone {
+  color: rgba($white, 0.55);
+}
+
+.arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.arrowDown svg {
+  transform: rotate(180deg);
+}
+
+.arrowFlat {
+  width: 7px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.7;
 }
 
 .scale {
@@ -195,6 +267,52 @@ $pricey: #fffc4d;
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.advice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px 6px;
+  border-radius: 8px;
+  background: rgba($white, 0.04);
+  color: rgba($white, 0.82);
+  font-size: 14px;
+  line-height: 1.35;
+  cursor: help;
+}
+
+.adviceIcon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: rgba($white, 0.45);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.adviceText {
+  min-width: 0;
+  margin-top: 2px;
+}
+
+.advice_buy {
+  background: rgba($cheap, 0.07);
+
+  .adviceIcon {
+    color: $cheap;
+  }
+}
+
+.advice_wait {
+  background: rgba($pricey, 0.07);
+
+  .adviceIcon {
+    color: $pricey;
+  }
 }
 
 .empty {

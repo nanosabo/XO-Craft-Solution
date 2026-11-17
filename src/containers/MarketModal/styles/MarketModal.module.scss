@@ -24,3 +24,14 @@
 
   box-shadow: 0 0 50px 0 rgba(0, 0, 0, 0.63);
 }
+
+// The chart tab is the tallest one. In short windows lift the modal a little
+// into the header's bottom margin and tighten its paddings so it fits at the
+// minimum size. The lift stays below the header controls.
+@media (max-height: 720px) {
+  .container {
+    margin-top: -16px;
+    padding: 14px;
+    gap: 8px;
+  }
+}

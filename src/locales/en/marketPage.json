@@ -139,6 +139,55 @@
       "expensiveLabel": "Expensive",
       "marker": "now",
       "range": "Usually {{from}} – {{to}}",
+      "stateHint": "How far the current price is from the usual price for the selected period.",
+      "trendLabel": "Over the week:",
+      "trendHint": "Compares the last 7 days with the previous 7 days.",
+      "trend": {
+        "price": {
+          "downStrong": "price dropped sharply",
+          "down": "price fell",
+          "flat": "price barely changed",
+          "up": "price rose",
+          "upStrong": "price rose sharply"
+        },
+        "lots": {
+          "downStrong": "far fewer lots",
+          "down": "fewer lots",
+          "flat": "same number of lots",
+          "up": "more lots",
+          "upStrong": "far more lots"
+        }
+      },
+      "advice": {
+        "cheap": {
+          "down": "The price is below usual and still falling, so hold off on buying and sell before it gets even cheaper.",
+          "flat": "The price is below usual, so now is a good time to buy, and there is no rush to sell.",
+          "up": "The price is below usual but already rising, so buy now, and selling can wait."
+        },
+        "normal": {
+          "down": "The price is about usual and falling, so hold off on buying and sell before it gets even cheaper.",
+          "flat": "The price is about usual, so you can buy or sell.",
+          "up": "The price is about usual but rising, so buy now, and selling can wait."
+        },
+        "expensive": {
+          "down": "The price is above usual but falling, so hold off on buying and sell before it gets even cheaper.",
+          "flat": "The price is above usual, so it is not worth buying, and you can sell right now.",
+          "up": "The price is above usual and rising, so it is not worth buying, and selling can wait."
+        },
+        "only": {
+          "cheap": "The price is below usual, so now is a good time to buy, and there is no rush to sell.",
+          "normal": "The price is about usual, so you can buy or sell.",
+          "expensive": "The price is above usual, so it is not worth buying, and you can sell right now."
+        },
+        "lots": {
+          "moreFalling": "There are more lots, so the fall may continue.",
+          "lessRising": "There are fewer lots, so the rise may continue."
+        },
+        "tooltip": {
+          "title": "Why this advice",
+          "text": "It looks at the price position versus the usual one, the weekly move and the number of lots. If there are fewer lots, supply drops and the price may rise, and if there are more lots, the opposite."
+        }
+      },
       "rangeTooltip": {
         "title": "Usual price",
         "text": "The price stayed within this range half of the time. Below this range is a good time to buy, above it — to sell."

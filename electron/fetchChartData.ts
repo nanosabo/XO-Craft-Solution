@@ -80,6 +80,18 @@ const requestHistory = async (
 };
 
 /**
+ * The site aggregates lots by summing snapshots inside the bucket: a four-hour
+ * point is roughly four hourly points added together. The chart mixes
+ * four-hour history with hourly recent points, so lots have to be converted to
+ * one basis; otherwise every week looks like a huge drop in offers.
+ */
+const normalizeLots = (point: IData, scale: number): IData => ({
+  ...point,
+  so: Math.round(point.so * scale),
+  bo: Math.round(point.bo * scale),
+});
+
+/**
  * Uses the hourly points for the recent week and the four-hour points for the
  * older history, so the chart opens quickly and still covers six months.
  */
@@ -87,8 +99,12 @@ const mergeHistory = (
   history: IData[] | null,
   recent: IData[] | null,
 ): IData[] => {
+  const historyScale = RECENT_AGGREGATION_MINUTES / HISTORY_AGGREGATION_MINUTES;
+
   if (!history) return recent ?? [];
-  if (!recent?.length) return history;
+  if (!recent?.length) {
+    return history.map((point) => normalizeLots(point, historyScale));
+  }
 
   const recentStart = recent.reduce(
     (min, point) => Math.min(min, point.t),
@@ -98,7 +114,9 @@ const mergeHistory = (
   const merged = new Map<number, IData>();
 
   for (const point of history) {
-    if (point.t < recentStart) merged.set(point.t, point);
+    if (point.t < recentStart) {
+      merged.set(point.t, normalizeLots(point, historyScale));
+    }
   }
 
   for (const point of recent) {

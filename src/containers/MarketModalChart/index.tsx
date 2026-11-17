@@ -14,7 +14,8 @@ const MarketModalChart = () => {
         option={options}
         opts={{ renderer: "canvas" }}
         style={{
-          height: "224px",
+          // Keeps the whole modal inside short windows; full height on tall ones.
+          height: "clamp(184px, calc(100vh - 460px), 224px)",
           width: "calc(100% + 30px)",
           transform: "translateX(-15px)",
           zIndex: 100,
