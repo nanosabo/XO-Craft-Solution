@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { logWarning } from "@src/helpers/errorLog";
+import { openReleasePreview } from "@src/helpers/release_notes";
 import formatBytes from "@src/helpers/formatBytes";
 import { selectLoaderState } from "@src/store/slices/loader.slice";
 import { selectUpdaterState } from "@src/store/slices/updater.slice";
@@ -69,6 +70,20 @@ const UpdateToast = () => {
     );
 
   const hide = () => setDismissedKey(toastKey);
+
+  const showNotes = () => {
+    if (update.latestVersion) openReleasePreview(update.latestVersion);
+  };
+
+  const notesButton = update.latestVersion ? (
+    <button
+      type="button"
+      className={classNames(styles.button, styles.notes)}
+      onClick={showNotes}
+    >
+      {t("actions.whatsNew")}
+    </button>
+  ) : null;
 
   const pillText =
     update.stage === "downloading"
@@ -151,6 +166,7 @@ const UpdateToast = () => {
           </p>
 
           <div className={styles.actions}>
+            {notesButton}
             <button
               type="button"
               className={classNames(styles.button, styles.primary)}
@@ -200,6 +216,7 @@ const UpdateToast = () => {
           </div>
 
           <div className={styles.actions}>
+            {notesButton}
             <button
               type="button"
               className={styles.button}
@@ -221,6 +238,7 @@ const UpdateToast = () => {
           </p>
 
           <div className={styles.actions}>
+            {notesButton}
             <button
               type="button"
               className={classNames(styles.button, styles.primary)}

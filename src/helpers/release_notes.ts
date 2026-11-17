@@ -18,6 +18,29 @@ interface StoredUpdateInfo {
   releaseNotes: string | null;
 }
 
+const looksLikeHtml = (value: string) => /<\/?[a-z][\s\S]*>/i.test(value);
+
+type PreviewListener = (version: string) => void;
+
+const previewListeners = new Set<PreviewListener>();
+
+/** Opens the patch-notes window for a version that is not installed yet. */
+export const openReleasePreview = (version: string) => {
+  const next = version.trim().replace(/^v/i, "");
+
+  if (!next) return;
+
+  previewListeners.forEach((listener) => listener(next));
+};
+
+export const subscribeReleasePreview = (listener: PreviewListener) => {
+  previewListeners.add(listener);
+
+  return () => {
+    previewListeners.delete(listener);
+  };
+};
+
 const fetchFromApi = async (version: string): Promise<ReleaseNotes | null> => {
   try {
     const { data } = await axios.get<Release>(
@@ -59,23 +82,33 @@ const fetchFromAtom = async (version: string): Promise<ReleaseNotes | null> => {
   }
 };
 
-export const fetchRelease = async (): Promise<ReleaseNotes | null> => {
+export const fetchReleaseFor = async (
+  version: string,
+): Promise<ReleaseNotes | null> => {
   try {
-    const version = await window.electronAPI.getVersion();
+    const next = version.trim().replace(/^v/i, "");
+
+    if (!next) return null;
 
     // Notes cached by the updater before the app was restarted.
     const cached: StoredUpdateInfo | null = window.electronAPI.getUpdateInfo
       ? await window.electronAPI.getUpdateInfo()
       : null;
 
-    if (cached?.version === version && cached.releaseNotes) {
-      return { body: cached.releaseNotes, html: true };
+    if (cached?.version === next && cached.releaseNotes) {
+      return { body: cached.releaseNotes, html: looksLikeHtml(cached.releaseNotes) };
     }
 
-    return (await fetchFromApi(version)) ?? (await fetchFromAtom(version));
+    return (await fetchFromApi(next)) ?? (await fetchFromAtom(next));
   } catch {
     return null;
   }
+};
+
+export const fetchRelease = async (): Promise<ReleaseNotes | null> => {
+  const version = await window.electronAPI.getVersion();
+
+  return fetchReleaseFor(version);
 };
 
 export const showVersion = async () => {

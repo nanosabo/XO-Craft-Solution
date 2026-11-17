@@ -20,6 +20,7 @@
     "download": "Could not complete the update. Please try again."
   },
   "actions": {
+    "whatsNew": "What's new?",
     "updateNow": "Update now",
     "nextLaunch": "Update on next launch",
     "restart": "Restart and install",
@@ -33,5 +34,9 @@
     "downloaded": "Update ready to install",
     "error": "Update error",
     "open": "Open the update notification"
+  },
+  "notes": {
+    "loading": "Loading the changelog…",
+    "empty": "Couldn't load the changelog."
   }
 }
