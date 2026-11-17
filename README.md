@@ -19,7 +19,7 @@
 
 На Windows установщик спрашивает папку. При удалении настройки, склад и история остаются на диске.
 
-При первом запуске Windows может написать, что защитила компьютер, и не показать кнопку установки сразу. Так система встречает любую программу без платного сертификата подписи. Сертификат стоит денег, у проекта его нет, поэтому издатель для Windows неизвестен. Это окно проверки подписи, а не сообщение о вирусе. Файл берите только со страницы релиза выше. В окне нажмите «Подробнее», затем «Выполнить в любом случае».
+При первом запуске Windows может написать, что защитила компьютер, и не показать кнопку установки сразу. Так система встречает новые программы без репутации в SmartScreen. Проект — open source, и для Windows-сборок планируется бесплатная подпись через SignPath Foundation. Пока подпись не подключена, издатель может отображаться как неизвестный. Это окно проверки подписи, а не сообщение о вирусе. Файл берите только со страницы релиза выше. В окне нажмите «Подробнее», затем «Выполнить в любом случае».
 
 ![Окно защиты Windows](docs/screenshots/windows_defend.jpg)
 
@@ -90,6 +90,20 @@
 - Запуск вместе с системой и сворачивание в трей.
 - Проверка обновлений с GitHub.
 - Кэш фильтров и последнее решение сбрасываются отдельно от склада и настроек.
+
+## Code signing policy
+
+Windows releases of XO Craft Solution are built from the source code in this repository by the project maintainer. Signing requests are reviewed and approved by the maintainer. Once the project is accepted into the SignPath Foundation program, release artifacts are signed through SignPath.io with a certificate issued to SignPath Foundation.
+
+- Source repository: https://github.com/nanosabo/XO-Craft-Solution
+- Maintainer: https://github.com/nanosabo
+- Signing service: [SignPath Foundation](https://signpath.org/) / [SignPath.io](https://signpath.io/)
+- Only artifacts built from this repository are signed.
+- The project contains no proprietary components; the bundled solver is built from [`solver/`](solver/) in this repository.
+
+## Лицензия
+
+Проект распространяется по лицензии [MIT](LICENSE).
 
 ## Данные
 

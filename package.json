@@ -2,6 +2,7 @@
   "name": "xo-craft-solution",
   "private": true,
   "version": "2.3.0",
+  "license": "MIT",
   "author": "SABOTAGE",
   "description": "Desktop application that helps you design optimal crafts",
   "scripts": {
