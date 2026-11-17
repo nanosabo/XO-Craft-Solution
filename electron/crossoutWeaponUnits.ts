@@ -1,6 +1,7 @@
 import type { ContentLanguage } from "./language";
-import { getBaseUrls } from "./crossoutInfo";
+import { getBaseUrls, requestTarget } from "./crossoutInfo";
 import { evaluateCrossout, loadCrossoutPage } from "./crossoutBrowser";
+import { writeLog } from "./logger";
 import { getCrossoutNameCatalog } from "./crossoutLogApi";
 import { weaponImageSrc } from "./weaponImages";
 import { parseWeaponUnitSummary, parseWeaponUnitTable } from "./weaponUnitTable";
@@ -80,6 +81,14 @@ export const loadWeaponUnits = async (
   for (const base of bases) {
     const url = `${base}/log/${encodeURIComponent(logId)}/${encodeURIComponent(type)}`;
     const script = requestScript(player, weapons, type.toUpperCase(), url);
+    const target = requestTarget(base);
+    const started = Date.now();
+
+    writeLog("info", "stats", "Loading weapon damage", {
+      target,
+      logId,
+      battleType: type,
+    });
 
     try {
       let fetched = await evaluateCrossout<{ status: number; text: string }>(
@@ -89,6 +98,13 @@ export const loadWeaponUnits = async (
 
       if (fetched.status === 503 || challengePage(fetched.text)) {
         sawChallenge = true;
+        writeLog("warn", "stats", "Weapon damage challenged", {
+          target,
+          logId,
+          battleType: type,
+          status: fetched.status,
+          ms: Date.now() - started,
+        });
         await loadCrossoutPage(url);
         fetched = await evaluateCrossout<{ status: number; text: string }>(
           url,
@@ -98,12 +114,38 @@ export const loadWeaponUnits = async (
 
       if (fetched.status === 503 || challengePage(fetched.text)) {
         sawChallenge = true;
+        writeLog("warn", "stats", "Weapon damage failed", {
+          target,
+          logId,
+          battleType: type,
+          status: fetched.status,
+          ms: Date.now() - started,
+        });
         continue;
       }
 
       const rows = parseWeaponUnitTable(fetched.text);
 
-      if (rows.length === 0) continue;
+      if (rows.length === 0) {
+        writeLog("warn", "stats", "Weapon damage answered", {
+          target,
+          logId,
+          battleType: type,
+          status: fetched.status,
+          ms: Date.now() - started,
+          rows: 0,
+        });
+        continue;
+      }
+
+      writeLog("info", "stats", "Weapon damage answered", {
+        target,
+        logId,
+        battleType: type,
+        status: fetched.status,
+        ms: Date.now() - started,
+        rows: rows.length,
+      });
 
       const catalog = await getCrossoutNameCatalog();
       const summary = parseWeaponUnitSummary(fetched.text);
@@ -121,8 +163,14 @@ export const loadWeaponUnits = async (
           total: row.total,
         })),
       };
-    } catch {
-      /* Try the other host. */
+    } catch (error) {
+      writeLog("warn", "stats", "Weapon damage failed", {
+        target,
+        logId,
+        battleType: type,
+        ms: Date.now() - started,
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

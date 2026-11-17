@@ -5,6 +5,7 @@ import { app, net } from "electron";
 import type { IData, ICategory, IRarity } from "@src/store/slices/market.slice";
 import { getFallbackActionId } from "./actionIds";
 import api, { isUsingMirror } from "./api";
+import { writeLog } from "./logger";
 import { fetchUpdate } from "./fetchUpdate";
 import { getContentLanguage } from "./main";
 import type { IItem } from "./craftItemsCalc";
@@ -99,14 +100,29 @@ const fetchCatalogFromNetwork = async (): Promise<MarketCatalog> => {
   const suffix = getContentLanguage() === "en" ? "_en.json" : ".json";
 
   for (const base of CATALOG_URLS) {
+    const url = base + suffix;
+
+    writeLog("info", "market", "Requesting published catalogue", { url });
+
     try {
-      const response = await catalogHttp.get(base + suffix, {
+      const response = await catalogHttp.get(url, {
         headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
       });
 
-      if (isCatalog(response.data)) return response.data;
-    } catch {
-      /* try the next host */
+      if (isCatalog(response.data)) {
+        writeLog("info", "market", "Published catalogue loaded", {
+          url,
+          items: response.data.items.length,
+        });
+        return response.data;
+      }
+
+      writeLog("warn", "market", "Published catalogue response was empty", { url });
+    } catch (error) {
+      writeLog("warn", "market", "Published catalogue request failed", {
+        url,
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -172,16 +188,26 @@ const fetchFromSite = async (): Promise<MarketResponse | null> => {
  * base URL cache used by the shared axios instance.
  */
 const probeNetwork = async (): Promise<boolean> => {
-  if (!net.isOnline()) return false;
+  if (!net.isOnline()) {
+    writeLog("info", "market", "Market probe skipped, offline");
+    return false;
+  }
+
+  writeLog("info", "market", "Probing market host", { url: "/robots.txt" });
 
   try {
     await api.get("/robots.txt", {
       timeout: PROBE_TIMEOUT,
       headers: { "User-Agent": USER_AGENT, Accept: "*/*" },
     });
+    writeLog("info", "market", "Market probe succeeded", {
+      mirror: isUsingMirror(),
+    });
     return true;
-  } catch {
-    /* both hosts are unavailable; the caller will try the fallbacks */
+  } catch (error) {
+    writeLog("warn", "market", "Market probe failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 };
@@ -207,9 +233,11 @@ const buildFromCatalog = async (): Promise<MarketResponse> => {
       catalog = await fetchCatalogFromNetwork();
       saveCatalogCache(catalog);
     } catch {
+      writeLog("warn", "market", "Using cached catalogue");
       catalog = readCatalogCache();
     }
   } else {
+    writeLog("info", "market", "Offline, using cached catalogue");
     catalog = readCatalogCache();
   }
 
@@ -222,10 +250,22 @@ const buildFromCatalog = async (): Promise<MarketResponse> => {
   let update: Awaited<ReturnType<typeof fetchFreshUpdate>>;
 
   if (online) {
+    writeLog("info", "market", "Refreshing market prices", {
+      mirror: isUsingMirror(),
+    });
+
     try {
       update = await fetchFreshUpdate();
-    } catch {
-      /* keep the cached catalogue when only the price update is unavailable */
+      writeLog(
+        update ? "info" : "warn",
+        "market",
+        update ? "Market prices refreshed" : "Market prices were not refreshed",
+        { mirror: isUsingMirror() },
+      );
+    } catch (error) {
+      writeLog("warn", "market", "Market price refresh failed", {
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -245,13 +285,26 @@ export const fetchItems = async (): Promise<MarketResponse> => {
   // The mirror cannot render the market page, so do not waste 15 seconds on it.
   // When the probe fails, skip the slow page request as well.
   if (online && !isUsingMirror()) {
+    writeLog("info", "market", "Requesting market page");
+
     try {
       const data = await fetchFromSite();
 
-      if (data) return data;
-    } catch {
-      /* fall through to the published catalogue */
+      if (data) {
+        writeLog("info", "market", "Market page loaded", {
+          items: data.initialData.items.length,
+        });
+        return data;
+      }
+
+      writeLog("warn", "market", "Market page had no catalogue");
+    } catch (error) {
+      writeLog("warn", "market", "Market page failed, using published catalogue", {
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
+  } else if (isUsingMirror()) {
+    writeLog("info", "market", "Skipping market page, mirror cannot render it");
   }
 
   return buildFromCatalog();

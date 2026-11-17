@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { writeLog } from "./logger";
 import { setIsMirror } from "./main";
 
 const BASE_URLS = [
@@ -80,6 +81,11 @@ api.interceptors.response.use(
     if (!fallbackBase) {
       return Promise.reject(error);
     }
+
+    writeLog("warn", "market", "Market host failed", {
+      status: error.response?.status ?? null,
+      code: error.code ?? null,
+    });
 
     setIsMirror(fallbackBase === BASE_URLS[1]);
 

@@ -1086,6 +1086,7 @@ export const setIsMirror = (isMirr: boolean) => {
   if (isMirror === isMirr) return;
 
   isMirror = isMirr;
+  writeLog("info", "mirror", isMirr ? "Using mirror for market" : "Market primary restored");
   win?.webContents.send("setMirror", isMirr);
 };
 

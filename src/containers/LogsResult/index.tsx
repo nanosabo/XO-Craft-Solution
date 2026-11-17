@@ -226,30 +226,21 @@ const cachedTableReady = (
     !sample ||
     (winrate.includes("/") && parts.includes(".") && frags.includes("/"));
   const battleRows = table.rows.filter((row) => row.battle);
-  const stamps = battleRows
-    .map((row) => row.battle?.at ?? 0)
-    .filter((at) => at > 0);
-  const repeated = stamps.reduce((best, at) => {
-    const count = stamps.filter((item) => item === at).length;
-
-    return Math.max(best, count);
-  }, 0);
+  // Several battles in a large log share a start time. That is not an old cache.
   const timeReady =
     table.times.length < 2 ||
-    (repeated < 3 &&
-      battleRows.some(
-        (row) =>
-          (row.battle?.at ?? 0) > 0 && (row.battle?.plays?.length ?? 0) > 0,
-      ));
+    battleRows.some(
+      (row) =>
+        (row.battle?.at ?? 0) > 0 && (row.battle?.plays?.length ?? 0) > 0,
+    );
+  const statsReady =
+    statWeapons.length === 0 ||
+    statWeapons.some((row) => "rating" in row && Boolean(row.image));
+  const battleImages =
+    battleWeapons.length === 0 ||
+    battleWeapons.some((item) => Boolean(item.image));
 
-  return (
-    columnsMatch &&
-    battleTone &&
-    nicksMarked &&
-    timeReady &&
-    statWeapons.every((row) => "rating" in row && Boolean(row.image)) &&
-    battleWeapons.every((item) => Boolean(item.image))
-  );
+  return columnsMatch && battleTone && nicksMarked && timeReady && statsReady && battleImages;
 };
 
 const parseUploadDate = (value: string): number => {
@@ -825,8 +816,11 @@ const LogsResult = () => {
         applyLoadedTable(table, Boolean(range));
 
         const current = summaryRef.current;
+        const worthSaving = Boolean(
+          result.table.stats?.rows.length || incomingBattles || keepRows,
+        );
 
-        if (!range && current && current.logId === id && (incomingBattles || keepRows)) {
+        if (!range && current && current.logId === id && worthSaving) {
           void window.electronAPI
             .crossoutStatsCacheSave({
               summary: current,

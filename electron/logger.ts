@@ -38,6 +38,16 @@ const stringify = (value: unknown): string => {
   }
 };
 
+const MIRROR_HOSTS = [
+  "https://cross.vas-matrizza.workers.dev",
+  "https://en.crossout-info.com",
+  "cross.vas-matrizza.workers.dev",
+  "en.crossout-info.com",
+];
+
+const redactMirrors = (value: string): string =>
+  MIRROR_HOSTS.reduce((line, host) => line.split(host).join("mirror"), value);
+
 const truncate = (value: string, limit = MAX_DETAILS_LENGTH): string =>
   value.length > limit ? `${value.slice(0, limit)}… [truncated]` : value;
 
@@ -105,9 +115,9 @@ export const writeLog = (
 ): string => {
   const timestamp = new Date().toISOString();
   const detailsText =
-    details === undefined ? "" : ` | ${truncate(stringify(details))}`;
+    details === undefined ? "" : ` | ${truncate(redactMirrors(stringify(details)))}`;
   const line = `[${timestamp}] [${level.toUpperCase()}] [${scope}] ${truncate(
-    message,
+    redactMirrors(message),
     2000,
   )}${detailsText}`;
 

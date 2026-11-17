@@ -18,6 +18,7 @@ import {
   translateCrossoutWeaponName,
   translateCrossoutWeaponNameToEnglish,
 } from "./crossoutNames";
+import { writeLog } from "./logger";
 
 const RU_HOST = "https://crossout-info.com";
 const EN_HOST = "https://en.crossout-info.com";
@@ -46,6 +47,14 @@ export const noteCrossoutHost = (url: string): void => {
   if (!host) return;
 
   unavailableHosts.delete(host);
+
+  if (preferredHost === host) return;
+
+  writeLog(
+    "info",
+    "stats",
+    host === EN_HOST ? "Using mirror for statistics" : "Stats primary restored",
+  );
   preferredHost = host;
 };
 
@@ -53,7 +62,14 @@ export const noteCrossoutHost = (url: string): void => {
 const noteCrossoutHostDown = (url: string): void => {
   const host = hostOf(url);
 
-  if (host) unavailableHosts.add(host);
+  if (!host || unavailableHosts.has(host)) return;
+
+  unavailableHosts.add(host);
+  writeLog(
+    "warn",
+    "stats",
+    host === EN_HOST ? "Stats mirror unavailable" : "Stats primary unavailable",
+  );
 };
 
 /**
@@ -65,7 +81,12 @@ export const probeCrossoutHost = (): Promise<void> => {
   if (probeTask) return probeTask;
 
   probeTask = (async () => {
-    if (!net.isOnline()) return;
+    if (!net.isOnline()) {
+      writeLog("info", "stats", "Stats probe skipped, offline");
+      return;
+    }
+
+    writeLog("info", "stats", "Probing stats host");
 
     try {
       const response = await axios.get(`${RU_HOST}/`, {
@@ -80,26 +101,49 @@ export const probeCrossoutHost = (): Promise<void> => {
       if (response.status >= 500) {
         noteCrossoutHostDown(RU_HOST);
         preferredHost = EN_HOST;
+        writeLog("warn", "stats", "Using mirror for statistics", {
+          status: response.status,
+        });
       } else {
         preferredHost = RU_HOST;
+        writeLog("info", "stats", "Stats primary answered", {
+          status: response.status,
+        });
       }
-    } catch {
+    } catch (error) {
       noteCrossoutHostDown(RU_HOST);
       preferredHost = EN_HOST;
+      writeLog("warn", "stats", "Using mirror for statistics", {
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   })();
 
   return probeTask;
 };
 
+let loggedHostOrder = "";
+
 export const getBaseUrls = async (): Promise<string[]> => {
   await probeCrossoutHost();
 
   const ordered = preferredHost === EN_HOST ? [EN_HOST, RU_HOST] : [RU_HOST, EN_HOST];
   const alive = ordered.filter((host) => !unavailableHosts.has(host));
+  const urls = alive.length > 0 ? alive : ordered;
+  const order = urls.join(" → ");
 
-  return alive.length > 0 ? alive : ordered;
+  if (order !== loggedHostOrder) {
+    loggedHostOrder = order;
+    writeLog("info", "stats", "Stats request order", {
+      mirror: preferredHost === EN_HOST,
+    });
+  }
+
+  return urls;
 };
+
+const redactStatsUrl = (url: string): string =>
+  url.replace(/\/api_ver1\/[^/]+/, "/api_ver1/***");
 
 const getWeaponTranslator = (
   language: CrossoutLanguage,
@@ -125,7 +169,44 @@ const API_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 const API_TIMEOUT = 45_000;
 
+export const requestTarget = (url: string): "mirror" | "primary" =>
+  url.startsWith(EN_HOST) ? "mirror" : "primary";
+
+const logRequestOf = (
+  path: string,
+): { logId: string; endpoint: "battle-types" | "battle-table"; battleType?: string } | null => {
+  const match = path.match(/\/log_([A-Za-z0-9_-]{4,64})(?:\/([^/?#]+))?/);
+
+  if (!match) return null;
+
+  const logId = match[1];
+  const tail = match[2];
+
+  if (!tail || tail === "type") return { logId, endpoint: "battle-types" };
+
+  return { logId, endpoint: "battle-table", battleType: tail };
+};
+
 export const fetchCrossoutText = async (url: string): Promise<string> => {
+  const safeUrl = redactStatsUrl(url);
+  const path = safeUrl.replace(EN_HOST, "").replace(RU_HOST, "");
+  const logRequest = logRequestOf(path);
+  const target = requestTarget(url);
+  const started = Date.now();
+  const endpointLabel =
+    logRequest?.endpoint === "battle-types"
+      ? "battle types"
+      : logRequest?.endpoint === "battle-table"
+        ? "battle table"
+        : null;
+
+  writeLog("info", "stats", endpointLabel ? `Loading ${endpointLabel}` : "Stats request", {
+    target,
+    ...(logRequest
+      ? { logId: logRequest.logId, ...(logRequest.battleType ? { battleType: logRequest.battleType } : {}) }
+      : { path }),
+  });
+
   try {
     const response = await axios.get<string>(url, {
       timeout: API_TIMEOUT,
@@ -139,8 +220,40 @@ export const fetchCrossoutText = async (url: string): Promise<string> => {
       maxBodyLength: Infinity,
     });
 
-    return String(response.data ?? "");
+    const text = String(response.data ?? "");
+
+    writeLog(
+      "info",
+      "stats",
+      endpointLabel ? `${endpointLabel[0].toUpperCase()}${endpointLabel.slice(1)} answered` : "Stats request finished",
+      {
+        target,
+        ...(logRequest
+          ? { logId: logRequest.logId, ...(logRequest.battleType ? { battleType: logRequest.battleType } : {}) }
+          : {}),
+        status: response.status,
+        ms: Date.now() - started,
+        bytes: text.length,
+      },
+    );
+
+    return text;
   } catch (error) {
+    writeLog(
+      "warn",
+      "stats",
+      endpointLabel ? `${endpointLabel[0].toUpperCase()}${endpointLabel.slice(1)} failed` : "Stats request failed",
+      {
+        target,
+        ...(logRequest
+          ? { logId: logRequest.logId, ...(logRequest.battleType ? { battleType: logRequest.battleType } : {}) }
+          : {}),
+        status: axios.isAxiosError(error) ? error.response?.status ?? null : null,
+        ms: Date.now() - started,
+        message: error instanceof Error ? error.message : String(error),
+      },
+    );
+
     if (axios.isAxiosError(error) && !error.response) {
       noteCrossoutHostDown(url);
     }
@@ -679,9 +792,18 @@ export const uploadCrossoutLog = async (
 
     tracker.start();
 
+    const uploadUrl = `${baseUrl}/public/autoUploadLog.php`;
+    const target = requestTarget(baseUrl);
+    const started = Date.now();
+
+    writeLog("info", "stats", "Uploading combat.log", {
+      target,
+      bytes: file.length,
+    });
+
     try {
       const response = await axios.post<string>(
-        `${baseUrl}/public/autoUploadLog.php?${query.toString()}`,
+        `${uploadUrl}?${query.toString()}`,
         form,
         {
           headers: {
@@ -702,27 +824,47 @@ export const uploadCrossoutLog = async (
       tracker.done();
 
       const logId = String(response.data ?? "").trim();
+      const ms = Date.now() - started;
 
-      if (!logId) {
-        return uploadFailure(
-          "empty-log-id",
-          "Сервис не вернул идентификатор лога.",
-        );
-      }
+      if (!logId || !LOG_ID_PATTERN.test(logId)) {
+        writeLog("warn", "stats", "Combat log upload failed", {
+          target,
+          status: response.status,
+          ms,
+          message: logId ? "unexpected response" : "empty log id",
+        });
 
-      if (!LOG_ID_PATTERN.test(logId)) {
-        return uploadFailure(
-          "server",
-          `Сервис вернул неожиданный ответ: ${logId.slice(0, 200)}`,
-        );
+        return logId
+          ? uploadFailure(
+              "server",
+              `Сервис вернул неожиданный ответ: ${logId.slice(0, 200)}`,
+            )
+          : uploadFailure(
+              "empty-log-id",
+              "Сервис не вернул идентификатор лога.",
+            );
       }
 
       noteCrossoutHost(baseUrl);
+
+      writeLog("info", "stats", "Combat log uploaded", {
+        target,
+        status: response.status,
+        ms,
+        logId,
+      });
 
       return { ok: true, logId, logUrl: `${baseUrl}/log/${logId}` };
     } catch (error) {
       form.destroy();
       lastError = error;
+
+      writeLog("warn", "stats", "Combat log upload failed", {
+        target,
+        status: axios.isAxiosError(error) ? error.response?.status ?? null : null,
+        ms: Date.now() - started,
+        message: error instanceof Error ? error.message : String(error),
+      });
 
       if (axios.isAxiosError(error) && !error.response) {
         noteCrossoutHostDown(baseUrl);
