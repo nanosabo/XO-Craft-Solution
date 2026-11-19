@@ -2,10 +2,14 @@
 ; electron-builder adds "XO Craft Solution" only on the next page, so the
 ; field can say D:\ while the files go into D:\XO Craft Solution, or the
 ; person creates that folder by hand and ends up with two of them.
-
-!define MUI_PAGE_CUSTOMFUNCTION_LEAVE DirectoryLeave
+;
+; The leave hook is defined in StrContains.nsh. electron-builder includes that
+; file immediately before the directory page, and the first page to see the
+; hook consumes it. Defining it here would also hit the uninstall welcome
+; page, which can only call functions named un.*.
 
 !macro customHeader
+  !ifndef BUILD_UNINSTALLER
   !ifndef WM_GETTEXT
     !define WM_GETTEXT 0x000D
   !endif
@@ -28,11 +32,13 @@
 
     FindWindow $0 "#32770" "" $HWNDPARENT
     GetDlgItem $1 $0 1019
+    ; 1019 is the path field of the directory page. The same leave hook is also
+    ; attached to the other installer pages, and those must keep $INSTDIR as is.
     ${If} $1 = 0
-      StrCpy $AppDirEdited $INSTDIR
-    ${Else}
-      SendMessage $1 ${WM_GETTEXT} ${NSIS_MAX_STRLEN} "STR:$AppDirEdited"
+      Goto directoryLeaveDone
     ${EndIf}
+
+    SendMessage $1 ${WM_GETTEXT} ${NSIS_MAX_STRLEN} "STR:$AppDirEdited"
 
     ${If} $AppDirEdited == ""
       Goto directoryLeaveDone
@@ -100,4 +106,5 @@
     Pop $1
     Pop $0
   FunctionEnd
+  !endif
 !macroend
