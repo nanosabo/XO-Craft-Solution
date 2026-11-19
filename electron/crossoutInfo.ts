@@ -124,6 +124,13 @@ export const probeCrossoutHost = (): Promise<void> => {
 
 let loggedHostOrder = "";
 
+/** True when log requests start on the English subdomain. */
+export const statsUsesMirror = async (): Promise<boolean> => {
+  await probeCrossoutHost();
+
+  return preferredHost === EN_HOST;
+};
+
 export const getBaseUrls = async (): Promise<string[]> => {
   await probeCrossoutHost();
 
@@ -200,8 +207,11 @@ export const fetchCrossoutText = async (url: string): Promise<string> => {
         ? "battle table"
         : null;
 
+  const requestedPart = new URLSearchParams(path.split("?")[1] ?? "").get("type");
+
   writeLog("info", "stats", endpointLabel ? `Loading ${endpointLabel}` : "Stats request", {
     target,
+    ...(requestedPart ? { part: requestedPart } : {}),
     ...(logRequest
       ? { logId: logRequest.logId, ...(logRequest.battleType ? { battleType: logRequest.battleType } : {}) }
       : { path }),
@@ -228,6 +238,7 @@ export const fetchCrossoutText = async (url: string): Promise<string> => {
       endpointLabel ? `${endpointLabel[0].toUpperCase()}${endpointLabel.slice(1)} answered` : "Stats request finished",
       {
         target,
+        ...(requestedPart ? { part: requestedPart } : {}),
         ...(logRequest
           ? { logId: logRequest.logId, ...(logRequest.battleType ? { battleType: logRequest.battleType } : {}) }
           : {}),
@@ -245,6 +256,7 @@ export const fetchCrossoutText = async (url: string): Promise<string> => {
       endpointLabel ? `${endpointLabel[0].toUpperCase()}${endpointLabel.slice(1)} failed` : "Stats request failed",
       {
         target,
+        ...(requestedPart ? { part: requestedPart } : {}),
         ...(logRequest
           ? { logId: logRequest.logId, ...(logRequest.battleType ? { battleType: logRequest.battleType } : {}) }
           : {}),

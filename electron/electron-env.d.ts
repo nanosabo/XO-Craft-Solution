@@ -118,6 +118,7 @@ interface Window {
         progress: import("@src/types/crossout").CrossoutUploadProgress,
       ) => void,
     ): () => void;
+    crossoutStatsMirror(): Promise<boolean>;
     crossoutLoadLog(
       logId: string,
     ): Promise<import("@src/types/crossout").CrossoutLogSummaryResult>;
@@ -139,6 +140,7 @@ interface Window {
       type: string,
       expectedBattles?: number,
       range?: { from: number; to: number } | null,
+      section?: "stats" | "map",
     ): Promise<import("@src/types/crossout").CrossoutLogTableResult>;
     crossoutHistoryList(): Promise<
       import("@src/types/crossout").CrossoutLogHistoryEntry[]

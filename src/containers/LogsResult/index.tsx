@@ -295,6 +295,83 @@ type StatGroup = {
   weapons: CrossoutLogStatRow[];
 };
 
+/** Round party ids are shared; the player total often has a unique id. */
+const withParty = (table: CrossoutLogTable): CrossoutLogTable => {
+  const stats = table.stats;
+
+  if (!stats?.rows.length) return table;
+  if (!table.rows.some((row) => (row.battle?.plays?.length ?? 0) > 0)) return table;
+
+  const owner = table.nickname?.trim().toLowerCase() ?? "";
+  const allies = new Set<string>();
+
+  if (owner) allies.add(owner);
+
+  for (const row of stats.rows) {
+    if (row.kind === "player" && row.team === "green" && row.name.trim()) {
+      allies.add(row.name.trim().toLowerCase());
+    }
+  }
+
+  const groups = new Map<number, string[]>();
+
+  for (const row of table.rows) {
+    for (const play of row.battle?.plays ?? []) {
+      const nick = play.nick.trim();
+
+      if (!nick || play.party === 0) continue;
+
+      const list = groups.get(play.party) ?? [];
+
+      list.push(nick);
+      groups.set(play.party, list);
+    }
+  }
+
+  for (const list of groups.values()) {
+    const withOwner = list.some((nick) => nick.trim().toLowerCase() === owner);
+
+    if (!withOwner) continue;
+
+    for (const nick of list) allies.add(nick.trim().toLowerCase());
+  }
+
+  const ordered = groupStatRows(stats.rows).map((group) => {
+    const name = group.player?.name.trim().toLowerCase() ?? "";
+    const team = name && allies.has(name) ? "green" : "red";
+
+    return {
+      player: group.player ? { ...group.player, team } : null,
+      weapons: group.weapons.map((weapon) => ({ ...weapon, team })),
+    };
+  });
+
+  ordered.sort((left, right) => {
+    const leftName = left.player?.name.trim().toLowerCase() ?? "";
+    const rightName = right.player?.name.trim().toLowerCase() ?? "";
+
+    if (leftName === owner) return -1;
+    if (rightName === owner) return 1;
+
+    const leftAlly = left.player?.team === "green";
+    const rightAlly = right.player?.team === "green";
+
+    if (leftAlly !== rightAlly) return leftAlly ? -1 : 1;
+
+    return Number(right.player?.damage ?? 0) - Number(left.player?.damage ?? 0);
+  });
+
+  return {
+    ...table,
+    stats: {
+      ...stats,
+      rows: ordered.flatMap((group) =>
+        group.player ? [group.player, ...group.weapons] : group.weapons,
+      ),
+    },
+  };
+};
+
 const groupStatRows = (rows: CrossoutLogStatRow[]): StatGroup[] => {
   const groups: StatGroup[] = [];
   let current: StatGroup | null = null;
@@ -680,6 +757,7 @@ const LogsResult = () => {
     >(),
   );
   const [logTableLoading, setLogTableLoading] = useState(false);
+  const [mapLoading, setMapLoading] = useState(false);
   const [logTableError, setLogTableError] = useState<ResultError | null>(null);
   const [linksCopied, setLinksCopied] = useState(false);
   const [view, setView] = useState<ResultView>("stats");
@@ -687,6 +765,8 @@ const LogsResult = () => {
   const [shotBusy, setShotBusy] = useState(false);
   const [shotCopied, setShotCopied] = useState(false);
   const summaryRef = useRef<CrossoutLogSummary | null>(null);
+  const logTableRef = useRef<CrossoutLogTable | null>(null);
+  const wantMapRef = useRef(false);
   const statsShotRef = useRef<HTMLDivElement>(null);
   const shotTimerRef = useRef<number | null>(null);
   const linksTimerRef = useRef<number | null>(null);
@@ -716,8 +796,11 @@ const LogsResult = () => {
   );
 
   const applyLoadedTable = useCallback(
-    (table: CrossoutLogTable, ranged: boolean) => {
-      setLogTable(table);
+    (table: CrossoutLogTable, ranged: boolean): CrossoutLogTable => {
+      const next = withParty(table);
+
+      logTableRef.current = next;
+      setLogTable(next);
 
       if (table.date) setUploadDate(table.date);
 
@@ -735,17 +818,98 @@ const LogsResult = () => {
         setSummary(next);
       }
 
-      if (!ranged && table.times.length > 0) {
-        setTimeOptions(table.times);
-        setTimeFrom(table.times[0].at);
-        setTimeTo(table.times[table.times.length - 1].at);
+      if (!ranged && next.times.length > 0) {
+        setTimeOptions(next.times);
+        setTimeFrom(next.times[0].at);
+        setTimeTo(next.times[next.times.length - 1].at);
         setTimeFiltered(false);
       }
+
+      return next;
     },
     [],
   );
 
   const loadSeq = useRef(0);
+  const mapSeq = useRef(0);
+  const mapFlight = useRef("");
+  const mapAnnounceRef = useRef(false);
+
+  const loadMap = useCallback(async (
+    id: string,
+    slug: string,
+    expectedBattles = 0,
+    announce = false,
+  ) => {
+    const current = logTableRef.current;
+    const key = `${id}:${slug}`;
+
+    if (announce) mapAnnounceRef.current = true;
+    if (current?.type === slug && current.rows.some((row) => row.battle)) return;
+    if (mapFlight.current === key) return;
+
+    const seq = ++mapSeq.current;
+
+    mapFlight.current = key;
+    setMapLoading(true);
+    if (announce) setLogTableError(null);
+
+    try {
+      const result = await window.electronAPI.crossoutLoadLogTable(
+        id,
+        slug,
+        expectedBattles,
+        null,
+        "map",
+      );
+
+      if (seq !== mapSeq.current) return;
+
+      if (!result.ok) {
+        if (mapAnnounceRef.current) {
+          setLogTableError({
+            code: result.errorCode,
+            message: result.error,
+            fallbackKey: "result.error",
+          });
+        }
+        return;
+      }
+
+      const previous = logTableRef.current;
+      const table = previous && previous.type === slug
+        ? {
+            ...previous,
+            rows: result.table.rows,
+            times: result.table.times,
+            date: result.table.date || previous.date,
+            nickname: result.table.nickname || previous.nickname,
+          }
+        : result.table;
+
+      const stored = applyLoadedTable(table, false);
+
+      const summary = summaryRef.current;
+
+      if (summary && summary.logId === id) {
+        void window.electronAPI
+          .crossoutStatsCacheSave({ summary, table: stored })
+          .catch((cacheError) => {
+            logWarning("crossout-stats-cache", cacheError);
+          });
+      }
+    } catch (error) {
+      if (seq !== mapSeq.current) return;
+
+      logWarning("crossout-log", error);
+      if (mapAnnounceRef.current) setLogTableError({ fallbackKey: "result.error" });
+    } finally {
+      if (seq === mapSeq.current) {
+        if (mapFlight.current === key) mapFlight.current = "";
+        setMapLoading(false);
+      }
+    }
+  }, [applyLoadedTable]);
 
   const loadLogType = useCallback(async (
     id: string,
@@ -755,6 +919,12 @@ const LogsResult = () => {
   ) => {
     const seq = ++loadSeq.current;
 
+    mapSeq.current += 1;
+    mapFlight.current = "";
+    mapAnnounceRef.current = false;
+    wantMapRef.current = false;
+    setMapLoading(false);
+    setLogTableLoading(true);
     setLogType(slug);
 
     let staleTable: CrossoutLogTable | null = null;
@@ -772,7 +942,15 @@ const LogsResult = () => {
         if (cachedTableReady(table)) {
           setLogTableError(null);
           setLogTableLoading(false);
-          applyLoadedTable(table, false);
+          const stored = applyLoadedTable(table, false);
+          const announce = wantMapRef.current;
+
+          wantMapRef.current = false;
+
+          if (!stored.rows.some((row) => row.battle)) {
+            void loadMap(id, slug, expectedBattles, announce);
+          }
+
           return;
         }
       } catch (error) {
@@ -781,6 +959,7 @@ const LogsResult = () => {
 
       if (seq !== loadSeq.current) return;
 
+      logTableRef.current = null;
       setLogTable(null);
     }
 
@@ -793,6 +972,7 @@ const LogsResult = () => {
         slug,
         expectedBattles,
         range,
+        "stats",
       );
 
       if (seq !== loadSeq.current) return;
@@ -813,7 +993,7 @@ const LogsResult = () => {
             }
           : result.table;
 
-        applyLoadedTable(table, Boolean(range));
+        const stored = applyLoadedTable(table, Boolean(range));
 
         const current = summaryRef.current;
         const worthSaving = Boolean(
@@ -824,11 +1004,19 @@ const LogsResult = () => {
           void window.electronAPI
             .crossoutStatsCacheSave({
               summary: current,
-              table,
+              table: stored,
             })
             .catch((cacheError) => {
               logWarning("crossout-stats-cache", cacheError);
             });
+        }
+
+        const announce = wantMapRef.current;
+
+        wantMapRef.current = false;
+
+        if (!range && !stored.rows.some((row) => row.battle)) {
+          void loadMap(id, slug, expectedBattles, announce);
         }
       } else {
         setLogTableError({
@@ -843,7 +1031,7 @@ const LogsResult = () => {
     } finally {
       if (seq === loadSeq.current) setLogTableLoading(false);
     }
-  }, [applyLoadedTable]);
+  }, [applyLoadedTable, loadMap]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -871,6 +1059,11 @@ const LogsResult = () => {
     }, 160);
 
     summaryRef.current = null;
+    logTableRef.current = null;
+    mapSeq.current += 1;
+    mapFlight.current = "";
+    mapAnnounceRef.current = false;
+    wantMapRef.current = false;
     setSummary(null);
     setError(null);
     setLogType(null);
@@ -921,7 +1114,12 @@ const LogsResult = () => {
 
           if (cachedTableReady(table) && firstType) {
             setLogType(firstType.key);
-            applyLoadedTable(table, false);
+            const stored = applyLoadedTable(table, false);
+
+            if (!stored.rows.some((row) => row.battle)) {
+              void loadMap(logId, firstType.key, firstType.count, false);
+            }
+
             return;
           }
 
@@ -979,7 +1177,7 @@ const LogsResult = () => {
       cancelled = true;
       window.clearTimeout(logoTimer);
     };
-  }, [applyLoadedTable, logId, loadLogType, preferredType]);
+  }, [applyLoadedTable, loadMap, logId, loadLogType, preferredType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1136,15 +1334,11 @@ const LogsResult = () => {
   );
 
   useEffect(() => {
-    if (!logTable) return;
-
-    const hasStats = Boolean(logTable.stats && logTable.stats.rows.length > 0);
-
-    setView(hasStats ? "stats" : "battles");
+    setView("stats");
     setAlliesOnly(true);
     setStatsQuery("");
     setMapQuery("");
-  }, [logTable]);
+  }, [logId, logType]);
 
   const shownTable = useMemo(
     () => localizeLogTable(logTable, nameCatalog, namesLanguage),
@@ -1441,11 +1635,18 @@ const LogsResult = () => {
     }
   };
 
+  const siteLogUrl = async (logId: string) => {
+    const mirror = await window.electronAPI.crossoutStatsMirror();
+    const base = mirror || !isRu ? SITE_URL_EN : SITE_URL_RU;
+
+    return `${base}/log/${logId}`;
+  };
+
   const copyLinks = async () => {
     if (!summary) return;
 
     const appLink = buildAppLogLink(summary.logId, logType);
-    const siteLink = `${isRu ? SITE_URL_RU : SITE_URL_EN}/log/${summary.logId}`;
+    const siteLink = await siteLogUrl(summary.logId);
 
     try {
       await window.electronAPI.copyText(`${appLink}\n${siteLink}`);
@@ -1491,6 +1692,10 @@ const LogsResult = () => {
     setTimeFiltered(!full);
   };
 
+  const partyPending =
+    mapLoading &&
+    !logTable?.rows.some((row) => (row.battle?.plays?.length ?? 0) > 0);
+
   const resetTimeFilter = () => {
     if (!summary || !logType || logTableLoading || timeOptions.length === 0) {
       return;
@@ -1531,11 +1736,11 @@ const LogsResult = () => {
             <button
               type="button"
               className={styles.secondaryButton}
-              onClick={() =>
-                void window.electronAPI.openExternal(
-                  `${isRu ? SITE_URL_RU : SITE_URL_EN}/log/${summary.logId}`,
-                )
-              }
+              onClick={() => {
+                void siteLogUrl(summary.logId).then((url) =>
+                  window.electronAPI.openExternal(url),
+                );
+              }}
             >
               <ExternalIcon />
               {t("result.openSite")}
@@ -1656,7 +1861,7 @@ const LogsResult = () => {
           </div>
         )}
 
-        {logTableLoading && !logTable && (
+        {(partyPending || (logTableLoading && !logTable)) && (
           <div className={styles.processingLogo} role="status" aria-live="polite">
             <CrossoutLogo />
             <strong>{t("log.tableLoading")}</strong>
@@ -1667,7 +1872,7 @@ const LogsResult = () => {
           <p className={styles.error}>{errorText(logTableError)}</p>
         )}
 
-        {logTable && (
+        {logTable && !partyPending && (
           <div
             className={classNames(styles.logView, {
               [styles.logViewStuck]: barStuck,
@@ -1703,7 +1908,20 @@ const LogsResult = () => {
                   className={classNames(styles.logSegmentButton, {
                     [styles.logSegmentActive]: view === "battles",
                   })}
-                  onClick={() => setView("battles")}
+                  onClick={() => {
+                    setView("battles");
+
+                    if (!summary || !logType) return;
+
+                    const count = summary.types.find((type) => type.key === logType)?.count ?? 0;
+
+                    if (logTableLoading) {
+                      wantMapRef.current = true;
+                      return;
+                    }
+
+                    void loadMap(summary.logId, logType, count, true);
+                  }}
                 >
                   {t("logView.battles")}
                 </button>
@@ -1770,7 +1988,14 @@ const LogsResult = () => {
                 <p className={styles.empty}>{t("logView.nothing")}</p>
               )}
 
-            {view === "battles" && logTable.rows.length === 0 && (
+            {view === "battles" && mapLoading && (
+              <div className={styles.processingLogo} role="status" aria-live="polite">
+                <CrossoutLogo />
+                <strong>{t("log.tableLoading")}</strong>
+              </div>
+            )}
+
+            {view === "battles" && !mapLoading && logTable.rows.length === 0 && (
               <p className={styles.empty}>{t("log.tableEmpty")}</p>
             )}
 

@@ -67,12 +67,14 @@ import {
   getCrossoutApiKey,
   probeCrossoutHost,
   saveCrossoutApiKey,
+  statsUsesMirror,
   uploadCrossoutLog,
 } from "./crossoutInfo";
 import {
   getCrossoutNameCatalog,
   loadCrossoutLog,
   loadCrossoutLogTable,
+  type LogTableSection,
 } from "./crossoutLogApi";
 import { closeCrossoutBrowser } from "./crossoutBrowser";
 import { loadWeaponUnits } from "./crossoutWeaponUnits";
@@ -664,6 +666,8 @@ ipcMain.handle(
   },
 );
 
+ipcMain.handle("crossout-stats-mirror", () => statsUsesMirror());
+
 ipcMain.handle("crossout-load-log", (_, logId: string) => {
   return loadCrossoutLog(String(logId ?? ""), getContentLanguage());
 });
@@ -708,6 +712,7 @@ ipcMain.handle(
     type: string,
     expectedBattles?: number,
     range?: { from?: number; to?: number } | null,
+    section?: LogTableSection,
   ) => {
     const from = Number(range?.from);
     const to = Number(range?.to);
@@ -720,6 +725,7 @@ ipcMain.handle(
       Number.isFinite(from) && Number.isFinite(to)
         ? { from, to }
         : null,
+      section === "map" ? "map" : "stats",
     );
   },
 );

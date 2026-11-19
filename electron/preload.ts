@@ -137,6 +137,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return () =>
       ipcRenderer.removeListener("crossout-upload-progress", wrapped);
   },
+  crossoutStatsMirror: () =>
+    ipcRenderer.invoke("crossout-stats-mirror") as Promise<boolean>,
   crossoutLoadLog: (logId: string) =>
     ipcRenderer.invoke("crossout-load-log", logId),
   crossoutNames: () =>
@@ -168,6 +170,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     type: string,
     expectedBattles?: number,
     range?: { from: number; to: number } | null,
+    section?: "stats" | "map",
   ) =>
     ipcRenderer.invoke(
       "crossout-load-log-table",
@@ -175,6 +178,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       type,
       expectedBattles,
       range ?? null,
+      section ?? "stats",
     ),
   crossoutHistoryList: () => ipcRenderer.invoke("crossout-history-list"),
   crossoutHistorySave: (

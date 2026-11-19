@@ -1254,12 +1254,34 @@ export const loadCrossoutLog = async (
   }
 };
 
+export type LogTableSection = "stats" | "map";
+
+const fetchLogPart = async (
+  baseUrl: string,
+  id: string,
+  slug: string,
+  part: "battles" | "log" | "map",
+): Promise<Record<string, unknown> | null> => {
+  const payload = await fetchJsonAt(baseUrl, `log_${id}/${slug}?type=${part}`);
+  const result = asRecord(payload.result);
+
+  if (!result) {
+    throw new LogApiError(
+      "unexpected-response",
+      "Сервис вернул неожиданный ответ.",
+    );
+  }
+
+  return result;
+};
+
 export const loadCrossoutLogTable = async (
   logId: string,
   type: string,
   language: CrossoutLanguage = "ru",
   expectedBattles = 0,
   range?: { from: number; to: number } | null,
+  section: LogTableSection = "stats",
 ): Promise<CrossoutLogTableResult> => {
   const id = logId.trim();
   const slug = type.trim().toLowerCase();
@@ -1278,18 +1300,46 @@ export const loadCrossoutLogTable = async (
 
   for (const baseUrl of await getBaseUrls()) {
     try {
-      const payload = await fetchJsonAt(baseUrl, `log_${id}/${slug}`);
-      const result = asRecord(payload.result);
+      const logRequest = fetchLogPart(baseUrl, id, slug, "log").catch(() => null);
 
-      if (!result) {
-        throw new LogApiError(
-          "unexpected-response",
-          "Сервис вернул неожиданный ответ.",
-        );
+      if (section === "stats") {
+        const [logBody, statsBody] = await Promise.all([
+          logRequest,
+          fetchLogPart(baseUrl, id, slug, "battles"),
+        ]);
+        const log = asRecord(logBody?.log);
+        const nickname = asText(log?.nick);
+        const uploaded = asCount(log?.time);
+        const players = readPlayers(statsBody?.battles);
+        const table: CrossoutLogTable = {
+          type: slug,
+          date: uploaded > 0 ? dayStamp(uploaded) : "",
+          times: [],
+          stats: buildStats(
+            players,
+            names,
+            language,
+            partyAllies(players, nickname, log?.sharedBattle),
+            nickname,
+          ),
+          rows: [],
+          nickname,
+          partyGrouped: true,
+        };
+
+        noteCrossoutHost(baseUrl);
+        best = table;
+        break;
       }
 
-      const log = asRecord(result.log);
-      const battles = readBattles(result.map, log?.sharedBattle);
+      const [logBody, mapBody] = await Promise.all([
+        logRequest,
+        fetchLogPart(baseUrl, id, slug, "map"),
+      ]);
+      const log = asRecord(logBody?.log);
+      const nickname = asText(log?.nick);
+      const uploaded = asCount(log?.time);
+      const battles = readBattles(mapBody?.map, log?.sharedBattle);
       const start = Math.min(from, to);
       const end = Math.max(from, to);
       const visible = battles.flatMap((battle, index) => {
@@ -1297,20 +1347,11 @@ export const loadCrossoutLogTable = async (
 
         return [{ battle, index: index + 1 }];
       });
-      const nickname = asText(log?.nick);
-      const uploaded = asCount(log?.time);
-      const players = readPlayers(result.battles);
       const table: CrossoutLogTable = {
         type: slug,
         date: uploaded > 0 ? dayStamp(uploaded) : "",
         times: buildTimes(battles),
-        stats: buildStats(
-          players,
-          names,
-          language,
-          partyAllies(players, nickname, log?.sharedBattle),
-          nickname,
-        ),
+        stats: null,
         rows: buildRows(visible, names, language),
         nickname,
         partyGrouped: true,
@@ -1335,7 +1376,9 @@ export const loadCrossoutLogTable = async (
   }
 
   if (best) return { ok: true, table: best };
-  if (partial?.stats) return { ok: true, table: partial };
+  if (partial && (partial.stats || partial.rows.length > 0)) {
+    return { ok: true, table: partial };
+  }
 
   const failure = failureOf(lastError);
 
