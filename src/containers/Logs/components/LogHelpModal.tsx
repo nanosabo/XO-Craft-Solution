@@ -11,7 +11,7 @@ import launcherShot2 from "@src/assets/images/log-help/2shag.png";
 import launcherShot3 from "@src/assets/images/log-help/3shag.png";
 import steamShot1 from "@src/assets/images/log-help/steamImg1.png";
 import steamShot2 from "@src/assets/images/log-help/steamImg2.png";
-import styles from "./styles/Logs.module.scss";
+import styles from "../styles/Logs.module.scss";
 
 type Platform = "launcher" | "steam";
 

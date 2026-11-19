@@ -8,7 +8,7 @@ import type {
   CrossoutWeaponUnit,
   CrossoutWeaponUnitSummary,
 } from "@src/types/crossout";
-import styles from "./WeaponUnitsDialog.module.scss";
+import styles from "../styles/WeaponUnitsDialog.module.scss";
 
 type Props = {
   open: boolean;
