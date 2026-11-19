@@ -2,7 +2,7 @@ import classNames from "classnames";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { buildAppLogLink } from "@src/helpers/appLogLink";
+import { buildAppLogLink, logFromClipboard, logResultsPath } from "@src/helpers/appLogLink";
 import { contentLanguage } from "@src/helpers/contentLanguage";
 import { logWarning } from "@src/helpers/errorLog";
 import {
@@ -1339,6 +1339,30 @@ const LogsResult = () => {
     setStatsQuery("");
     setMapQuery("");
   }, [logId, logType]);
+
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      const element = event.target instanceof HTMLElement ? event.target : null;
+      const typing =
+        element &&
+        (element.tagName === "TEXTAREA" ||
+          element.tagName === "INPUT" ||
+          element.isContentEditable);
+
+      if (typing) return;
+
+      const parsed = logFromClipboard(event.clipboardData?.getData("text") ?? "");
+
+      if (!parsed) return;
+
+      event.preventDefault();
+      navigate(logResultsPath(parsed));
+    };
+
+    window.addEventListener("paste", onPaste);
+
+    return () => window.removeEventListener("paste", onPaste);
+  }, [navigate]);
 
   const shownTable = useMemo(
     () => localizeLogTable(logTable, nameCatalog, namesLanguage),

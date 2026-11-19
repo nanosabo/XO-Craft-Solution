@@ -72,6 +72,39 @@ export const parseAppLogLink = (raw: string): AppLogLink | null => {
   return parseProtocolLink(url) ?? parsePageLink(url);
 };
 
+const SITE_LOG =
+  /(?:https?:\/\/)?(?:www\.)?(?:en\.)?crossout-info\.com\/log\/([A-Za-z0-9_-]{4,64})(?:\/([A-Za-z0-9_-]{1,32}))?/i;
+
+const APP_LINK =
+  /(?:https?:\/\/nanosabo\.github\.io\/xocs-imgs\/log\/?\?[^\s]+|xocraft:\/\/[^\s]+)/i;
+
+/** A crossout-info log link, an app link, or text that contains one of them. */
+export const logFromClipboard = (value: string): AppLogLink | null => {
+  const direct = parseAppLogLink(value);
+
+  if (direct) return direct;
+
+  const appMatch = value.match(APP_LINK);
+
+  if (appMatch) {
+    const parsed = parseAppLogLink(appMatch[0]);
+
+    if (parsed) return parsed;
+  }
+
+  const match = value.match(SITE_LOG);
+
+  if (!match) return null;
+
+  return withType(match[1], match[2] ?? "");
+};
+
+export const logResultsPath = (parsed: AppLogLink): string => {
+  const query = parsed.type ? `?type=${encodeURIComponent(parsed.type)}` : "";
+
+  return `/logs/${encodeURIComponent(parsed.logId)}${query}`;
+};
+
 export const findAppLogLink = (argv: string[]): AppLogLink | null => {
   for (const arg of argv) {
     const parsed = parseAppLogLink(arg);

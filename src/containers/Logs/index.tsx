@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { parseAppLogLink } from "@src/helpers/appLogLink";
+import { logFromClipboard, logResultsPath } from "@src/helpers/appLogLink";
 import { normalizeUiLanguage } from "@src/helpers/contentLanguage";
 import { logWarning } from "@src/helpers/errorLog";
 import formatBytes from "@src/helpers/formatBytes";
@@ -39,48 +39,6 @@ const shortenPath = (value: string): string => {
   if (value.length <= 72) return value;
 
   return `${value.slice(0, 32)}…${value.slice(-32)}`;
-};
-
-const LOG_LINK =
-  /(?:https?:\/\/)?(?:www\.)?(?:en\.)?crossout-info\.com\/log\/([A-Za-z0-9_-]{4,64})(?:\/([A-Za-z0-9_-]{1,32}))?/i;
-
-const APP_LINK = /(?:https?:\/\/nanosabo\.github\.io\/xocs-imgs\/log\/?\?[^\s]+|xocraft:\/\/[^\s]+)/i;
-
-const crossoutLogFromText = (
-  value: string,
-): { logId: string; type: string | null } | null => {
-  const match = value.match(LOG_LINK);
-
-  if (!match) return null;
-
-  const type = match[2]?.toLowerCase() ?? "";
-  const slug = /^[a-z0-9_-]{1,32}$/.test(type) ? type : null;
-
-  return { logId: match[1], type: slug };
-};
-
-const logFromClipboard = (
-  value: string,
-): { logId: string; type: string | null } | null => {
-  const direct = parseAppLogLink(value);
-
-  if (direct) return direct;
-
-  const appMatch = value.match(APP_LINK);
-
-  if (appMatch) {
-    const parsed = parseAppLogLink(appMatch[0]);
-
-    if (parsed) return parsed;
-  }
-
-  return crossoutLogFromText(value);
-};
-
-const logResultsPath = (parsed: { logId: string; type: string | null }): string => {
-  const query = parsed.type ? `?type=${encodeURIComponent(parsed.type)}` : "";
-
-  return `/logs/${encodeURIComponent(parsed.logId)}${query}`;
 };
 
 const clampPercent = (percent: number): number =>
