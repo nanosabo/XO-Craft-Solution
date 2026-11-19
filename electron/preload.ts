@@ -62,8 +62,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     body: string;
     icon?: string;
   }) => ipcRenderer.invoke("show-notification", payload),
+  fetchItemSignal: (id: number) =>
+    ipcRenderer.invoke("fetchItemSignal", id) as Promise<
+      import("@src/types/marketSignal").ItemSignalData
+    >,
   setSystemNotifications: (enabled: boolean) =>
     ipcRenderer.send("set-system-notifications", enabled),
+  setRunInBackground: (enabled: boolean) =>
+    ipcRenderer.send("set-run-in-background", enabled),
   onToast: (
     listener: (toast: {
       id: string;

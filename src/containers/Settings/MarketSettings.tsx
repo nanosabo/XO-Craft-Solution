@@ -7,6 +7,7 @@ import {
 } from "@src/store/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@src/store/store";
 import MarketFollowedSection from "./market/MarketFollowedSection";
+import MarketSignalsSection from "./market/MarketSignalsSection";
 import MarketSoundSection from "./market/MarketSoundSection";
 import styles from "./styles/Settings.module.scss";
 
@@ -28,6 +29,8 @@ const MarketSettings = () => {
       </div>
 
       <MarketSoundSection notifications={notifications} onUpdate={update} />
+
+      <MarketSignalsSection notifications={notifications} onUpdate={update} />
 
       <MarketFollowedSection count={followedItems.length} />
     </div>

@@ -16,6 +16,7 @@ import {
   mergeFollowRules,
   roundFollowValue,
 } from "../follow";
+import { ItemSignalRules, mergeSignalRules } from "../signals";
 
 export interface ICategory {
   id: number;
@@ -107,6 +108,7 @@ export interface Filters {
   followed: boolean;
   followedItems: number[];
   followRules: Record<number, FollowRules>;
+  signalRules: Record<number, ItemSignalRules>;
   search: string;
 }
 
@@ -136,6 +138,7 @@ const saveFilters = (state: MarketState) => {
     "followed",
     "followedItems",
     "followRules",
+    "signalRules",
     "search",
   ];
 
@@ -159,6 +162,7 @@ const defaultFilters: Filters = {
   followed: false,
   followedItems: [],
   followRules: {},
+  signalRules: {},
   search: "",
 };
 
@@ -167,6 +171,7 @@ const filters: Filters = {
   ...defaultFilters,
   ...(storedFilters ?? {}),
   followRules: storedFilters?.followRules ?? {},
+  signalRules: storedFilters?.signalRules ?? {},
 };
 const own_recipes = storageRecipes
   ? (JSON.parse(storageRecipes) as Record<string, OwnRecipe>)
@@ -283,14 +288,30 @@ export const MarketSLice = createSlice({
       if (state.followedItems.includes(id)) {
         state.followedItems = state.followedItems.filter((item) => item !== id);
         delete state.followRules[id];
+        delete state.signalRules[id];
       } else {
         state.followedItems = [...state.followedItems, id];
         state.followRules[id] = mergeFollowRules(
           state.followRules[id],
           values,
         );
+        state.signalRules[id] = mergeSignalRules(state.signalRules[id]);
       }
 
+      saveFilters(state);
+    },
+    setSignalRule: (
+      state,
+      action: PayloadAction<{ id: number; patch: Partial<ItemSignalRules> }>,
+    ) => {
+      const { id, patch } = action.payload;
+
+      if (!state.followedItems.includes(id)) return;
+
+      state.signalRules[id] = mergeSignalRules({
+        ...state.signalRules[id],
+        ...patch,
+      });
       saveFilters(state);
     },
     ensureFollowRules: (
@@ -403,6 +424,7 @@ export const {
   setFollowedItem,
   ensureFollowRules,
   setFollowRule,
+  setSignalRule,
   switchMarketFollowed,
   setOwnRecipe,
   removeOwnRecipe,

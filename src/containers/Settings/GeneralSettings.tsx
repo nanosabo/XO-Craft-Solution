@@ -9,6 +9,7 @@ import {
 import { normalizeUiLanguage, type UiLanguage } from "@src/helpers/contentLanguage";
 import useAppVersion from "./useAppVersion";
 import AboutSection from "./general/AboutSection";
+import BackgroundSection from "./general/BackgroundSection";
 import DataSection from "./general/DataSection";
 import LanguageSection from "./general/LanguageSection";
 import ScaleSection from "./general/ScaleSection";
@@ -49,6 +50,8 @@ const GeneralSettings = () => {
       />
 
       <StartupSection />
+
+      <BackgroundSection />
 
       <NotificationsSection
         systemNotifications={systemNotifications}

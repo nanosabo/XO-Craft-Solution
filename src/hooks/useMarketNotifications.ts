@@ -229,6 +229,7 @@ const useMarketNotifications = () => {
             id: `${trigger.item.id}-${trigger.metric}-${Date.now()}-${historySerial++}`,
             itemId: trigger.item.id,
             name: trigger.item.name,
+            kind: "rule",
             metric: trigger.metric,
             value: rounded,
             previous,

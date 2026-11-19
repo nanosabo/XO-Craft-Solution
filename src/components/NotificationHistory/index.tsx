@@ -112,10 +112,44 @@ const NotificationHistory = () => {
           ) : (
             <ul className={styles.list}>
               {entries.map((entry) => {
-                const keys = notificationKeys[entry.metric];
-                const numbers = isLotsMetric(entry.metric)
-                  ? { amount: entry.value, previous: entry.previous }
-                  : { price: entry.value, previous: entry.previous };
+                let title: string;
+                let body: string;
+
+                if (entry.kind === "price") {
+                  const advice = entry.adviceKey
+                    ? t(`chart.scale.${entry.adviceKey}`)
+                    : "";
+                  const lots = entry.lotsKey
+                    ? ` ${t(`chart.scale.${entry.lotsKey}`)}`
+                    : "";
+
+                  title = t(`history.price.${entry.signal ?? "down"}.title`);
+                  body = `${entry.name}. ${advice}${lots}`;
+                } else if (entry.kind === "craft") {
+                  const profit = Math.round(entry.profit ?? 0).toLocaleString(
+                    i18n.language,
+                  );
+
+                  title = t("history.craft.title");
+                  body = `${t("history.craft.body", {
+                    name: entry.name,
+                    profit,
+                  })} ${t(
+                    entry.isOwn
+                      ? "history.craft.own"
+                      : "history.craft.official",
+                  )}`;
+                } else if (entry.metric) {
+                  const keys = notificationKeys[entry.metric];
+                  const numbers = isLotsMetric(entry.metric)
+                    ? { amount: entry.value, previous: entry.previous }
+                    : { price: entry.value, previous: entry.previous };
+
+                  title = i18n.t(keys.title);
+                  body = i18n.t(keys.body, { name: entry.name, ...numbers });
+                } else {
+                  return null;
+                }
 
                 return (
                   <li key={entry.id}>
@@ -128,15 +162,8 @@ const NotificationHistory = () => {
                         <MarketItemImage id={entry.itemId} title={entry.name} />
                       </span>
                       <span className={styles.copy}>
-                        <span className={styles.itemTitle}>
-                          {i18n.t(keys.title)}
-                        </span>
-                        <span className={styles.itemBody}>
-                          {i18n.t(keys.body, {
-                            name: entry.name,
-                            ...numbers,
-                          })}
-                        </span>
+                        <span className={styles.itemTitle}>{title}</span>
+                        <span className={styles.itemBody}>{body}</span>
                       </span>
                       <time dateTime={new Date(entry.at).toISOString()}>
                         {formatWhen(entry.at, i18n.language)}

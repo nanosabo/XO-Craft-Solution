@@ -65,7 +65,11 @@ interface Window {
       body: string;
       icon?: string;
     }): Promise<boolean>;
+    fetchItemSignal(
+      id: number,
+    ): Promise<import("@src/types/marketSignal").ItemSignalData>;
     setSystemNotifications(enabled: boolean): void;
+    setRunInBackground(enabled: boolean): void;
     onToast(
       listener: (toast: {
         id: string;

@@ -304,3 +304,107 @@
   @include caption;
   line-height: 1.35;
 }
+
+.signals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.signalCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba($input, 0.35);
+  border: 1px solid rgba($white, 0.08);
+  border-radius: 12px;
+  transition:
+    opacity 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+}
+
+.signalTitle {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  h5 {
+    @include body;
+    font-weight: 600;
+    color: $white;
+  }
+
+  span {
+    color: $default;
+    @include caption;
+    line-height: 1.3;
+  }
+}
+
+.signalPreview {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: $default;
+  @include caption;
+  line-height: 1.4;
+  transition:
+    color 0.2s ease-in-out,
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    opacity 0.2s ease-in-out;
+}
+
+.signalPreviewIcon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 1px;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.signalPreview_buy {
+  color: #b8f7a8;
+  background: rgba(#6bff4d, 0.08);
+  border-color: rgba(#6bff4d, 0.22);
+}
+
+.signalPreview_wait {
+  color: #f7e6a0;
+  background: rgba(#fffc4d, 0.08);
+  border-color: rgba(#fffc4d, 0.22);
+}
+
+.signalPreview_neutral {
+  color: $default;
+  background: rgba($white, 0.03);
+  border-color: rgba($white, 0.08);
+}
+
+.signalPreviewMuted {
+  opacity: 0.55;
+}
+
+.signalFieldLabel {
+  flex-shrink: 0;
+  color: $default;
+  @include caption;
+  white-space: nowrap;
+}
+
+.signalCraftHint {
+  color: $default;
+}
+
+.signalCraftReached {
+  color: #b8f7a8;
+}

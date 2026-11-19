@@ -85,7 +85,8 @@
       "remove": "Remove from watchlist",
       "groups": {
         "price": "Prices",
-        "lots": "Lots"
+        "lots": "Lots",
+        "signals": "Advice"
       },
       "metrics": {
         "sell": "Sell price",
@@ -115,7 +116,26 @@
         "lots": "lots"
       },
       "disabledHint": "Add the item to your watchlist to set up alerts.",
-      "noPrice": "No data"
+      "noPrice": "No data",
+      "signals": {
+        "price": {
+          "title": "Buying and selling advice",
+          "subtitle": "Watching the usual price and the weekly move",
+          "quiet": "The price is about usual and barely moving, so there is no rush.",
+          "noData": "Not enough data yet, so the advice will appear later."
+        },
+        "craft": {
+          "title": "Crafting advice",
+          "subtitle": "Recipe and profit per item",
+          "minProfit": "At least",
+          "noRecipe": "This item has no recipe, so there will be no alerts.",
+          "good": "The recipe now brings {{profit}} coins per item, so the moment is good.",
+          "low": "The recipe now brings {{profit}} coins per item, which is not enough for an alert.",
+          "own": "Calculated with your recipe.",
+          "official": "Calculated with the usual recipe."
+        },
+        "loading": "Looking at price history..."
+      }
     }
   },
   "followed": {
@@ -200,6 +220,26 @@
     "open": "Notification history",
     "title": "Notification history",
     "empty": "Nothing yet. Market alerts that arrive while the app is running show up here.",
-    "clear": "Clear"
+    "clear": "Clear",
+    "price": {
+      "buy": {
+        "title": "Good moment to buy"
+      },
+      "sell": {
+        "title": "Good moment to sell"
+      },
+      "hold": {
+        "title": "The price is rising, selling can wait"
+      },
+      "down": {
+        "title": "The price is falling"
+      }
+    },
+    "craft": {
+      "title": "Worth crafting",
+      "body": "{{name}} now brings {{profit}} coins per item.",
+      "own": "Calculated with your recipe.",
+      "official": "Calculated with the usual recipe."
+    }
   }
 }

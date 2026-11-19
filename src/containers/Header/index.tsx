@@ -18,6 +18,7 @@ import { contentLanguage } from "@src/helpers/contentLanguage";
 import i18n from "../../i18n";
 import useAutoUpdate from "@src/hooks/useAutoUpdate";
 import useMarketNotifications from "@src/hooks/useMarketNotifications";
+import useMarketSignals from "@src/hooks/useMarketSignals";
 
 const Header = () => {
   const location = useLocation();
@@ -27,6 +28,7 @@ const Header = () => {
 
   useAutoUpdate();
   useMarketNotifications();
+  useMarketSignals();
 
   useEffect(() => {
     const listener = (

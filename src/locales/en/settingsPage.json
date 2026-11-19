@@ -124,6 +124,12 @@
       "github": "GitHub",
       "discord": "Discord",
       "site": "Parts data"
+    },
+    "background": {
+      "title": "Background work",
+      "subtitle": "The app can stay in the tray after the window is closed.",
+      "runInTray": "Stay in the tray",
+      "runInTrayHint": "After the window closes, the app keeps running in the tray and can still send notifications."
     }
   },
   "inventory": {
@@ -270,6 +276,12 @@
     "notificationSellLotsTitle": "Sell lots changed",
     "notificationSellLotsBody": "{{name}}: sell lots {{amount}} (was {{previous}}).",
     "notificationBuyLotsTitle": "Buy lots changed",
-    "notificationBuyLotsBody": "{{name}}: buy lots {{amount}} (was {{previous}})."
+    "notificationBuyLotsBody": "{{name}}: buy lots {{amount}} (was {{previous}}).",
+    "signalSection": "Market advice",
+    "signalSectionHint": "We tell you when it is a good time to buy, sell or craft.",
+    "signalPrice": "Buying and selling advice",
+    "signalPriceHint": "Tell you when the price is good for buying or selling.",
+    "signalCraft": "Crafting advice",
+    "signalCraftHint": "Tell you when a recipe brings a noticeable profit."
   }
 }

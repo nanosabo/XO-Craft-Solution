@@ -20,6 +20,8 @@ export interface MarketNotificationSettings {
   soundEnabled: boolean;
   priceDropEnabled: boolean;
   backgroundEnabled: boolean;
+  signalPriceEnabled: boolean;
+  signalCraftEnabled: boolean;
   signal: NotificationSignal;
   customSoundName: string | null;
 }
@@ -59,6 +61,8 @@ export interface SettingsState {
   startScreen: StartScreen;
   /** When on, alerts use the operating system instead of the in-app toasts. */
   systemNotifications: boolean;
+  /** When on, closing the window keeps the app running in the system tray. */
+  runInBackground: boolean;
   /** Nickname row colors of the combat log tables. */
   teamColors: TeamColors;
 }
@@ -77,6 +81,8 @@ export const createDefaultSettings = (): SettingsState => ({
     soundEnabled: true,
     priceDropEnabled: true,
     backgroundEnabled: true,
+    signalPriceEnabled: true,
+    signalCraftEnabled: true,
     signal: "coins",
     customSoundName: null,
   },
@@ -89,6 +95,7 @@ export const createDefaultSettings = (): SettingsState => ({
   crossoutLogsPath: null,
   startScreen: "craft",
   systemNotifications: false,
+  runInBackground: true,
   teamColors: { ...DEFAULT_TEAM_COLORS },
 });
 
@@ -108,6 +115,11 @@ const loadSettings = (): SettingsState => {
     } as MarketNotificationSettings & { priceDropThreshold?: number };
 
     delete notifications.priceDropThreshold;
+
+    notifications.signalPriceEnabled =
+      notifications.signalPriceEnabled !== false;
+    notifications.signalCraftEnabled =
+      notifications.signalCraftEnabled !== false;
 
     if (
       typeof notifications.customSoundName !== "string" ||
@@ -151,6 +163,7 @@ const loadSettings = (): SettingsState => {
         ? parsed.startScreen
         : defaults.startScreen,
       systemNotifications: parsed.systemNotifications === true,
+      runInBackground: parsed.runInBackground !== false,
       priceScalePeriod: isPriceScalePeriod(parsed.priceScalePeriod)
         ? parsed.priceScalePeriod
         : defaults.priceScalePeriod,
@@ -291,6 +304,10 @@ export const settingsSlice = createSlice({
       state.systemNotifications = action.payload;
       saveSettings(state);
     },
+    setRunInBackground(state, action: PayloadAction<boolean>) {
+      state.runInBackground = action.payload !== false;
+      saveSettings(state);
+    },
     setTeamColor(state, action: PayloadAction<{ team: Team; color: string }>) {
       if (!isHexColor(action.payload.color)) return;
 
@@ -328,6 +345,7 @@ export const {
   setCrossoutLogsPath,
   setStartScreen,
   setSystemNotifications,
+  setRunInBackground,
   setTeamColor,
   resetTeamColors,
   resetSettings,

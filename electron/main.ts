@@ -209,7 +209,10 @@ app.on("open-url", (event, url) => {
   queueAppLog(parseAppLogLink(url));
 });
 
+let isQuitting = false;
+
 app.on("before-quit", () => {
+  isQuitting = true;
   closeCrossoutBrowser();
   destroyToasts();
 });
@@ -346,6 +349,8 @@ const statePath = path.join(app.getPath("userData"), "window-state.json");
 
 const RELEASE_REPO = "nanosabo/XO-Craft-Solution";
 
+let runInBackground = true;
+
 function createWindow() {
   const { bounds, maximized } = readWindowState(statePath);
 
@@ -369,6 +374,28 @@ function createWindow() {
   bindWindowScale(win, statePath);
   if (maximized) win.maximize();
   win.once("ready-to-show", () => win?.show());
+
+  // With background work on, the window is hidden to the tray instead of
+  // closing, so the app keeps checking the market and sending notifications.
+  win.on("close", (event) => {
+    if (isQuitting) return;
+
+    if (runInBackground) {
+      event.preventDefault();
+      win?.hide();
+      showAppNotification({
+        title: locales[lang].hide.title,
+        body: locales[lang].hide.body,
+      });
+      return;
+    }
+
+    // Background work is off, so closing the main window must end the app.
+    // Do not wait for "window-all-closed": helper windows (toasts, the
+    // embedded browser) may still be alive and would keep the process up.
+    event.preventDefault();
+    app.quit();
+  });
 
   if (win) bindToastAnchor(win);
 
@@ -431,7 +458,8 @@ function createWindow() {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+  // With background work off, closing the window always exits the app.
+  if (!runInBackground || process.platform !== "darwin") {
     app.quit();
     win = null;
   }
@@ -474,13 +502,15 @@ ipcMain.handle("get-window-maximized", (e) =>
 );
 
 ipcMain.on("close", () => {
-  // const win = BrowserWindow.fromWebContents(e.sender);
-  // win?.close();
-  win?.hide();
-  showAppNotification({
-    title: locales[lang].hide.title,
-    body: locales[lang].hide.body,
-  });
+  // The close handler decides whether to hide to the tray or really close.
+  // Quit explicitly when background work is off so helper windows cannot
+  // keep the process alive after the main window is gone.
+  if (!runInBackground) {
+    app.quit();
+    return;
+  }
+
+  win?.close();
 });
 
 ipcMain.on("openDiscordExternal", () => {
@@ -496,6 +526,11 @@ ipcMain.handle("get-launch-at-login", () => getLaunchAtLogin());
 ipcMain.handle("set-launch-at-login", (_, enabled: boolean) =>
   setLaunchAtLogin(enabled === true),
 );
+
+ipcMain.on("set-run-in-background", (_, enabled: boolean) => {
+  runInBackground = enabled === true;
+  applyRunInBackground();
+});
 
 ipcMain.handle("get-error-logs", () => {
   return getRecentLogs();
@@ -1230,6 +1265,66 @@ ipcMain.handle("fetchMarketChartData", async (_, id: number) => {
   return buildChartData(chartData !== undefined ? chartData : [], "6m", lang);
 });
 
+ipcMain.handle("fetchItemSignal", async (_, id: number) => {
+  const chartData = await fetchChartData(id);
+  const chart = buildChartData(
+    chartData !== undefined ? chartData : [],
+    "6m",
+    lang,
+  );
+
+  const emptyCraft = {
+    hasRecipe: false,
+    isOwn: false,
+    profit: 0,
+    craftCost: 0,
+    sellPriceNet: 0,
+  };
+
+  if (!fetchedItems || !fetchedPrices) {
+    return { chart, craft: emptyCraft };
+  }
+
+  const item = fetchedItems.find((entry) => entry.id === id);
+
+  if (!item) {
+    return { chart, craft: emptyCraft };
+  }
+
+  const ownRecipe = own_recipes[id] !== undefined;
+  const hasOfficialRecipe =
+    item.recipe !== "$undefined" && item.craftable !== 0;
+  const hasRecipe =
+    !getNoRecipeMarked(id) && (hasOfficialRecipe || ownRecipe);
+
+  if (!hasRecipe) {
+    return { chart, craft: emptyCraft };
+  }
+
+  // A fresh solver instance is required because its memo key does not include
+  // the recipe priority, and a custom recipe must win when it is installed.
+  const fnForItem = getOneItem(fetchedItems, fetchedPrices);
+  const solved = fnForItem(id, "b", {
+    initialPriority: !ownRecipe,
+    ownPriority: ownRecipe,
+  });
+
+  const price = fetchedPrices[id] || { s: 0, b: 0, so: 0, bo: 0, t: 0 };
+  const sellPriceNet = Math.round(price.s * 0.9 * 100) / 100;
+  const craftCost = Math.round(solved.craftCoast * 100) / 100;
+
+  return {
+    chart,
+    craft: {
+      hasRecipe: true,
+      isOwn: ownRecipe && solved.isOwn,
+      profit: Math.round((sellPriceNet - craftCost) * 100) / 100,
+      craftCost,
+      sellPriceNet,
+    },
+  };
+});
+
 interface PreparedPart extends Part {
   /** Real parts represented by one solver unit. A left/right pair uses 2. */
   slots?: number;
@@ -1706,7 +1801,50 @@ ipcMain.handle("search-required-parts", async (_, value) => {
   return parts.filter((part) => matchesRequiredPartQuery(part, query));
 });
 
-let tray;
+let tray: Tray | null = null;
+
+const createTray = () => {
+  if (tray) return;
+
+  const icon = nativeImage.createFromPath(iconPath);
+  tray = new Tray(icon);
+  tray.setToolTip(`XO Craft Solution v${app.getVersion()}`);
+
+  tray.on("click", () => {
+    if (!win || win.isDestroyed()) {
+      createWindow();
+      return;
+    }
+
+    focusWindow();
+  });
+
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "Выход",
+        click: () => {
+          if (win) writeWindowState(win, statePath);
+          app.quit();
+          win = null;
+        },
+      },
+    ]),
+  );
+};
+
+const destroyTray = () => {
+  if (!tray) return;
+
+  tray.destroy();
+  tray = null;
+};
+
+/** Shows the tray icon only while the app is allowed to work in background. */
+const applyRunInBackground = () => {
+  if (runInBackground) createTray();
+  else destroyTray();
+};
 
 installWeaponScheme();
 
@@ -1730,31 +1868,7 @@ app.whenReady().then(async () => {
     },
   });
 
-  const icon = nativeImage.createFromPath(iconPath);
-
-  tray = new Tray(icon);
-  tray.setToolTip(`XO Craft Solution v${app.getVersion()}`);
-
-  tray.on("click", () => {
-    if (!win || win.isDestroyed()) {
-      createWindow();
-      return;
-    }
-
-    win.show();
-  });
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: "Выход",
-      click: () => {
-        if (win) writeWindowState(win, statePath);
-        app.quit();
-        win = null;
-      },
-    },
-  ]);
-  tray.setContextMenu(contextMenu);
+  applyRunInBackground();
 
   // Never block the window on network access: without a connection the app
   // must still open and show the error/report screen.

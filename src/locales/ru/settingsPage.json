@@ -124,6 +124,12 @@
       "github": "GitHub",
       "discord": "Discord",
       "site": "Данные деталей"
+    },
+    "background": {
+      "title": "Работа в фоне",
+      "subtitle": "Приложение может оставаться в трее после закрытия окна.",
+      "runInTray": "Оставаться в трее",
+      "runInTrayHint": "После закрытия окна приложение продолжит работать в значках и присылать уведомления."
     }
   },
   "inventory": {
@@ -270,6 +276,12 @@
     "notificationSellLotsTitle": "Изменилось количество лотов на продажу",
     "notificationSellLotsBody": "{{name}}: лотов на продажу {{amount}} (было {{previous}}).",
     "notificationBuyLotsTitle": "Изменилось количество лотов на покупку",
-    "notificationBuyLotsBody": "{{name}}: лотов на покупку {{amount}} (было {{previous}})."
+    "notificationBuyLotsBody": "{{name}}: лотов на покупку {{amount}} (было {{previous}}).",
+    "signalSection": "Советы по рынку",
+    "signalSectionHint": "Подсказываем, когда стоит покупать, продавать или крафтить.",
+    "signalPrice": "Советы по покупке/продаже",
+    "signalPriceHint": "Подсказывать, когда цена стала хорошей для покупки или продажи.",
+    "signalCraft": "Советы по крафту",
+    "signalCraftHint": "Подсказывать, когда рецепт приносит заметную прибыль."
   }
 }

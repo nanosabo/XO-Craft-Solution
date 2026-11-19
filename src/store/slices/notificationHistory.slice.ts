@@ -1,19 +1,31 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { FollowMetric } from "../follow";
+import type { PriceSignalKind } from "../signals";
 import type { RootState } from "../store";
 
 /** Kept in memory only, so quitting the app drops the list. */
 const HISTORY_LIMIT = 100;
 
+export type NotificationEntryKind = "rule" | "price" | "craft";
+
 export interface NotificationHistoryEntry {
   id: string;
   itemId: number;
   name: string;
-  metric: FollowMetric;
-  value: number;
-  previous: number;
+  kind: NotificationEntryKind;
   at: number;
   seen: boolean;
+  /** Rule-based entries. */
+  metric?: FollowMetric;
+  value?: number;
+  previous?: number;
+  /** Smart price entries. */
+  signal?: PriceSignalKind;
+  adviceKey?: string;
+  lotsKey?: string | null;
+  /** Smart craft entries. */
+  profit?: number;
+  isOwn?: boolean;
 }
 
 interface NotificationHistoryState {
